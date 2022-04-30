@@ -12,6 +12,8 @@
   <modules>
     <module>common.dao.center</module>
       <module>common.bean</module>
+    <module>spider.on.bilibili.video</module>
+    <module>common.util</module>
   </modules>
 
   <properties>
@@ -20,9 +22,14 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <junit.version>4.12</junit.version>
     <log4j.version>1.2.17</log4j.version>
+    <slf4j.version>2.0.0-alpha7</slf4j.version>
     <lombok.version>1.16.18</lombok.version>
     <mysql.version>8.0.22</mysql.version>
     <druid.version>1.1.16</druid.version>
+    <jsoup.version>1.14.3</jsoup.version>
+    <common-io.version>2.11.0</common-io.version>
+    <jetbrains.annotations.version>18.0.0</jetbrains.annotations.version>
+
     <mybatis.spring.boot.version>1.3.0</mybatis.spring.boot.version>
   </properties>
 
@@ -80,6 +87,39 @@
         <version>${lombok.version}</version>
         <optional>true</optional>
       </dependency>
+      <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${common-io.version}</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+      <dependency>
+        <groupId>org.jsoup</groupId>
+        <artifactId>jsoup</artifactId>
+        <version>${jsoup.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>${jetbrains.annotations.version}</version>
+      </dependency>
+
+
+      <dependency>
+        <groupId>com.github.dadiyang</groupId>
+        <artifactId>jave</artifactId>
+        <version>1.0.3</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
+      <dependency>
+        <groupId>commons-beanutils</groupId>
+        <artifactId>commons-beanutils</artifactId>
+        <version>1.9.4</version>
+      </dependency>
+
+
+
     </dependencies>
   </dependencyManagement>
 
