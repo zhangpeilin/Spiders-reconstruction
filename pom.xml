@@ -10,7 +10,7 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>common-dao-center</module>
+    <module>common.dao.center</module>
   </modules>
 
   <properties>
