@@ -1,0 +1,62 @@
+# maven ignore
+target/
+*.jar
+!.mvn/wrapper/*
+*.war
+*.zip
+*.tar
+*.tar.gz
+
+# eclipse ignore
+.settings/
+.project
+.classpath
+
+# idea ignore
+.idea/
+*.ipr
+*.iml
+*.iws
+
+# temp ignore
+*.log
+*.cache
+*.diff
+*.patch
+*.tmp
+
+# system ignore
+.DS_Store
+Thumbs.db
+*.orig
+
+# svn
+.svn/
+
+# fap web dir
+gov.df.pay.web/src/main/webapp/df/demo/
+gov.df.pay.web/src/main/webapp/df/fap/
+gov.df.pay.web/src/main/webapp/df/images/
+gov.df.pay.web/src/main/webapp/df/portal/
+gov.df.pay.web/src/main/webapp/df/require.config.js
+gov.df.pay.web/src/main/webapp/df/supervise/
+gov.df.pay.web/src/main/webapp/df/swagger/
+gov.df.pay.web/src/main/webapp/df/trd/
+
+
+# overlays
+gov.df.pay.web/overlays/
+
+# jdbc properties
+gov.df.pay.web/src/main/resources/jdbc.properties
+gov.df.pay.web/src/main/resources/yy-datasource.xml
+
+#class
+*.class
+
+#txlcn
+.txlcn/
+
+#properties
+fpay-pay/src/main/resources/application.properties
+*.versionsBackup
