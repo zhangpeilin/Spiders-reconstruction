@@ -12,6 +12,9 @@ public class CommonParams {
     @Value("charSet")
     public static String charSet;
 
+    public static String webSite = "bilibili";
+
+
 
     public static String commonHeaders = "User" +
             "-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0" +
