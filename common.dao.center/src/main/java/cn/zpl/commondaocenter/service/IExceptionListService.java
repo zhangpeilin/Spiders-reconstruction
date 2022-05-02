@@ -1,6 +1,6 @@
 package cn.zpl.commondaocenter.service;
 
-import cn.zpl.commondaocenter.entity.ExceptionList;
+import cn.zpl.common.bean.ExceptionList;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
