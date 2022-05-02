@@ -20,6 +20,6 @@ public class UrlConfig {
     public static String getExceptionListById;
 
     static {
-        InitConfigFactory.loadPropertyByClass(UrlConfig.class,"classpath:common-dao-center-url.properties");
+        InitConfigFactory.loadPropertyByClass(UrlConfig.class,"common-dao-center-url.properties");
     }
 }

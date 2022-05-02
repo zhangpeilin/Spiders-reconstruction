@@ -42,12 +42,12 @@ public class VideoInfoController {
     }
 
     @GetMapping("/get/{id}")
-    public String getById(@PathVariable("id") String id){
+    public VideoInfo getById(@PathVariable("id") String id){
         QueryWrapper<VideoInfo> queryWrapper = new QueryWrapper<>();
         QueryWrapper<VideoInfo> video_id = queryWrapper.eq("video_id", id);
         VideoInfo one = iVideoInfoService.getOne(video_id);
         System.out.println(one);
-        return one.getTitle();
+        return one;
     }
 
     @PostMapping("/saveVideoInfo")

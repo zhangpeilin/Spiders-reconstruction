@@ -5,16 +5,19 @@ import cn.zpl.common.bean.ExceptionList;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.common.bean.VideoInfo;
 import cn.zpl.config.UrlConfig;
+import com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Collections;
+
 @Data
 @Slf4j
 public class CrudTools<T> {
 
-    private static RestTemplate restTemplate;
+    private static RestTemplate restTemplate = new RestTemplate();
 
     public static RestResponse saveBika(Bika bika) {
         ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(UrlConfig.saveOrUpdateBika, bika, RestResponse.class);
@@ -34,6 +37,7 @@ public class CrudTools<T> {
     }
 
     public static VideoInfo getVideoById(String id) {
+//        restTemplate.setMessageConverters(Collections.singletonList(new FastJsonHttpMessageConverter()));
         ResponseEntity<VideoInfo> forEntity = restTemplate.getForEntity(UrlConfig.getVideoInfoById + id, VideoInfo.class, id);
         log.debug(String.valueOf(forEntity));
         return forEntity.getBody();
