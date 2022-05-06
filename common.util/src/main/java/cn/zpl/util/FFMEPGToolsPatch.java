@@ -164,7 +164,7 @@ public class FFMEPGToolsPatch {
             return true;
         }
         List<String> command = new ArrayList<String>();
-        String FFMEPGPATH = "U:\\baiduyundownload\\ffmpeg-4.1-win64-static\\bin\\ffmpeg";
+        String FFMEPGPATH = "E:\\ffmpeg-master-latest-win64-gpl-shared\\bin\\ffmpeg";
         command.add(FFMEPGPATH);
         command.add("-i");
         command.add("\"" + videoData.getVideo().getSavePath() + "\"");
