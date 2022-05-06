@@ -9,8 +9,7 @@ public class RestResponse extends HashMap<String, Object> {
 
     private static final long serialVersionUID = -8768946805942663366L;
 
-    private RestResponse() {
-    }
+
 
     public RestResponse msg(String msg) {
         this.put(AppConstant.MESSAGE, msg);
@@ -22,16 +21,20 @@ public class RestResponse extends HashMap<String, Object> {
         return this;
     }
 
+    public Object getItem() {
+        return this.get(AppConstant.ITEM);
+    }
+
     public RestResponse list(List<?> list) {
         this.put(AppConstant.LIST, list);
         return this;
     }
 
-    @NonNull
-    public RestResponse put(String key, Object value) {
-        super.put(key, value);
-        return this;
-    }
+//    @NonNull
+//    public RestResponse put(String key, Object value) {
+//        super.put(key, value);
+//        return this;
+//    }
 
     public static RestResponse ok() {
         RestResponse result = new RestResponse();
@@ -69,6 +72,8 @@ public class RestResponse extends HashMap<String, Object> {
     }
 
     public static RestResponse fail(int errcode) {
-        return fail().put(AppConstant.ERROR, errcode);
+        RestResponse fail = fail();
+        fail.put(AppConstant.ERROR, errcode);
+        return fail;
     }
 }
