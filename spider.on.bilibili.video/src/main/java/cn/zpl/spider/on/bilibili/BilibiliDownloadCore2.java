@@ -16,6 +16,8 @@ import cn.zpl.util.DownloadTools;
 import cn.zpl.util.FFMEPGToolsPatch;
 import cn.zpl.util.SaveLog;
 import cn.zpl.util.URLConnectionTool;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -57,6 +59,11 @@ public class BilibiliDownloadCore2 {
     //下载指定用户
     public void test() {
         getVideoList("4653374");
+    }
+
+    public static void main(String[] args) {
+        BilibiliDownloadCore2 bilibiliDownloadCore2 = new BilibiliDownloadCore2();
+        bilibiliDownloadCore2.downloadTheVideo();
     }
 
     public void downloadTheVideo() {
@@ -153,8 +160,13 @@ public class BilibiliDownloadCore2 {
             log.debug(video_id + "已排除");
             return true;
         } else {
-            ExceptionList exceptionListById = CrudTools.getExceptionListById(video_id);
-            if (video_id.equalsIgnoreCase(exceptionListById.getVideoId())) {
+            RestResponse response = CrudTools.getExceptionListById(video_id);
+            if (!response.isSuccess() && response.getItem() == null) {
+                return false;
+            }
+            response.getItem();
+            ExceptionList exceptionList = JSON.parseObject(JSONObject.toJSONString(response.getItem()), ExceptionList.class);
+            if (video_id.equalsIgnoreCase(exceptionList.getVideoId())) {
                 log.debug(video_id + "已排除");
                 exception.add(video_id);
                 return true;
@@ -300,7 +312,7 @@ public class BilibiliDownloadCore2 {
         videoInfo.setVideoName(title);
         videoInfo.setTitle(title);
         videoInfo.setWebsite(CommonParams.webSite);
-        videoInfo.setDownloadDate(new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").format(new Date()));
+        videoInfo.setDownloadDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 
 
 //        videoDto.put("bid", bvid);
