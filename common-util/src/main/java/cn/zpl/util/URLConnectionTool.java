@@ -4,7 +4,6 @@ import cn.zpl.config.CommonParams;
 import cn.zpl.connection.TrustAnyHostnameVerifier;
 import cn.zpl.connection.TrustAnyTrustManager;
 import cn.zpl.pojo.DownloadDTO;
-import com.sun.istack.internal.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -15,6 +14,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.util.ObjectUtils;
 

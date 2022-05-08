@@ -1,6 +1,6 @@
 package cn.zpl.pojo;
 
-import com.sun.istack.internal.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.io.Serializable;

@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>common.daos.center</artifactId>
+    <artifactId>common-dao-center</artifactId>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -36,7 +36,7 @@
         <!--公共实体类依赖-->
         <dependency>
             <groupId>cn.zpl</groupId>
-            <artifactId>common.bean</artifactId>
+            <artifactId>common-bean</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
             <exclusions>

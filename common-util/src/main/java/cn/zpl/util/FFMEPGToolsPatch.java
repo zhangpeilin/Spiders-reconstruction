@@ -2,10 +2,10 @@ package cn.zpl.util;
 
 import cn.zpl.common.bean.VideoInfo;
 import cn.zpl.pojo.VideoData;
-import com.sun.istack.internal.NotNull;
 import it.sauronsoftware.jave.Encoder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileWriter;
