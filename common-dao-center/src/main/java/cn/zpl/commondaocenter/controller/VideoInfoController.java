@@ -1,7 +1,7 @@
 package cn.zpl.commondaocenter.controller;
 
 import cn.zpl.common.bean.RestResponse;
-import cn.zpl.common.bean.VideoInfo;
+import cn.zpl.commondaocenter.bean.VideoInfo;
 import cn.zpl.commondaocenter.service.IVideoInfoService;
 import cn.zpl.commondaocenter.utils.CommonUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;

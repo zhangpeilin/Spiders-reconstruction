@@ -1,6 +1,6 @@
 package cn.zpl.commondaocenter.mapper;
 
-import cn.zpl.common.bean.ExceptionList;
+import cn.zpl.commondaocenter.bean.ExceptionList;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

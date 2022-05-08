@@ -1,7 +1,7 @@
 package cn.zpl.commondaocenter.controller;
 
-import cn.zpl.common.bean.ExceptionList;
 import cn.zpl.common.bean.RestResponse;
+import cn.zpl.commondaocenter.bean.ExceptionList;
 import cn.zpl.commondaocenter.service.IExceptionListService;
 import cn.zpl.commondaocenter.utils.CommonUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;

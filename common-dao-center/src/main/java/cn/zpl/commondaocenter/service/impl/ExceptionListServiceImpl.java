@@ -1,6 +1,6 @@
 package cn.zpl.commondaocenter.service.impl;
 
-import cn.zpl.common.bean.ExceptionList;
+import cn.zpl.commondaocenter.bean.ExceptionList;
 import cn.zpl.commondaocenter.mapper.ExceptionListMapper;
 import cn.zpl.commondaocenter.service.IExceptionListService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

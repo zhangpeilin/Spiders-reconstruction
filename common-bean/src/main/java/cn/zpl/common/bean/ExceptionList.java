@@ -1,6 +1,5 @@
 package cn.zpl.common.bean;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
 
 import java.io.Serializable;
@@ -13,7 +12,6 @@ import java.io.Serializable;
  * @author zpl
  * @since 2022-05-02
  */
-@TableName("exception_list")
 @ApiModel(value = "ExceptionList对象", description = "")
 public class ExceptionList implements Serializable {
 

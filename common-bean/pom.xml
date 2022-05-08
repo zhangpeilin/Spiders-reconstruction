@@ -18,15 +18,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-annotation</artifactId>
-            <version>3.5.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
-            <version>1.5.21</version>
+            <version>1.6.6</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

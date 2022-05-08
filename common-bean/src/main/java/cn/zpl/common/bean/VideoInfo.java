@@ -1,7 +1,5 @@
 package cn.zpl.common.bean;
 
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -15,13 +13,11 @@ import java.io.Serializable;
  * @author zpl
  * @since 2022-04-02
  */
-@TableName("video_info")
 @ApiModel(value = "VideoInfo对象", description = "")
 public class VideoInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId
     private String videoId;
 
     @ApiModelProperty("存储下载的url地址，如果是分段的，每个分段存储一次，最后视频合并后存储一个总的，url地址为空，parent_id为空")

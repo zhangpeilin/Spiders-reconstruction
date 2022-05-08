@@ -1,6 +1,6 @@
 package cn.zpl.commondaocenter.service.impl;
 
-import cn.zpl.common.bean.VideoInfo;
+import cn.zpl.commondaocenter.bean.VideoInfo;
 import cn.zpl.commondaocenter.mapper.VideoInfoMapper;
 import cn.zpl.commondaocenter.service.IVideoInfoService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
