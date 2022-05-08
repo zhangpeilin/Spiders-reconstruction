@@ -69,7 +69,7 @@ public class BilibiliDownloadCore2 {
     public void downloadTheVideo() {
         filter = false;
         FFMEPGToolsPatch.checkExist = false;
-        String video_id = "BV1SY41177Ti";
+        String video_id = "BV1tA4y197wd";
         mainBusiness(video_id, "");
     }
 
@@ -255,14 +255,13 @@ public class BilibiliDownloadCore2 {
             }
             avid = CommonIOUtils.getFromJson2Str(result, "aid");
         } catch (Exception e) {
-            if (!data.getDoRetry().canDoRetry()) {
+            if (!data.doRetry()) {
                 log.error("重试次数已用完，返回");
                 return;
             }
             log.error(video_id + "下载异常，重新解析\n", e);
             data.sleep();
             exception.clear();
-            data.getDoRetry().doRetry();
             mainBusiness(video_id, quality_level);
         }
 

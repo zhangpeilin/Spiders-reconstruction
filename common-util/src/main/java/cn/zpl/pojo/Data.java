@@ -33,45 +33,7 @@ public class Data {
     private Map<String,String> valuePairs;
     private String baseUrl;
     private String cookie;
-
-    public void setAlwaysRetry(){
-        this.doRetry.setAlwaysRetry(true);
-    }
-
-    public String getHeader() {
-        return header;
-    }
-
-    public void setHeader(String header) {
-        this.header = header;
-    }
-
     private String header;
-
-    public boolean isProxy() {
-        return proxy;
-    }
-
-    public void setProxy(boolean proxy) {
-        this.proxy = proxy;
-    }
-
-    public String getResult() {
-        return result== null ? "" : result.toString();
-    }
-
-    public Object getResObject() {
-        return result;
-    }
-
-    @Nullable
-    public String getString(){
-        return result.toString();
-    }
-
-    public void setResult(Object result) {
-        this.result = result;
-    }
 
     public Data() {
         this.doRetry = new DoRetry();
@@ -81,12 +43,6 @@ public class Data {
         this.type = "json";
         this.header = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36\n" +
                 "Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,ja;q=0.7,zh-TW;q=0.6\n";
-    }
-
-    public static Data getInstance(String url) {
-        Data data = new Data();
-        data.setUrl(url);
-        return data;
     }
 
     public Data(int retryMaxCount) {
@@ -100,12 +56,47 @@ public class Data {
                 "Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,ja;q=0.7,zh-TW;q=0.6\n";
     }
 
-    public DoRetry getDoRetry() {
-        return doRetry;
+    public static Data getInstance(String url) {
+        Data data = new Data();
+        data.setUrl(url);
+        return data;
     }
 
-    public void setDoRetry(DoRetry doRetry) {
-        this.doRetry = doRetry;
+    public void setAlwaysRetry(){
+        this.doRetry.setAlwaysRetry(true);
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public void setHeader(String header) {
+        this.header = header;
+    }
+
+    public boolean isProxy() {
+        return proxy;
+    }
+
+    public void setProxy(boolean proxy) {
+        this.proxy = proxy;
+    }
+
+    public String getResult() {
+        return result== null ? "" : result.toString();
+    }
+
+    public void setResult(Object result) {
+        this.result = result;
+    }
+
+    public Object getResObject() {
+        return result;
+    }
+
+    @Nullable
+    public String getString(){
+        return result.toString();
     }
 
     public String getUrl() {
@@ -305,5 +296,15 @@ public class Data {
 
     public void setCookie(String cookie) {
         this.cookie = cookie;
+    }
+
+    public boolean doRetry(){
+        if (doRetry.canDoRetry()) {
+            doRetry.doRetry();
+            return true;
+        } else {
+            return false;
+        }
+
     }
 }

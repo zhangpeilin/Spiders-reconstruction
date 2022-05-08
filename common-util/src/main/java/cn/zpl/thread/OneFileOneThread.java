@@ -153,7 +153,7 @@ public class OneFileOneThread implements Runnable {
             if (progressing != null) {
                 progressing.interrupt();
             }
-            if (!data.getDoRetry().canDoRetry()) {
+            if (!data.doRetry()) {
                 return;
             }
             log.error("报错：", e);
@@ -169,7 +169,7 @@ public class OneFileOneThread implements Runnable {
             //如果是404错误，则直接返回不再重试，否则休眠5秒后重试
             try {
                 if (conn.getResponseCode() == 404) {
-                    data.getDoRetry().setAlwaysRetry(false).setRetryMaxCount(0);
+                    data.stopRetry();
                 } else {
                     Thread.sleep(5000);
                 }
@@ -184,10 +184,9 @@ public class OneFileOneThread implements Runnable {
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
-            if (!data.getDoRetry().canDoRetry()) {
+            if (!data.doRetry()) {
                 return;
             }
-            data.getDoRetry().doRetry();
             if (data.getFileLength() != 0) {
                 try {
                     log.debug("视频下载，休眠30秒");

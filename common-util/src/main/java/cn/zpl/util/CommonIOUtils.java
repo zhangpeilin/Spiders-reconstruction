@@ -701,7 +701,7 @@ public class CommonIOUtils {
             }
         });
         timer.start();
-        Thread execute = new Thread(() -> excuteResponse(data));
+        Thread execute = new Thread(() -> executeResponse(data));
         execute.start();
         while (!data.getStoped().get()) {
             try {
@@ -724,14 +724,13 @@ public class CommonIOUtils {
             log.error("重新解析" + data.getUrl());
             data.getGet().releaseConnection();
             //判断如果可以重试，则递归调用
-            if (data.getDoRetry().canDoRetry()) {
-                data.getDoRetry().doRetry();
+            if (data.doRetry()) {
                 withTimer(data);
             }
         }
     }
 
-    private static void excuteResponse(Data data) {
+    private static void executeResponse(Data data) {
 
         try {
             //执行HttpGet请求实例，也就是发起GET请求，响应结果保存到httpResponse变量中

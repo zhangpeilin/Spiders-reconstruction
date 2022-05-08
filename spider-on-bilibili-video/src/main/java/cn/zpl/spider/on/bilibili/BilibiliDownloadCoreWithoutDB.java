@@ -186,13 +186,12 @@ public class BilibiliDownloadCoreWithoutDB {
             }
             avid = CommonIOUtils.getFromJson2Str(result, "aid");
         } catch (Exception e) {
-            if (!data.getDoRetry().canDoRetry()) {
+            if (!data.doRetry()) {
                 log.error("重试次数已用完，返回");
                 return;
             }
             log.error(video_id + "下载异常，重新解析\n", e);
             data.sleep();
-            data.getDoRetry().doRetry();
             mainBusiness(video_id);
         }
 

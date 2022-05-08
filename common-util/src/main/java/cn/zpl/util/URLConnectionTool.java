@@ -4,6 +4,7 @@ import cn.zpl.config.CommonParams;
 import cn.zpl.connection.TrustAnyHostnameVerifier;
 import cn.zpl.connection.TrustAnyTrustManager;
 import cn.zpl.pojo.DownloadDTO;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -35,6 +36,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class URLConnectionTool {
@@ -151,6 +153,7 @@ public class URLConnectionTool {
         }
     }
 
+    @SneakyThrows
     public static Long getDataLength(@NotNull DownloadDTO data) {
 //        if (!data.getUrl().toLowerCase().startsWith("https")) {
 //            data.setUrl("https" + data.getUrl().substring(4));
@@ -194,6 +197,7 @@ public class URLConnectionTool {
             }
         } catch (IOException e) {
             log.error("获取文件大小异常：", e);
+            TimeUnit.SECONDS.sleep(5);
             return getDataLength(data);
         }
         httpconn.disconnect();

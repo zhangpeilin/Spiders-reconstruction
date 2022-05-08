@@ -31,6 +31,23 @@ public class DownloadDTO implements Serializable {
      * 是否严格校验，true表示需要校验响应头中的文件类型字段不为空
      */
     private boolean isStrict;
+    //默认不是图片
+    private boolean isImage;
+    private List<String> pathMake = new ArrayList<>();
+    private DoRetry doRetry;
+    private SynchronizeLock synchronizeLock;
+    private long fileLength = 0;
+
+    public DownloadDTO() {
+        this.isProxy = false;
+        this.doRetry = new DoRetry();
+        this.doRetry.setRetryMaxCount(3);
+        this.needLog = true;
+        this.synchronizeLock = new SynchronizeLock();
+        this.isImage = false;
+        this.charsetName = "gbk";
+        this.isStrict = false;
+    }
 
     public boolean isImage() {
         return isImage;
@@ -39,20 +56,6 @@ public class DownloadDTO implements Serializable {
     public void setImage(boolean image) {
         isImage = image;
     }
-
-    //默认不是图片
-    private boolean isImage;
-    private List<String> pathMake = new ArrayList<>();
-
-    public DoRetry getDoRetry() {
-        return doRetry;
-    }
-
-    public void setDoRetry(DoRetry doRetry) {
-        this.doRetry = doRetry;
-    }
-
-    private DoRetry doRetry;
 
     public long getStartIndex() {
         return startIndex;
@@ -68,18 +71,6 @@ public class DownloadDTO implements Serializable {
 
     public void setEndIndex(long endIndex) {
         this.endIndex = endIndex;
-    }
-
-
-    public DownloadDTO() {
-        this.isProxy = false;
-        this.doRetry = new DoRetry();
-        this.doRetry.setRetryMaxCount(3);
-        this.needLog = true;
-        this.synchronizeLock = new SynchronizeLock();
-        this.isImage = false;
-        this.charsetName = "gbk";
-        this.isStrict = false;
     }
 
     public String getWebSite() {
@@ -150,9 +141,6 @@ public class DownloadDTO implements Serializable {
         this.synchronizeLock = synchronizeLock;
     }
 
-
-    private SynchronizeLock synchronizeLock;
-
     public long getFileLength() {
         return fileLength;
     }
@@ -160,8 +148,6 @@ public class DownloadDTO implements Serializable {
     public void setFileLength(long fileLength) {
         this.fileLength = fileLength;
     }
-
-    private long fileLength = 0;
 
     public List<String> getPathMake() {
         return pathMake;
@@ -223,6 +209,10 @@ public class DownloadDTO implements Serializable {
         this.doRetry.setAlwaysRetry(true);
     }
 
+    public void stopRetry(){
+        doRetry.setAlwaysRetry(false).setRetryMaxCount(0);
+    }
+
     public void setComplete() {
         if (id == null) {
             return;
@@ -235,6 +225,16 @@ public class DownloadDTO implements Serializable {
 
     public void setProgress(Map<String, AtomicInteger> progress) {
         this.progress = progress;
+    }
+
+    public boolean doRetry(){
+        if (doRetry.canDoRetry()) {
+            doRetry.doRetry();
+            return true;
+        } else {
+            return false;
+        }
+
     }
 }
 
