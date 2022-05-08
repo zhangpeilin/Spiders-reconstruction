@@ -14,6 +14,7 @@
         <module>common-bean</module>
         <module>spider-on-bilibili-video</module>
         <module>common-util</module>
+        <module>spdier-on-ehentai</module>
     </modules>
 
     <properties>

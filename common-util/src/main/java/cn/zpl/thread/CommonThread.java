@@ -12,16 +12,7 @@ public abstract class CommonThread implements Runnable {
 
     Vector<DownloadDTO> dtoList = new Vector<>();
     DownloadDTO dto = new DownloadDTO();
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    String url;
+    public String url;
 
     public CommonThread() {
 
@@ -29,6 +20,14 @@ public abstract class CommonThread implements Runnable {
 
     public CommonThread(Vector<DownloadDTO> dtoList) {
         this.dtoList = dtoList;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     @Override
