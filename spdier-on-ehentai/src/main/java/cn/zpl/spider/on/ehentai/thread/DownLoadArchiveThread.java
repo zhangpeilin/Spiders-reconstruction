@@ -8,6 +8,7 @@ import cn.zpl.spider.on.ehentai.config.Params;
 import cn.zpl.thread.CommonThread;
 import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.CrudTools;
 import cn.zpl.util.UnZipUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -17,8 +18,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 
 import java.awt.Desktop;
 import java.io.File;
@@ -31,21 +30,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
 public class DownLoadArchiveThread extends CommonThread {
 
-    RestTemplate restTemplate = new RestTemplate();
-    public DownLoadArchiveThread(String url){
+    public DownLoadArchiveThread(String url) {
         this.setUrl(url);
     }
+
     @Override
     public void domain() {
         Data data = new Data();
-        Ehentai ehentai = new Ehentai();
+        Ehentai ehentai;
         data.setUrl(getUrl());
         data.setHeader(Params.exhentai_cookies);
         data.setProxy(true);
@@ -72,6 +70,7 @@ public class DownLoadArchiveThread extends CommonThread {
         }
         ehentai = JSON.toJavaObject(new JSONObject(infomation), Ehentai.class);
         Pattern pattern = Pattern.compile("[\\d,]+");
+        assert favcount != null;
         Matcher favcountMatcher = pattern.matcher(favcount.text());
         if (favcountMatcher.find()) {
             try {
@@ -101,8 +100,9 @@ public class DownLoadArchiveThread extends CommonThread {
                 Document tmp = Jsoup.parse(archive.getResult());
                 String title = tmp.selectFirst("div#db > h1").text();
                 Element form = tmp.selectFirst("form");
+                assert form != null;
                 Elements freeMark = form.previousElementSibling().getElementsMatchingText("Free");
-                if (freeMark == null || freeMark.isEmpty()) {
+                if (freeMark.isEmpty()) {
                     log.error("下载消耗点数，暂时返回，链接地址记录：" + url);
                     log.error(tmp.select("   div#db h1").text());
                     Matcher matcher = pattern.matcher(form.previousElementSibling().text());
@@ -117,8 +117,8 @@ public class DownLoadArchiveThread extends CommonThread {
                         ehentai.setTitle(title);
                         ehentai.setUrl(url);
                         ehentai.setCost(String.valueOf(GP));
-                        ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(Params.saveOrUpdateEhentai, ehentai, RestResponse.class);
-                        System.out.println(Objects.requireNonNull(responseEntity.getBody()).isSuccess());
+                        RestResponse restResponse = CrudTools.saveEhentai(ehentai);
+                        log.debug("保存是否成功：{}", restResponse.isSuccess());
 
                         if (GP > 1000) {
                             return;
@@ -126,9 +126,8 @@ public class DownLoadArchiveThread extends CommonThread {
                         log.error("下载消耗点数：" + GP);
                     }
                     return;
-//                    Params.mainFrame.updateInfo(Thread.currentThread().getName(), "<p>下载消耗点数，暂时返回<br>");
                 }
-                if (form.attr("action") != null && form.attr("action").startsWith("http")) {
+                if (form.attr("action").startsWith("http")) {
                     Data d1 = new Data();
                     d1.setUrl(form.attr("action"));
                     d1.setHeader(Params.exhentai_cookies + "\nContent-Type: application/x-www-form-urlencoded; charset=UTF-8");
@@ -170,7 +169,7 @@ public class DownLoadArchiveThread extends CommonThread {
                         String dest = UnZipUtils.unZip(new File(dto.getSavePath()), "G:\\exhentai\\archive\\20201226\\丝袜\\" + dto.getFileName().replace(".zip", ""), "");
                         log.debug("解压成功，目录为：" + dest);
                         if (Params.mainFrame != null)
-                        Desktop.getDesktop().open(new File(dest));
+                            Desktop.getDesktop().open(new File(dest));
                     } catch (IOException e) {
                         log.error("解压失败");
                         e.printStackTrace();

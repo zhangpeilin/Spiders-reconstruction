@@ -1,6 +1,6 @@
 package cn.zpl.commondaocenter.service.impl;
 
-import cn.zpl.common.bean.Ehentai;
+import cn.zpl.commondaocenter.bean.Ehentai;
 import cn.zpl.commondaocenter.mapper.EhentaiMapper;
 import cn.zpl.commondaocenter.service.IEhentaiService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

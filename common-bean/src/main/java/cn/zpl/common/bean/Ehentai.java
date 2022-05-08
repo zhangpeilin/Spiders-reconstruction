@@ -1,6 +1,5 @@
 package cn.zpl.common.bean;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
 
@@ -42,6 +41,6 @@ public class Ehentai implements Serializable {
 
     private String parody;
 
-    @TableField("`group`")
+//    @TableField("`group`")
     private String group;
 }

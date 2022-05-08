@@ -1,6 +1,6 @@
 package cn.zpl.commondaocenter.controller;
 
-import cn.zpl.common.bean.Ehentai;
+import cn.zpl.commondaocenter.bean.Ehentai;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.commondaocenter.service.IEhentaiService;
 import cn.zpl.commondaocenter.utils.CommonUtils;
