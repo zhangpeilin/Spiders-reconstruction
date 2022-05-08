@@ -11,17 +11,19 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.HttpURLConnection;
+import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class OneFileOneThread implements Runnable {
 
-    private String url;
-    private DownloadDTO data;
+    private final String url;
+    private final DownloadDTO data;
     private long length;
     private final Object lock;
     private MyJFrame frame;
@@ -36,9 +38,6 @@ public class OneFileOneThread implements Runnable {
 
         length = 0;
         File saveDir = new File(data.getSavePath());
-//        if (frame != null) {
-//            frame.clearInfo();
-//        }
         if (!saveDir.getParentFile().exists()) {
             boolean mkdirs = saveDir.getParentFile().mkdirs();
             if (!mkdirs) {
@@ -54,9 +53,7 @@ public class OneFileOneThread implements Runnable {
             return;
         }
         HttpURLConnection conn = URLConnectionTool.getHttpURLConnection(data.isProxy(), url);
-        //性能太差，替换掉RandomAccessFile
         BufferedOutputStream outputStream = null;
-//        RandomAccessFile randomfile = null;
         Thread progressing = null;
         try {
             if (data.getReferer() != null && !"".equals(data.getReferer())) {
@@ -98,9 +95,7 @@ public class OneFileOneThread implements Runnable {
                 }
             }
             if (conn.getResponseCode() == 200) {
-                outputStream = new BufferedOutputStream(new FileOutputStream(saveDir));
-//                randomfile = new RandomAccessFile(saveDir, "rwd");
-//                randomfile.seek(0);
+                outputStream = new BufferedOutputStream(Files.newOutputStream(saveDir.toPath()));
                 //对于图片来说再长的数组都是浪费，只用前面一两千个
                 byte[] getData = data.isImage() ? new byte[20000] : new byte[7000000];
                 int len;
@@ -108,10 +103,9 @@ public class OneFileOneThread implements Runnable {
                     if (frame != null && size != 0 && progressing == null) {
                         progressing = new Thread(() -> {
                             while (length != size && !Thread.interrupted()) {
-                                BigDecimal rate = new BigDecimal(length).divide(new BigDecimal(size), 4, BigDecimal.ROUND_HALF_UP).multiply(new BigDecimal(100)).setScale(0, BigDecimal.ROUND_HALF_UP);
+                                BigDecimal rate = new BigDecimal(length).divide(new BigDecimal(size), 4, RoundingMode.HALF_UP).multiply(new BigDecimal(100)).setScale(0, RoundingMode.HALF_UP);
                                 StringBuilder stringBuilder;
                                 stringBuilder = new StringBuilder();
-//                                stringBuilder.append("<html><body>");
                                 stringBuilder.append("<p>压缩包大小：").append(CommonIOUtils.transformB2MB(size)).append("MB<br>").append("当前下载进度：").append(rate).append("%<br>");
                                 frame.updateInfo(Thread.currentThread().getName(), stringBuilder.toString());
 //                                frame.getScreen().setText(stringBuilder.toString());
@@ -121,7 +115,6 @@ public class OneFileOneThread implements Runnable {
                         progressing.start();
                     }
                     outputStream.write(getData, 0, len);
-//                    randomfile.write(getData, 0, len);
                     length += len;
                 }
                 is.close();
@@ -131,7 +124,6 @@ public class OneFileOneThread implements Runnable {
                     progressing.interrupt();
                 }
                 conn.disconnect();
-//                randomfile.close();
                 //如果服务器返回chunked，那么只需要比较data中的长度和下载到文件的长度即可
                 if (conn.getHeaderField("Transfer-Encoding") != null && conn.getHeaderField("Transfer-Encoding").equalsIgnoreCase("chunked") && data.getFileLength() != 0 && data.getFileLength() == saveDir.length()) {
                     log.debug("服务端返回chunked，不再校验文件大小一致性");
@@ -171,7 +163,7 @@ public class OneFileOneThread implements Runnable {
                 if (conn.getResponseCode() == 404) {
                     data.stopRetry();
                 } else {
-                    Thread.sleep(5000);
+                    TimeUnit.SECONDS.sleep(5);
                 }
             } catch (InterruptedException | IOException e1) {
                 e1.printStackTrace();
@@ -189,8 +181,8 @@ public class OneFileOneThread implements Runnable {
             }
             if (data.getFileLength() != 0) {
                 try {
-                    log.debug("视频下载，休眠30秒");
-                    Thread.sleep(1);
+                    log.debug("视频下载，休眠5秒");
+                    TimeUnit.SECONDS.sleep(5);
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 }

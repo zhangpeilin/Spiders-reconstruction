@@ -276,12 +276,6 @@ public class BilibiliDownloadCore2 {
         String part = CommonIOUtils.getFromJson2Str(partJson, "part");
         int page = CommonIOUtils.getFromJson2Integer(partJson, "page");
         String url = "https://api.bilibili.com/x/player/playurl?avid=" + avid + "&cid=" + cid + "&bvid=&qn=" + (quality_level.equals("") ? "112" : quality_level) + "&type=&otype=json&fnver=0&fnval=16&fourk=1";
-//        List<OrigionalDTO> list = DBManager.getInstance().findDtoBySql("select * from video_info where video_id = '" + cid +
-//                "' and aid = '" + avid + "' and download_date != ''", OrigionalDTO.class);
-//        if (!list.isEmpty()) {
-//            log.debug("已下载");
-//            return;
-//        }
         if (filter && isDownloaded(cid, avid)) {
             already.set(already.get() == null ? 0 : already.get() + 1);
             log.debug(title);
@@ -299,8 +293,6 @@ public class BilibiliDownloadCore2 {
         }
         title = CommonIOUtils.filterFileName2(title);
         VideoData videoData = new VideoData();
-//        VideoInfo video = new VideoInfo();
-//        OrigionalDTO videoDto = new OrigionalDTO();
         VideoInfo videoInfo = new VideoInfo();
         videoInfo.setOwnerName(owner_name == null || "".equalsIgnoreCase(owner_name) ? CommonIOUtils.getFromJson2Str(mainJson, "userName") : owner_name);
         videoInfo.setVideoId(cid);
@@ -312,9 +304,7 @@ public class BilibiliDownloadCore2 {
         videoInfo.setTitle(title);
         videoInfo.setWebsite(CommonParams.webSite);
         videoInfo.setDownloadDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
-
-
-//        videoDto.put("bid", bvid);
+        videoInfo.setBid(bvid);
 
         List<String> path = new ArrayList<>();
         path.add(newPath.get() != null && !"".equals(newPath.get()) ? newPath.get() : BilibiliStaticParams.video_save_path);
@@ -329,9 +319,7 @@ public class BilibiliDownloadCore2 {
         videoData.setTmpSavePath(new File(BilibiliStaticParams.tmp_save_path, avid));
         videoData.setDesSavePath(CommonIOUtils.makeFilePath(path, videoName));
         videoInfo.setLocalPath(videoData.getDesSavePath());
-
-//        video.setLocalPath(videoData.getDesSavePath());
-        videoData.setTimeLength((String) videoInfo.getTimeLength());
+        videoData.setTimeLength(videoInfo.getTimeLength());
         videoData.setVideoId(avid);
         if (FFMEPGToolsPatch.isExists(videoData)) {
             RestResponse restResponse = CrudTools.saveVideoInfo(videoInfo);
@@ -353,7 +341,6 @@ public class BilibiliDownloadCore2 {
             downLoadByAPI(String.valueOf(quality.get(0)), cid, mainJson, partJson);
             return;
         }
-        String play_list;
         //判断是否为1p多段，如果是，那么json中是flv的下载地址，否则是m4s的地址
         if (CommonIOUtils.getFromJson2(json, "data-dash-video").isJsonNull()) {
             //1p多段下载

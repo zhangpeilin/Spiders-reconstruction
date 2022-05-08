@@ -2,6 +2,7 @@ package cn.zpl.common.bean;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
 
 import java.io.Serializable;
 
@@ -14,6 +15,7 @@ import java.io.Serializable;
  * @since 2022-04-02
  */
 @ApiModel(value = "VideoInfo对象", description = "")
+@Data
 public class VideoInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -52,6 +54,8 @@ public class VideoInfo implements Serializable {
     private String downloadDate;
 
     private String aid;
+
+    private String bid;
 
     public String getVideoId() {
         return videoId;
