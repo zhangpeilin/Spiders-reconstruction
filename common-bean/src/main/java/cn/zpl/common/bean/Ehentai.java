@@ -43,4 +43,6 @@ public class Ehentai implements Serializable {
 
 //    @TableField("`group`")
     private String group;
+
+    private String create_time;
 }

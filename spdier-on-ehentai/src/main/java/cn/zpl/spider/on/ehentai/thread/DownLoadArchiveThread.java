@@ -117,15 +117,16 @@ public class DownLoadArchiveThread extends CommonThread {
                         ehentai.setTitle(title);
                         ehentai.setUrl(url);
                         ehentai.setCost(String.valueOf(GP));
+                        ehentai.setCreate_time(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
                         RestResponse restResponse = CrudTools.saveEhentai(ehentai);
                         log.debug("保存是否成功：{}", restResponse.isSuccess());
 
-                        if (GP > 1000) {
+                        if (GP > 10000) {
                             return;
                         }
-                        log.error("下载消耗点数：" + GP);
+                        log.info("下载消耗点数：" + GP);
                     }
-                    return;
+//                    return;
                 }
                 if (form.attr("action").startsWith("http")) {
                     Data d1 = new Data();
