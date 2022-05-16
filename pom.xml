@@ -15,6 +15,7 @@
         <module>spider-on-bilibili-video</module>
         <module>common-util</module>
         <module>spdier-on-ehentai</module>
+        <module>tencentcloud-util</module>
     </modules>
 
     <properties>
