@@ -1,6 +1,7 @@
 package cn.zpl.util;
 
 import cn.zpl.common.bean.VideoInfo;
+import cn.zpl.config.CommonParams;
 import cn.zpl.pojo.VideoData;
 import it.sauronsoftware.jave.Encoder;
 import lombok.extern.slf4j.Slf4j;
@@ -164,8 +165,7 @@ public class FFMEPGToolsPatch {
             return true;
         }
         List<String> command = new ArrayList<String>();
-        String FFMEPGPATH = "E:\\ffmpeg-master-latest-win64-gpl-shared\\bin\\ffmpeg";
-        command.add(FFMEPGPATH);
+        command.add(CommonParams.FFMPEG);
         command.add("-i");
         command.add("\"" + videoData.getVideo().getSavePath() + "\"");
         command.add("-i");
