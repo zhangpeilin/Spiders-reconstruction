@@ -11,6 +11,9 @@ public class UrlConfig {
     public static String saveOrUpdateVideoInfo;
     @Value("url.saveOrUpdateEhentai")
     public static String saveOrUpdateEhentai;
+
+    @Value("url.saveOrUpdatePA")
+    public static String saveOrUpdatePA;
     @Value("url.getVideoInfoById")
     public static String getVideoInfoById;
     @Value("url.saveOrUpdateExceptionList")
