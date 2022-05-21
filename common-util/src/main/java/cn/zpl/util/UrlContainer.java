@@ -1,5 +1,8 @@
 package cn.zpl.util;
 
+import cn.zpl.pojo.Data;
+import cn.zpl.pojo.DownloadDTO;
+
 import java.io.Serializable;
 
 public class UrlContainer implements Serializable {
@@ -12,6 +15,11 @@ public class UrlContainer implements Serializable {
     private long sleepMills;
     private int retryMaxCount = 5;
     private String cookies;
+
+    public UrlContainer(DownloadDTO data) {
+        this.url = data.getUrl();
+        this.proxy = data.isProxy();
+    }
     public UrlContainer(String url) {
         this.url = url;
         this.proxy = false;
