@@ -17,6 +17,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.openjsse.net.ssl.OpenJSSE;
 import org.springframework.util.ObjectUtils;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -35,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.Security;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -54,7 +56,8 @@ public class URLConnectionTool {
         HttpsURLConnection urlcon = null;
         SSLContext sc;
         try {
-            sc = SSLContext.getInstance("SSL", "SunJSSE");
+            Security.addProvider(new OpenJSSE());
+            sc = SSLContext.getInstance("TLSv1.3");
             sc.init(null, new TrustManager[]{new TrustAnyTrustManager()}, new java.security.SecureRandom());
             URL cover_url = new URL(container.getUrl());
             urlcon = container.isProxy() ? (HttpsURLConnection) cover_url.openConnection(proxy) :
@@ -81,7 +84,7 @@ public class URLConnectionTool {
                 urlcon.setRequestProperty("Referer", container.getReferer());
             }
             return urlcon;
-        } catch (NoSuchAlgorithmException | KeyManagementException | IOException | NoSuchProviderException e) {
+        } catch (NoSuchAlgorithmException | KeyManagementException | IOException e) {
             e.printStackTrace();
         }
         return urlcon;
