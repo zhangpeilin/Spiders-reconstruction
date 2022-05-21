@@ -5,6 +5,7 @@ import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.SaveLog;
 import cn.zpl.util.URLConnectionTool;
+import cn.zpl.util.UrlContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,7 +43,10 @@ public class DownloadWithMultipleThread implements Runnable, DownloadThreadInter
             log.debug(data.getSavePath() + "已下载，跳过");
             return;
         }
-        HttpURLConnection conn = URLConnectionTool.getHttpURLConnection(data.isProxy(), url);
+        UrlContainer container = new UrlContainer(data);
+        HttpURLConnection conn = container.isHttps() ?
+                URLConnectionTool.getHttpsURLConnection(container) : URLConnectionTool.getHttpURLConnection(container);
+
         InputStream is = null;
         if (data.getReferer() != null && !"".equals(data.getReferer())) {
             conn.setRequestProperty("Referer", data.getReferer());
