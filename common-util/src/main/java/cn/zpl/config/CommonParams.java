@@ -13,6 +13,8 @@ public class CommonParams {
     public static String charSet;
 
     public static String webSite = "bilibili";
+    @Value("ffmpeg")
+    public static String FFMPEG;
 
 
 
