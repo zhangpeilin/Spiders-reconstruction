@@ -2,6 +2,7 @@ package cn.zpl.util;
 
 import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.Ehentai;
+import cn.zpl.common.bean.PictureAnalyze;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.common.bean.VideoInfo;
 import cn.zpl.config.UrlConfig;
@@ -64,6 +65,12 @@ public class CrudTools<T> {
 
     public static RestResponse saveEhentai(Ehentai ehentai) {
         ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(UrlConfig.saveOrUpdateEhentai, ehentai, RestResponse.class);
+        log.debug(String.valueOf(responseEntity));
+        return responseEntity.getBody();
+    }
+
+    public static RestResponse savePA(PictureAnalyze pictureAnalyze) {
+        ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(UrlConfig.saveOrUpdatePA, pictureAnalyze, RestResponse.class);
         log.debug(String.valueOf(responseEntity));
         return responseEntity.getBody();
     }
