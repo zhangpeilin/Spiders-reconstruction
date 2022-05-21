@@ -94,6 +94,26 @@
             <artifactId>zip4j</artifactId>
             <version>2.10.0</version>
         </dependency>
+        <dependency>
+            <groupId>cn.xsshome</groupId>
+            <artifactId>taip</artifactId>
+            <version>4.3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.drewnoakes</groupId>
+            <artifactId>metadata-extractor</artifactId>
+            <version>2.18.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjsse</groupId>
+            <artifactId>openjsse</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ejlchina</groupId>
+            <artifactId>okhttps-fastjson</artifactId>
+            <version>3.5.2</version>
+        </dependency>
     </dependencies>
 
 </project>
