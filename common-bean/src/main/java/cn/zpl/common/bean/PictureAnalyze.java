@@ -30,27 +30,5 @@ public class PictureAnalyze implements Serializable {
 
     private String tencentJsonResult;
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-    @Override
-    public String toString() {
-        return "PictureAnalyze{" +
-            "id=" + id +
-            ", path=" + path +
-            ", baiduResult=" + baiduResult +
-            ", tencentResult=" + tencentResult +
-        "}";
-    }
+    private String qualityResult;
 }

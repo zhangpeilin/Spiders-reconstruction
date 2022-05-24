@@ -1,5 +1,7 @@
 package cn.zpl.common.bean;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.springframework.lang.NonNull;
 
 import java.util.HashMap;
@@ -25,16 +27,20 @@ public class RestResponse extends HashMap<String, Object> {
         return this.get(AppConstant.ITEM);
     }
 
+    public <T> List<T> getList(Class<T> clazz){
+        assert get(AppConstant.LIST) != null;
+        return JSONObject.parseArray(JSONObject.toJSONString(get(AppConstant.LIST)), clazz);
+    }
+
+    public <T> T getObject(Class<T> clazz) {
+        assert get(AppConstant.ITEM) != null;
+        return JSONObject.parseObject(JSONObject.toJSONString(get((AppConstant.ITEM))), clazz);
+    }
+
     public RestResponse list(List<?> list) {
         this.put(AppConstant.LIST, list);
         return this;
     }
-
-//    @NonNull
-//    public RestResponse put(String key, Object value) {
-//        super.put(key, value);
-//        return this;
-//    }
 
     public static RestResponse ok() {
         RestResponse result = new RestResponse();
