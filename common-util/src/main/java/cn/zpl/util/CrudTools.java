@@ -75,5 +75,20 @@ public class CrudTools<T> {
         return responseEntity.getBody();
     }
 
+    public static RestResponse getPAById(String id) {
+        ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(UrlConfig.getPAById + id, RestResponse.class);
+        return forEntity.getBody();
+    }
+
+    public static RestResponse queryListWithKey(String key) {
+        ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(UrlConfig.queryPAList + key, RestResponse.class);
+        return forEntity.getBody();
+    }
+
+    public static RestResponse queryPAListByCondition(String condition) {
+        ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(UrlConfig.queryPAListByCondition + condition, RestResponse.class);
+        return forEntity.getBody();
+    }
+
 
 }

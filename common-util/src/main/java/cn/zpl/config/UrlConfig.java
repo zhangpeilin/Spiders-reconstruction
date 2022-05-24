@@ -14,10 +14,16 @@ public class UrlConfig {
 
     @Value("url.saveOrUpdatePA")
     public static String saveOrUpdatePA;
+    @Value("url.getPAById")
+    public static String getPAById;
     @Value("url.getVideoInfoById")
     public static String getVideoInfoById;
     @Value("url.saveOrUpdateExceptionList")
     public static String getSaveOrUpdateExceptionList;
+    @Value("url.queryPAList")
+    public static String queryPAList;
+    @Value("url.queryPAListByCondition")
+    public static String queryPAListByCondition;
 
     @Value("url.getExceptionListById")
     public static String getExceptionListById;
