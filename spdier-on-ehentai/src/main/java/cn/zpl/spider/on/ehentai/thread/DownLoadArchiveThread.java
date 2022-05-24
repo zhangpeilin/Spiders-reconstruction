@@ -122,6 +122,7 @@ public class DownLoadArchiveThread extends CommonThread {
                         log.debug("保存是否成功：{}", restResponse.isSuccess());
 
                         if (GP > 10000) {
+                            log.error("当前漫画未下载：{}", url);
                             return;
                         }
                         log.info("下载消耗点数：" + GP);
