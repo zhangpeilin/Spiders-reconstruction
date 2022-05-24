@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
-import java.io.ByteArrayInputStream;
-import java.io.ObjectInputStream;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,14 +58,19 @@ public class PictureAnalyzeController {
     }
 
     @SneakyThrows
+    @GetMapping("/queryPAListByCondition/{condition}")
+    public RestResponse queryPAListByCondition(@PathVariable String condition) {
+        QueryWrapper<PictureAnalyze> objectQueryWrapper = new QueryWrapper<>();
+        objectQueryWrapper.apply(URLDecoder.decode(condition, "utf-8"));
+        List<PictureAnalyze> list = pictureAnalyzeService.list(objectQueryWrapper);
+        return RestResponse.ok().list(list);
+    }
+
+    @SneakyThrows
     public static void main(String[] args) {
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<PictureAnalyze> responseEntity = restTemplate.getForEntity("http://localhost:8080/commondaocenter/pictureAnalyze/download/1526642337481396226", PictureAnalyze.class);
-        PictureAnalyze item = responseEntity.getBody();
-        assert item != null;
-        ByteArrayInputStream bis = new ByteArrayInputStream(Objects.requireNonNull(item.getBaiduResult()));
-            ObjectInputStream ois = new ObjectInputStream(bis);
-        Object o = ois.readObject();
-        System.out.println(o);
+        ResponseEntity<RestResponse> responseEntity = restTemplate.getForEntity("http://localhost:8080/commondaocenter/pictureAnalyze/queryPAListByCondition/" + URLEncoder.encode("id='1527733848444903425'", "utf-8"), RestResponse.class);
+        RestResponse item = responseEntity.getBody();
+        System.out.println(Objects.requireNonNull(item).getItem());
     }
 }
