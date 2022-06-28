@@ -17,6 +17,7 @@
         <module>spdier-on-ehentai</module>
         <module>tencentcloud-util</module>
         <module>baidu-ai-platform</module>
+        <module>spider-on-bika</module>
     </modules>
 
     <properties>
