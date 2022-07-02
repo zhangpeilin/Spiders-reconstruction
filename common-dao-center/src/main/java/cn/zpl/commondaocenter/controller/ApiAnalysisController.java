@@ -3,6 +3,7 @@ package cn.zpl.commondaocenter.controller;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.commondaocenter.service.IBikaService;
 import cn.zpl.commondaocenter.utils.SpringContext;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -70,12 +71,14 @@ public class ApiAnalysisController {
         log.debug(fetchProperties);
         log.debug(condition);
         log.debug(String.valueOf(size));
-        loadServiceByEntity(entity);
+        IService<?> iService = loadServiceByEntity(entity, aClass);
+        assert iService != null;
+        Object one = iService.getOne(new QueryWrapper<>());
         return RestResponse.ok();
 
     }
     @SneakyThrows
-    private <T> IService<T> loadServiceByEntity(String entity){
+    private <T> IService<T> loadServiceByEntity(String entity, Class<T> tClass){
         Reflections reflections = new Reflections("cn.zpl.commondaocenter.service.impl");
         Set<Class<? extends IService>> serviceImplements = reflections.getSubTypesOf(IService.class);
         Optional<Class<? extends IService>> first = serviceImplements.stream().filter(aClass -> !aClass.isInterface() && aClass.getName().toLowerCase().contains(entity.toLowerCase())).findFirst();
