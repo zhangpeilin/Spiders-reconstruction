@@ -1,8 +1,10 @@
 package cn.zpl.common.bean;
 
-import java.io.Serializable;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
+
+import java.io.Serializable;
 
 /**
  * <p>
@@ -13,6 +15,7 @@ import lombok.Data;
  * @since 2022-05-18
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @ApiModel(value = "PictureAnalyze对象", description = "")
 public class PictureAnalyze implements Serializable {
 
