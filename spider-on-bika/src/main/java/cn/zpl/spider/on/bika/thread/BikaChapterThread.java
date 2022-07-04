@@ -1,23 +1,21 @@
 package cn.zpl.spider.on.bika.thread;
 
-import cn.zpl.entities.Bika;
+
+import cn.zpl.common.bean.Bika;
+import cn.zpl.pojo.DownloadDTO;
+import cn.zpl.pojo.SynchronizeLock;
+import cn.zpl.spider.on.bika.utils.BikaUtils;
+import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.DownloadTools;
+import cn.zpl.util.SaveLog;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import common.BikaParams;
-import dao.DBManager;
-import dto.BikaEmptyChapterRecordsEntity;
-import entity.DownloadDTO;
-import entity.SynchronizeLock;
-import org.apache.log4j.Logger;
-import util.BikaUtils;
-import utils.CommonIOUtils;
-import utils.io.DownloadTools;
-import utils.io.SaveLog;
-import utils.io.thread.OneFileOneThread2;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.util.Vector;
 
+@Slf4j
 public class BikaChapterThread implements Runnable {
 
     private String chapternum;
@@ -28,7 +26,6 @@ public class BikaChapterThread implements Runnable {
 
     private String chapterPath;
 
-    private Logger logger = BikaParams.logger;
     BikaChapterThread(String chapternum, String title, String comicid) {
         this.chapternum = chapternum;
         this.title = title;
@@ -46,13 +43,13 @@ public class BikaChapterThread implements Runnable {
     public void run() {
         try {
             if (SaveLog.isChapterCompelete(chapterPath)) {
-                logger.debug(chapterPath + "该章节已下载，跳过");
+                log.debug(chapterPath + "该章节已下载，跳过");
                 return;
             }
             domain();
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("线程异常：" + title + "章节分析出错，重新分析");
+            log.error("线程异常：" + title + "章节分析出错，重新分析");
             domain();
         }
     }
@@ -82,14 +79,14 @@ public class BikaChapterThread implements Runnable {
             }
             i++;
             if (i > max_age) {
-                if (dtoVector.isEmpty()) {
-                    BikaEmptyChapterRecordsEntity entity = new BikaEmptyChapterRecordsEntity();
-                    entity.setId(comicid);
-                    entity.setUrl(getImgs);
-                    entity.setReason("章节图片数为0，跳过待检");
-                    if (BikaParams.writeDB)
-                    DBManager.ForceSave(entity);
-                }
+//                if (dtoVector.isEmpty()) {
+//                    BikaEmptyChapterRecordsEntity entity = new BikaEmptyChapterRecordsEntity();
+//                    entity.setId(comicid);
+//                    entity.setUrl(getImgs);
+//                    entity.setReason("章节图片数为0，跳过待检");
+//                    if (BikaParams.writeDB)
+//                    DBManager.ForceSave(entity);
+//                }
                 break;
             }
         }
@@ -98,15 +95,14 @@ public class BikaChapterThread implements Runnable {
             return;
         }
         SynchronizeLock lock = new SynchronizeLock();
-        DownloadTools tools = DownloadTools.getInstance(10, BikaParams.logger);
+        DownloadTools tools = DownloadTools.getInstance(10);
         tools.setSleepTimes(2000);
         tools.setLock(lock);
         tools.setName(title + "的images");
         dtoVector.forEach(dto -> {
             dto.setSynchronizeLock(lock);
-            dto.setLogger(logger);
             dto.setProgress(BikaUtils.progress);
-            tools.ThreadExecutorAdd(new OneFileOneThread2(dto));
+//            tools.ThreadExecutorAdd(new OneFileOneThread2(dto));
         });
         //启动一个线程读取完成的次数
         tools.shutdown();
