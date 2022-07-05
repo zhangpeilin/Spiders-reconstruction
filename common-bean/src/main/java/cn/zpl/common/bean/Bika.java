@@ -1,5 +1,6 @@
 package cn.zpl.common.bean;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 
 import java.io.Serializable;
@@ -13,6 +14,7 @@ import java.io.Serializable;
  * @since 2022-03-27
  */
 @ApiModel(value = "Bika对象", description = "哔咔漫画下载信息记录")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Bika implements Serializable {
 
     private static final long serialVersionUID = 1L;
