@@ -1,5 +1,6 @@
 package cn.zpl.common.bean;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ import java.io.Serializable;
  * @since 2022-04-20
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @ApiModel(value = "Ehentai对象", description = "")
 public class Ehentai implements Serializable {
 

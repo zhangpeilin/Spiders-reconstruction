@@ -1,5 +1,6 @@
 package cn.zpl.common.bean;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -16,6 +17,7 @@ import java.io.Serializable;
  */
 @ApiModel(value = "VideoInfo对象", description = "")
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class VideoInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
