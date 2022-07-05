@@ -10,6 +10,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -58,7 +59,7 @@ public class ApiAnalysisController {
      * @return 返回json
      */
     @GetMapping("/api/v2/{entity}")
-    public RestResponse apiAnalysis2(@PathVariable("entity") String entity, @RequestParam("fetchProperties") String fetchProperties, @RequestParam(value = "condition", required = false) String condition, @RequestParam(value = "size", required = false) Integer size) {
+    public RestResponse apiAnalysis2(@PathVariable("entity") String entity, @RequestParam(value = "fetchProperties", required = false) String fetchProperties, @RequestParam(value = "condition", required = false) String condition, @RequestParam(value = "size", required = false) Integer size) {
         Class<?> aClass;
         if (entityList.isEmpty()) {
             Reflections reflections = new Reflections("cn.zpl.common.bean");
@@ -79,6 +80,9 @@ public class ApiAnalysisController {
         log.debug(String.valueOf(size));
         IService iService = loadServiceByEntity(entity);
         Pattern compile = Pattern.compile("[^=\\[\\],']+");
+        if (!StringUtils.hasText(condition) || !StringUtils.hasText(fetchProperties)) {
+            return RestResponse.fail("没有传入有效查询信息");
+        }
         Matcher conditionMatcher = compile.matcher(condition);
         Matcher columnMatcher = compile.matcher(fetchProperties);
         QueryWrapper<Object> objectQueryWrapper = new QueryWrapper<>();
@@ -87,7 +91,9 @@ public class ApiAnalysisController {
 //            log.debug("{}={}", conditionMatcher.group(i), conditionMatcher.group(i + 1));
             log.debug(conditionMatcher.group());
             String key = conditionMatcher.group();
-            conditionMatcher.find();
+            if (!conditionMatcher.find()) {
+                return RestResponse.fail("传入查询条件不完整");
+            }
             log.debug(conditionMatcher.group());
             String value = conditionMatcher.group();
             objectQueryWrapper.and(wrapper -> wrapper.eq(key, value));
