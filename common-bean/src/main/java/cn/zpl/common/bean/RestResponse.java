@@ -1,6 +1,5 @@
 package cn.zpl.common.bean;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.lang.NonNull;
 

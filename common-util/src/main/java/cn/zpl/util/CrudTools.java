@@ -69,6 +69,14 @@ public class CrudTools<T> {
         return responseEntity.getBody();
     }
 
+    public static RestResponse commonApiSave(Object bean) {
+        String entity = bean.getClass().getSimpleName();
+        ResponseEntity<RestResponse> restResponseResponseEntity = restTemplate.postForEntity("http://localhost:8080/common/dao/api/save/" + entity, bean, RestResponse.class);
+        log.debug(String.valueOf(restResponseResponseEntity));
+        return restResponseResponseEntity.getBody();
+
+    }
+
     public static RestResponse savePA(PictureAnalyze pictureAnalyze) {
         ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(UrlConfig.saveOrUpdatePA, pictureAnalyze, RestResponse.class);
         log.debug(String.valueOf(responseEntity));
