@@ -2,14 +2,16 @@ package cn.zpl.spider.on.bika.utils;
 
 
 import cn.zpl.common.bean.Bika;
+import cn.zpl.common.bean.BikaDownloadFailed;
 import cn.zpl.config.CommonParams;
+import cn.zpl.pojo.Data;
 import cn.zpl.spider.on.bika.common.BikaParams;
 import cn.zpl.util.CommonIOUtils;
-import cn.zpl.util.CrudTools;
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.sun.istack.internal.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -38,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 public class BikaUtils {
 
     public static Map<String, Bika> exists = new ConcurrentHashMap<>();
@@ -88,7 +91,7 @@ public class BikaUtils {
     private static void Login() {
         try {
 
-            logger.debug("登录失效，开始登录……");
+            log.debug("登录失效，开始登录……");
             JsonObject json = postUrl("auth/sign-in", "{\"email\":\"huashenhweijian\",\"password\":\"z3462638\"}");
             if (json == null) {
                 CommonIOUtils.waitSeconds(5);
@@ -142,7 +145,7 @@ public class BikaUtils {
         post.setEntity(postingString);
         HttpResponse response = httpClient.execute(post);
         String content = EntityUtils.toString(response.getEntity());
-        logger.debug(content);
+        log.debug(content);
         json = Objects.requireNonNull(CommonIOUtils.paraseJsonFromStr(content)).getAsJsonObject();
         if ("401".equals(json.get("code").getAsString()) && "unauthorized".equals(json.get("message").getAsString())) {
             Login();
@@ -273,7 +276,7 @@ public class BikaUtils {
             if (isNeedDownload) {
 //                DBManager.ForceSave(bika);
                 if (!BikaUtils.saveBika(bika)) {
-                    logger.error("保存失败" + bika);
+                    log.error("保存失败" + bika);
                 }
             }
             DBManager.ForceSave(list);
@@ -283,7 +286,7 @@ public class BikaUtils {
             if (isNeedDownload) {
 //                DBManager.ForceSave(bika);
                 if (!BikaUtils.saveBika(bika)) {
-                    logger.error("保存失败" + bika);
+                    log.error("保存失败" + bika);
                 }
 
             }
@@ -323,8 +326,8 @@ public class BikaUtils {
             return bika;
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error(e.getMessage());
-            logger.error(bika.getId() + "存在错误，请核对");
+            log.error(e.getMessage());
+            log.error(bika.getId() + "存在错误，请核对");
         }
         return bika;
     }
@@ -358,8 +361,8 @@ public class BikaUtils {
             bika.setIsDeleted(0);
             return bika;
         } catch (Exception e) {
-            logger.error(e.getMessage());
-            logger.error(bika.getId() + "存在错误，请核对");
+            log.error(e.getMessage());
+            log.error(bika.getId() + "存在错误，请核对");
         }
         return bika;
     }
@@ -384,12 +387,12 @@ public class BikaUtils {
     public static boolean needSkip(JsonObject info) {
         String categories = CommonIOUtils.getFromJson2(info, "data-comic-categories").toString();
         if (categories.contains("耽美") && !categories.contains("偽娘")) {
-            logger.debug("跳过BL本");
+            log.debug("跳过BL本");
             Bika bika = getBika(info, "");
             bika.setIsDeleted(1);
 //            DBManager.update(bika);
             if (BikaParams.writeDB && !BikaUtils.saveBika(bika)) {
-                logger.error("保存失败：" + bika);
+                log.error("保存失败：" + bika);
             }
             return true;
         }
@@ -498,13 +501,12 @@ public class BikaUtils {
         try {
             restResponseBean = JSONObject.parseObject(data.getResult(), RestResponseBean.class);
         } catch (Exception e) {
-            logger.error("保存异常，错误内容：", e);
+            log.error("保存异常，错误内容：", e);
             return false;
         }
         return restResponseBean.isSuccess();
     }
 
-    @Test
     public void test() {
         List<File> list = getFolders("G:\\Bika完结", "\\(\\w+\\)");
         System.out.println(list.size());
