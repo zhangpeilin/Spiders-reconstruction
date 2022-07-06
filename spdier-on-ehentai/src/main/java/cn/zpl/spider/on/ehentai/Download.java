@@ -6,7 +6,8 @@ import cn.zpl.util.DownloadTools;
 public class Download {
 
     public static void main(String[] args) {
-        String url = "https://e-hentai.org/g/143/e5fee59d04/";
+        String url = "https://e-hentai.org/g/2208421/a651b5d31c/";
+        url = url.replaceAll("VM.+ ", "");
         String[] urls = url.split("\n");
         DownloadTools tools = DownloadTools.getInstance(20);
         for (String s : urls) {
