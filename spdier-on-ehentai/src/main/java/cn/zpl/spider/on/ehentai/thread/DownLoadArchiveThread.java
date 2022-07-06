@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -101,9 +102,9 @@ public class DownLoadArchiveThread extends CommonThread {
                 String title = tmp.selectFirst("div#db > h1").text();
                 Element form = tmp.selectFirst("form");
                 assert form != null;
-                Elements freeMark = form.previousElementSibling().getElementsMatchingText("Free");
+                Elements freeMark = Objects.requireNonNull(form.previousElementSibling()).getElementsMatchingText("Free");
                 if (freeMark.isEmpty()) {
-                    log.error("下载消耗点数，暂时返回，链接地址记录：" + url);
+                    log.error("下载消耗点数，链接地址记录：" + url);
                     log.error(tmp.select("   div#db h1").text());
                     Matcher matcher = pattern.matcher(form.previousElementSibling().text());
                     if (matcher.find()) {
@@ -118,10 +119,11 @@ public class DownLoadArchiveThread extends CommonThread {
                         ehentai.setUrl(url);
                         ehentai.setCost(String.valueOf(GP));
                         ehentai.setCreate_time(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
-                        RestResponse restResponse = CrudTools.saveEhentai(ehentai);
+//                        RestResponse restResponse = CrudTools.saveEhentai(ehentai);
+                        RestResponse restResponse = CrudTools.commonApiSave(ehentai);
                         log.debug("保存是否成功：{}", restResponse.isSuccess());
 
-                        if (GP > 10000) {
+                        if (GP > 20000) {
                             log.error("当前漫画未下载：{}", url);
                             return;
                         }
