@@ -1,8 +1,7 @@
-package cn.zpl;
+package cn.zpl.util;
 
 import cn.zpl.common.BaiduAIParams;
 import cn.zpl.common.bean.PictureAnalyze;
-import cn.zpl.util.CrudTools;
 import com.baidu.aip.imageclassify.AipImageClassify;
 import lombok.SneakyThrows;
 import org.json.JSONObject;
