@@ -17,6 +17,8 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.GsonHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Objects;
+
 @Data
 @Slf4j
 public class CrudTools<T> {
@@ -75,6 +77,12 @@ public class CrudTools<T> {
         log.debug(String.valueOf(restResponseResponseEntity));
         return restResponseResponseEntity.getBody();
 
+    }
+
+    public static <T> T commonApiQuery(String condition, String fetchProperties, Class<T> tClass) {
+        String entity = tClass.getSimpleName();
+        ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity("http://localhost:8080/common/dao/api/query/" + entity + "?", RestResponse.class);
+        return Objects.requireNonNull(forEntity.getBody()).getObject(tClass);
     }
 
     public static RestResponse savePA(PictureAnalyze pictureAnalyze) {
