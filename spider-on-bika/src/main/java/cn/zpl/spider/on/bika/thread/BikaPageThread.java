@@ -1,28 +1,28 @@
 package cn.zpl.spider.on.bika.thread;
 
+import cn.zpl.common.bean.BikaList;
+import cn.zpl.spider.on.bika.common.BikaParams;
+import cn.zpl.spider.on.bika.utils.BikaUtils;
+import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.CrudTools;
+import cn.zpl.util.DownloadTools;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import common.BikaParams;
-import dao.DBManager;
-import dto.BikaList;
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import util.BikaUtils;
-import utils.CommonIOUtils;
-import utils.io.DownloadTools;
 
 import java.net.URLEncoder;
 import java.util.Vector;
 
+@Slf4j
 public class BikaPageThread implements Runnable {
 
-    private int page;
-    private Logger logger = BikaParams.logger;
+    private final int page;
 
-    private String keyword;
-    private boolean isNeedDownload;
+    private final String keyword;
+    private final boolean isNeedDownload;
 
     @Contract(pure = true)
     public BikaPageThread(int page, String keyword, boolean isNeedDownload) {
@@ -37,7 +37,7 @@ public class BikaPageThread implements Runnable {
             domain();
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("线程异常：第" + page + "页分析出错，重新分析");
+            log.error("线程异常：第" + page + "页分析出错，重新分析");
             run();
         }
     }
@@ -50,7 +50,7 @@ public class BikaPageThread implements Runnable {
             JsonObject partJson = BikaUtils.getJsonByUrl(part);
             JsonElement comics = CommonIOUtils.getFromJson2(partJson, "data-comics-docs");
             if (comics instanceof JsonArray) {
-                DownloadTools tool = DownloadTools.getInstance(20, BikaParams.logger);
+                DownloadTools tool = DownloadTools.getInstance(20);
                 tool.setName(keyword + "第" + page + "页");
                 tool.setSleepTimes(2000);
                 for (JsonElement detail : comics.getAsJsonArray()) {
@@ -60,9 +60,9 @@ public class BikaPageThread implements Runnable {
                         listVector.add(saveComicInfo(detail));
                     }
                 }
-                logger.debug(keyword + "第" + page + "页");
+                log.debug(keyword + "第" + page + "页");
                 if (BikaParams.writeDB){
-                    DBManager.batchInsert(listVector);
+                    CrudTools.commonApiSave(listVector);
                 }
                 tool.shutdown();
             }
@@ -76,7 +76,9 @@ public class BikaPageThread implements Runnable {
     private BikaList saveComicInfo(JsonElement jsonElement) {
         BikaList bikaList = new BikaList();
         bikaList.setId(CommonIOUtils.getFromJson2Str(jsonElement, "id"));
-        BikaList exists = DBManager.getDTOById2(BikaList.class, CommonIOUtils.getFromJson2Str(jsonElement, "id"));
+        CommonIOUtils.getFromJson2Str(jsonElement, "id");
+        BikaList exists = CrudTools.commonApiQuery(BikaList.class);
+//        BikaList exists = DBManager.getDTOById2(BikaList.class, );
         if (exists != null) {
             bikaList = exists;
         }
