@@ -1,6 +1,6 @@
-package cn.zpl;
+package cn.zpl.thread;
 
-import cn.zpl.thread.CommonThread;
+import cn.zpl.util.BaiduAITool;
 
 import java.io.File;
 

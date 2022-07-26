@@ -1,4 +1,4 @@
-package cn.zpl;
+package cn.zpl.util;
 
 import cn.zpl.common.BaiduAIParams;
 import com.alibaba.fastjson.JSON;
