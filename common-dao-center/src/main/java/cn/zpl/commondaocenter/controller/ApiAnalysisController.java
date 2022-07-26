@@ -70,24 +70,27 @@ public class ApiAnalysisController {
         }
         Optional<Class<? extends Serializable>> first = entityList.stream().filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(entity)).findFirst();
         if (first.isPresent()) {
-            Serializable serializable = JSON.parseObject(JSON.toJSONString(data), first.get());
+            Serializable serializable = null;
+            List<? extends Serializable> serializables = null;
+            try {
+                serializable = JSON.parseObject(JSON.toJSONString(data), first.get());
+            } catch (Exception e) {
+                //如果解析失败尝试解析为array
+                serializables = JSON.parseArray(JSON.toJSONString(data), first.get());
+            }
+            boolean flag = false;
             IService iService = loadServiceByEntity(entity);
             assert iService != null;
-            boolean save = iService.save(serializable);
-            return save ? RestResponse.ok("保存成功") : RestResponse.fail("保存失败");
-//            Constructor<?> defaultConstructor = DeserializeBeanInfo.getDefaultConstructor((Class<?>) serializable);
-//            Object o = defaultConstructor.newInstance();
-//            Constructor<?>[] constructors = serializable.getClass().getConstructors();
+            if (serializable == null && serializables != null) {
+                flag = iService.saveBatch(serializables);
+            }
+            if (serializable != null) {
+                flag = iService.save(serializable);
+            }
+            return flag ? RestResponse.ok("保存成功") : RestResponse.fail("保存失败");
         } else {
             return RestResponse.fail("没有找到实体类");
         }
-//        log.debug(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, "PictureAnalyze"));
-
-//        Ehentai ehentai = JSON.parseObject(JSON.toJSONString(data), Ehentai.class);
-//        IService iService = loadServiceByEntity(entity);
-//        assert iService != null;
-//        boolean save = iService.save(data);
-//        return save ? RestResponse.ok("保存成功") : RestResponse.fail("保存失败");
     }
 
     /**
@@ -110,7 +113,7 @@ public class ApiAnalysisController {
         log.debug(String.valueOf(size));
         IService iService = loadServiceByEntity(entity);
         Pattern compile = Pattern.compile("[^=\\[\\],']+");
-        if (!StringUtils.hasText(condition) || !StringUtils.hasText(fetchProperties)) {
+        if (!StringUtils.hasText(condition)) {
             List list = iService.list();
             return RestResponse.fail("没有传入有效查询信息");
         }
@@ -119,7 +122,6 @@ public class ApiAnalysisController {
         QueryWrapper<Object> objectQueryWrapper = new QueryWrapper<>();
         int i = 0;
         while (conditionMatcher.find()) {
-//            log.debug("{}={}", conditionMatcher.group(i), conditionMatcher.group(i + 1));
             log.debug(conditionMatcher.group());
             String key = conditionMatcher.group();
             if (!conditionMatcher.find()) {
@@ -133,7 +135,10 @@ public class ApiAnalysisController {
         while (columnMatcher.find()) {
             columns.add(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, columnMatcher.group()));
         }
+        //如果不为空，则拼接列名
+        if (!columns.isEmpty()) {
             objectQueryWrapper.select(columns.toArray(new String[0]));
+        }
 
         Object one = iService.getOne(objectQueryWrapper);
         return RestResponse.ok(one);
