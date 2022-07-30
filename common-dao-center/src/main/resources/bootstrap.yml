@@ -1,0 +1,7 @@
+spring:
+  cloud:
+    config:
+      label: master
+      name: config
+      profile: dao-center
+      uri: http://localhost:3344
