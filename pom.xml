@@ -10,6 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>common-config-center</module>
         <module>common-dao-center</module>
         <module>common-bean</module>
         <module>spider-on-bilibili-video</module>
