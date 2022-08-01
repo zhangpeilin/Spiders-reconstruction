@@ -6,7 +6,7 @@ import cn.zpl.pojo.Data;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.VideoData;
 import cn.zpl.spider.on.bilibili.common.BilibiliCommonUtils;
-import cn.zpl.spider.on.bilibili.common.BilibiliStaticParams;
+import cn.zpl.spider.on.bilibili.common.BilibiliConfigParams;
 import cn.zpl.spider.on.bilibili.common.TransformVideId;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.DownloadTools;
@@ -22,7 +22,11 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.test.context.SpringBootTest;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -36,10 +40,14 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 @Slf4j
+@SpringBootTest
 public class BilibiliDownloadCoreWithoutDB {
 
     private String owner_name = "";
     private String avid;
+
+    @Resource
+    BilibiliConfigParams configParams;
 
     ThreadLocal<String> getNewPath() {
         return newPath;
@@ -51,18 +59,6 @@ public class BilibiliDownloadCoreWithoutDB {
     public void test() {
         getVideoList("4653374");
     }
-
-    public static void main(String[] args) {
-        BilibiliDownloadCoreWithoutDB bilibiliDownloadCore2 = new BilibiliDownloadCoreWithoutDB();
-        bilibiliDownloadCore2.downloadTheVideo();
-    }
-
-    public void downloadTheVideo() {
-        FFMEPGToolsPatch.checkExist = false;
-        String video_id = "BV1SY41177Ti";
-        mainBusiness(video_id);
-    }
-
     void downloadList(@NotNull List<String> list) {
         for (String string : list) {
             try {
@@ -72,6 +68,20 @@ public class BilibiliDownloadCoreWithoutDB {
             }
             mainBusiness(string);
         }
+    }
+
+
+
+//    public static void main(String[] args) {
+//        SpringApplication.run(BilibiliApplication.class, args);
+//        BilibiliDownloadCoreWithoutDB bilibiliDownloadCore2 = new BilibiliDownloadCoreWithoutDB();
+//        bilibiliDownloadCore2.downloadTheVideo();
+//    }
+    @Test
+    public void downloadTheVideo() {
+        FFMEPGToolsPatch.checkExist = false;
+        String video_id = "BV1SY41177Ti";
+        mainBusiness(video_id);
     }
 
     void getVideoList(String uid) {
@@ -93,7 +103,7 @@ public class BilibiliDownloadCoreWithoutDB {
         owner_name = BilibiliCommonUtils.getUserInfo(uid);
         Data data = new Data();
         data.setUrl("https://api.bilibili.com/x/space/arc/search?mid=" + uid + "&ps=100&tid=0&pn=" + page + "&keyword=&order=pubdate&jsonp=jsonp");
-        data.setHeader(BilibiliStaticParams.bilibiliCookies);
+        data.setHeader(configParams.properties.cookies);
         CommonIOUtils.withTimer(data);
         JsonElement json = CommonIOUtils.paraseJsonFromStr(data.getResult());
         int videoSize = CommonIOUtils.getFromJson2(json, "data-list-vlist").isJsonArray() ? CommonIOUtils.getFromJson2(json, "data-list-vlist").getAsJsonArray().size() : 0;
@@ -153,7 +163,7 @@ public class BilibiliDownloadCoreWithoutDB {
                 return;
             }
             if (code == -403) {
-                data.setHeader(BilibiliStaticParams.bilibiliCookies);
+                data.setHeader(configParams.properties.cookies);
                 CommonIOUtils.withTimer(data);
                 result = JsonParser.parseString(Objects.requireNonNull(data.getString()));
                 code = CommonIOUtils.getFromJson2Integer(result, "code");
@@ -207,7 +217,7 @@ public class BilibiliDownloadCoreWithoutDB {
         String url = "https://api.bilibili.com/x/player/playurl?avid=" + avid + "&cid=" + cid + "&bvid=&qn=" + (quality_level.equals("") ? "112" : quality_level) + "&type=&otype=json&fnver=0&fnval=16&fourk=1";
         Data data = new Data();
         data.setUrl(url);
-        data.setHeader(BilibiliStaticParams.bilibiliCookies);
+        data.setHeader(configParams.properties.cookies);
         CommonIOUtils.withTimer(data);
         JsonElement json = JsonParser.parseString(Objects.requireNonNull(data.getString()));
         int code = CommonIOUtils.getFromJson2Integer(json, "code");
@@ -230,7 +240,7 @@ public class BilibiliDownloadCoreWithoutDB {
         videoInfo.setDownloadDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 
         List<String> path = new ArrayList<>();
-        path.add(newPath.get() != null && !"".equals(newPath.get()) ? newPath.get() : BilibiliStaticParams.video_save_path);
+        path.add(newPath.get() != null && !"".equals(newPath.get()) ? newPath.get() : configParams.properties.video_save_path);
         path.add(owner_name);
         String videoName = title + "(av" + avid + ")" + ".mp4";
         if (videos > 1) {
@@ -239,7 +249,7 @@ public class BilibiliDownloadCoreWithoutDB {
         }
         videoData.setWebSite("bilibili");
         videoData.setDesSaveName(videoName);
-        videoData.setTmpSavePath(new File(BilibiliStaticParams.tmp_save_path, avid));
+        videoData.setTmpSavePath(new File(configParams.properties.tmp_save_path, avid));
         videoData.setDesSavePath(CommonIOUtils.makeFilePath(path, videoName));
         videoInfo.setLocalPath(videoData.getDesSavePath());
 
@@ -279,7 +289,7 @@ public class BilibiliDownloadCoreWithoutDB {
         }
     }
 
-    private static void dealMultiplePart(JsonElement json, String video_id, VideoData videoData, int page, VideoInfo video) {
+    private void dealMultiplePart(JsonElement json, String video_id, VideoData videoData, int page, VideoInfo video) {
         JsonElement durl = CommonIOUtils.getFromJson2(json, "data-durl");
         String play_list;
         String order;
@@ -303,7 +313,7 @@ public class BilibiliDownloadCoreWithoutDB {
                 // 存储的是视频大小（字节）
                 dto.setFileLength(length);
                 //如果有指定保存路径，则使用指定的路径，否则从config.properties中读取
-                pathMake.add(BilibiliStaticParams.tmp_save_path);
+                pathMake.add(configParams.properties.tmp_save_path);
                 pathMake.add(video_id);
                 dto.setSavePath(CommonIOUtils.makeFilePath(pathMake, "p" + page + " order" + order + ".flv"));
                 videoData.getPartList().add(dto.getSavePath());
@@ -326,7 +336,7 @@ public class BilibiliDownloadCoreWithoutDB {
         }
     }
 
-    private static void doM4s(JsonElement json, String avid, String bvid, String current_quality, VideoInfo video, VideoData videoData) {
+    private void doM4s(JsonElement json, String avid, String bvid, String current_quality, VideoInfo video, VideoData videoData) {
 
         JsonElement videoElement = CommonIOUtils.getFromJson2(json, "data-dash-video");
         JsonElement audioElement = CommonIOUtils.getFromJson2(json, "data-dash-audio");
@@ -361,7 +371,7 @@ public class BilibiliDownloadCoreWithoutDB {
         dto.setFileLength(URLConnectionTool.getDataLength(dto));
         audio.setFileLength(URLConnectionTool.getDataLength(audio));
         //如果有指定保存路径，则使用指定的路径，否则从config.properties中读取
-        pathMake.add(BilibiliStaticParams.tmp_save_path);
+        pathMake.add(configParams.properties.tmp_save_path);
         pathMake.add(avid);
         dto.setSavePath(CommonIOUtils.makeFilePath(pathMake, dto.getUrl().substring(dto.getUrl().lastIndexOf("/") + 1, dto.getUrl().indexOf("?"))));
         audio.setSavePath(CommonIOUtils.makeFilePath(pathMake, audio.getUrl().substring(audio.getUrl().lastIndexOf("/") + 1, audio.getUrl().indexOf("?"))));
