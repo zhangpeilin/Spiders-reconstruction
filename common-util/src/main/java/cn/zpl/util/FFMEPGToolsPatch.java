@@ -7,7 +7,11 @@ import it.sauronsoftware.jave.Encoder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -19,16 +23,26 @@ import java.util.List;
 
 
 @Slf4j
+@Component
+@EnableConfigurationProperties(CommonProperties.class)
 public class FFMEPGToolsPatch {
 
 
 
+    public static String ffmpegPath;
     /**
      * 判断是否检查已存在，false时表示不检查，已存在时也会被覆盖；true表示检查，存在时会跳过
      */
     public static boolean checkExist = true;
 
     public static boolean check = true;
+
+
+    @Bean
+    public CommonProperties fillNumber (CommonProperties properties) {
+        ffmpegPath = properties.getFfmpeg();
+        return properties;
+    }
 
     public static boolean isExists(@NotNull VideoData video) {
         if (!checkExist) {
@@ -165,7 +179,7 @@ public class FFMEPGToolsPatch {
             return true;
         }
         List<String> command = new ArrayList<String>();
-        command.add(CommonParams.FFMPEG);
+        command.add(ffmpegPath);
         command.add("-i");
         command.add("\"" + videoData.getVideo().getSavePath() + "\"");
         command.add("-i");
