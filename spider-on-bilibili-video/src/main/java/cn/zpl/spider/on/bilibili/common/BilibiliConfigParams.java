@@ -71,5 +71,6 @@ public class BilibiliConfigParams {
         public String video_save_path;
         public String manga_save_path;
         public String favourite_save_path;
+        public String ffmpeg;
     }
 }
