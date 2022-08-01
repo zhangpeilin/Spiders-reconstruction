@@ -62,11 +62,11 @@ public class BilibiliCommonUtils {
         return null;
     }
 
-    public static String postUrl(String path, String params, String headers) {
-        if (headers == null)
-            headers = BilibiliStaticParams.commonHeaders;
-        return URLConnectionTool.postUrl(path, params, headers);
-    }
+//    public static String postUrl(String path, String params, String headers) {
+//        if (headers == null)
+//            headers = BilibiliStaticParams.commonHeaders;
+//        return URLConnectionTool.postUrl(path, params, headers);
+//    }
 
     public String test() {
         return BilibiliCommonUtils.getUserInfo("");
