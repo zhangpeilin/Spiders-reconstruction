@@ -61,7 +61,7 @@ public class DownloadController {
     @GetMapping("/download/{bid}")
     public RestResponse downloadById(@PathVariable("bid") String bid) {
         try {
-            mainBusiness(bid);
+            return mainBusiness(bid);
         } catch (Exception e) {
             log.error("下载错误：", e);
             RestResponse.fail(e.getMessage());
@@ -140,7 +140,7 @@ public class DownloadController {
         return videoSize;
     }
 
-    void mainBusiness(@NotNull String video_id) {
+    RestResponse mainBusiness(@NotNull String video_id) {
 
         //^\d+$
         if (video_id.startsWith("http")) {
@@ -158,9 +158,6 @@ public class DownloadController {
             if (match) {
                 log.error("出大问题");
                 System.exit(0);
-//                data.setUrl("https://api.bilibili.com/x/web-interface/view?aid=" + video_id);
-//            } else {
-//                data.setUrl("https://api.bilibili.com/x/web-interface/view?bvid=" + video_id);
             }
             CommonIOUtils.withTimer(data);
             if (data.getResult() == null && data.getStatusCode() == 403) {
@@ -168,7 +165,7 @@ public class DownloadController {
                 CommonIOUtils.withTimer(data);
                 if (data.getStatusCode() == 403) {
                     log.error(video_id + "拒绝访问403，请查证后重试");
-                    return;
+                    return RestResponse.fail(video_id + "拒绝访问403，请查证后重试");
                 }
             }
             JsonElement result = JsonParser.parseString(Objects.requireNonNull(data.getString()));
@@ -178,7 +175,7 @@ public class DownloadController {
             }
             if (code == -404) {
                 log.error("视频不存在！");
-                return;
+                return RestResponse.fail("视频不存在！");
             }
             if (code == -403) {
                 data.setHeader(configParams.properties.cookies);
@@ -187,7 +184,7 @@ public class DownloadController {
                 code = CommonIOUtils.getFromJson2Integer(result, "code");
                 if (code != 0) {
                     log.error(CommonIOUtils.getFromJson2Str(result, "message"));
-                    return;
+                    return RestResponse.fail(CommonIOUtils.getFromJson2Str(result, "message"));
                 }
             }
             result.getAsJsonObject().addProperty("aid", TransformVideId.b2a(video_id));
@@ -216,13 +213,13 @@ public class DownloadController {
         } catch (Exception e) {
             if (!data.doRetry()) {
                 log.error("重试次数已用完，返回");
-                return;
+                return RestResponse.fail("重试次数已用完，返回");
             }
             log.error(video_id + "下载异常，重新解析\n", e);
             data.sleep();
             mainBusiness(video_id);
         }
-
+        return RestResponse.ok();
     }
 
     private void downLoadByAPI(@NotNull String quality_level, String cid, JsonElement mainJson, JsonElement partJson) {
