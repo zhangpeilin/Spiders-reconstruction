@@ -3,16 +3,21 @@ package cn.zpl.spider.on.bika.utils;
 
 import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaDownloadFailed;
+import cn.zpl.common.bean.BikaList;
+import cn.zpl.common.bean.Token;
 import cn.zpl.config.CommonParams;
 import cn.zpl.pojo.Data;
 import cn.zpl.spider.on.bika.common.BikaParams;
 import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.CrudTools;
+import cn.zpl.util.GetSignature;
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.sun.istack.internal.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -30,6 +35,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,8 +62,8 @@ public class BikaUtils {
         }
         synchronized (BikaUtils.class) {
             if (exists.size() == 0) {
-                List<Bika> list = DBManager.getInstance().findDtoBySql("select * from bika", Bika.class);
-                list.forEach(bika -> exists.put(bika.getId(), bika));
+                List<Bika> BikaList = CrudTools.commonApiQuery("", new String[]{"*"}, Bika.class);
+                BikaList.forEach(bika -> exists.put(bika.getId(), bika));
             }
             return exists.get(comicid);
         }
@@ -69,8 +75,8 @@ public class BikaUtils {
         }
         synchronized (BikaUtils.class) {
             if (exists.size() == 0) {
-                List<Bika> list = DBManager.getInstance().findDtoBySql("select * from bika", Bika.class);
-                list.forEach(bika -> exists.put(bika.getId(), bika));
+                List<Bika> BikaList = CrudTools.commonApiQuery("", new String[]{"*"}, Bika.class);
+                BikaList.forEach(bika -> exists.put(bika.getId(), bika));
             }
         }
         Bika already = exists.get(comicid);
@@ -101,7 +107,7 @@ public class BikaUtils {
             Token dto = new Token();
             dto.setId(String.valueOf(System.currentTimeMillis()));
             dto.setToken(token);
-            DBManager.ForceSave(dto);
+            CrudTools.commonApiSave(token);
             currentToken = token;
         } catch (Exception e) {
             Login();
@@ -113,7 +119,7 @@ public class BikaUtils {
             return currentToken;
         }
         //id是字符串，需要转换成数字后排序
-        List<Token> list0 = DBManager.getInstance().findDtoBySql("SELECT * from token ORDER BY CAST(id as UNSIGNED) desc LIMIT 0,1", Token.class);
+        List<Token> list0 = CrudTools.commonApiQueryBySql("SELECT * from token ORDER BY CAST(id as UNSIGNED) desc LIMIT 0,1", Token.class);
         if (list0.size() == 1) {
             currentToken = list0.get(0).getToken();
         }
@@ -163,13 +169,14 @@ public class BikaUtils {
         } else {
             method = "post";
         }
-        String signature = GetSignature.generateSignature(path, time.substring(0, time.length() - 3), uuid, method);
+        String substring = time.substring(0, time.length() - 3);
+        String signature = GetSignature.generateSignature(path, substring, uuid, method);
         String authorization = getCurrentToken() + "\n";
         String headers = "authorization: " + authorization +
                 "api-key: C69BAF41DA5ABD1FFEDC6D2FEA56B\n" +
                 "accept: application/vnd.picacomic.com.v1+json\n" +
                 "app-channel: 1\n" +
-                "time: " + time.substring(0, time.length() - 3) + "\n" +
+                "time: " + substring + "\n" +
                 "nonce: " + uuid + "\n" +
                 "signature: " + signature + "\n" +
                 "app-version: 2.2.1.3.3.4\n" +
@@ -269,28 +276,27 @@ public class BikaUtils {
         list.setLocalPath(localPath);
         BikaDownloadFailed failed = new BikaDownloadFailed();
         failed.setId(comicid);
-        if (DBManager.getDTOById2(BikaDownloadFailed.class, comicid) != null) {
-            DBManager.delete(failed);
+        List<Bika> result = CrudTools.commonApiQuery(null, null, Bika.class);
+        if (!CollectionUtils.isEmpty(result)) {
+            CrudTools.commonApiDelete(null, Bika.class);
         }
         try {
             if (isNeedDownload) {
-//                DBManager.ForceSave(bika);
-                if (!BikaUtils.saveBika(bika)) {
+                if (!CrudTools.saveBika(bika).isSuccess()) {
                     log.error("保存失败" + bika);
                 }
             }
-            DBManager.ForceSave(list);
+            CrudTools.commonApiSave(list);
         } catch (Exception e) {
-            base64ErrorCols(((GenericJDBCException) e.getCause()).getSQLException().getMessage(), bika);
-            base64ErrorCols(((GenericJDBCException) e.getCause()).getSQLException().getMessage(), list);
+//            base64ErrorCols(((GenericJDBCException) e.getCause()).getSQLException().getMessage(), bika);
+//            base64ErrorCols(((GenericJDBCException) e.getCause()).getSQLException().getMessage(), list);
             if (isNeedDownload) {
 //                DBManager.ForceSave(bika);
-                if (!BikaUtils.saveBika(bika)) {
-                    log.error("保存失败" + bika);
+                if (!CrudTools.saveBika(bika).isSuccess()) {
+                    log.error("保存失败-->{}", bika);
                 }
-
             }
-            DBManager.ForceSave(list);
+            CrudTools.commonApiSave(list);
         }
     }
 
@@ -316,7 +322,7 @@ public class BikaUtils {
             bika.setCommentsCount(CommonIOUtils.getFromJson2Integer(json, "data-comic-commentsCount"));
             bika.setDownloadedAt(String.valueOf(System.currentTimeMillis()));
             bika.setIsComplete(0);
-            bika.setTranslated(1);
+            bika.setIsTranslated(1);
             bika.setIsDeleted(0);
             bika.setLocalPath(localPath);
             if (new File(bika.getLocalPath()).exists()) {
@@ -391,7 +397,7 @@ public class BikaUtils {
             Bika bika = getBika(info, "");
             bika.setIsDeleted(1);
 //            DBManager.update(bika);
-            if (BikaParams.writeDB && !BikaUtils.saveBika(bika)) {
+            if (BikaParams.writeDB && !CrudTools.saveBika(bika).isSuccess()) {
                 log.error("保存失败：" + bika);
             }
             return true;
@@ -481,30 +487,6 @@ public class BikaUtils {
 //            }
 //        }
         return result.get();
-    }
-
-    public static Bika getById(String id) {
-        Data data = new Data();
-        data.setUrl(RemoteRequestConstant.GETBYID + id);
-        CommonIOUtils.withTimer(data);
-        JsonElement element = CommonIOUtils.getFromJson2(data.getResult(), "item");
-        return JSONObject.parseObject(element.toString(), Bika.class);
-    }
-
-    public static boolean saveBika(Bika bika) {
-        Data data = new Data();
-        data.setUrl(RemoteRequestConstant.SAVEBIKA);
-        data.setParams(JSONObject.toJSONString(bika));
-        data.setHeader("Content-Type: application/json");
-        CommonIOUtils.postUrl(data);
-        RestResponseBean restResponseBean;
-        try {
-            restResponseBean = JSONObject.parseObject(data.getResult(), RestResponseBean.class);
-        } catch (Exception e) {
-            log.error("保存异常，错误内容：", e);
-            return false;
-        }
-        return restResponseBean.isSuccess();
     }
 
     public void test() {

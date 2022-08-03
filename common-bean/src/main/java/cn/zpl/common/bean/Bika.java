@@ -61,6 +61,8 @@ public class Bika implements Serializable {
 
     private Integer isComplete;
 
+    private Integer isTranslated;
+
     public String getId() {
         return id;
     }
@@ -234,5 +236,13 @@ public class Bika implements Serializable {
             ", localPath=" + localPath +
             ", isComplete=" + isComplete +
         "}";
+    }
+
+    public Integer getIsTranslated() {
+        return isTranslated;
+    }
+
+    public void setIsTranslated(Integer isTranslated) {
+        this.isTranslated = isTranslated;
     }
 }

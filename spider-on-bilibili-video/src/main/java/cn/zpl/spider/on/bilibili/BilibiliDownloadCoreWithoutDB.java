@@ -40,7 +40,6 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 @Slf4j
-@SpringBootTest
 public class BilibiliDownloadCoreWithoutDB {
 
     private String owner_name = "";
@@ -77,7 +76,6 @@ public class BilibiliDownloadCoreWithoutDB {
 //        BilibiliDownloadCoreWithoutDB bilibiliDownloadCore2 = new BilibiliDownloadCoreWithoutDB();
 //        bilibiliDownloadCore2.downloadTheVideo();
 //    }
-    @Test
     public void downloadTheVideo() {
         FFMEPGToolsPatch.checkExist = false;
         String video_id = "BV1SY41177Ti";
