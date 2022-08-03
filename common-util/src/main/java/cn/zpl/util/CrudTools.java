@@ -17,6 +17,8 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.GsonHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Data
@@ -79,10 +81,18 @@ public class CrudTools<T> {
 
     }
 
-    public static <T> T commonApiQuery(String condition, String fetchProperties, Class<T> tClass) {
+    public static <T> List<T> commonApiQueryBySql(String sql, Class<T> tClass) {
+        return RestResponse.ok().getList(tClass);
+    }
+
+    public static <T> List<T> commonApiQuery(String condition, String[] fetchProperties, Class<T> tClass) {
         String entity = tClass.getSimpleName();
         ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity("http://localhost:8080/common/dao/api/query/" + entity + "?", RestResponse.class);
-        return Objects.requireNonNull(forEntity.getBody()).getObject(tClass);
+        return Objects.requireNonNull(forEntity.getBody()).getList(tClass);
+    }
+
+    public static <T> boolean commonApiDelete(String condition, Class<T> tClass) {
+        return RestResponse.ok().isSuccess();
     }
 
     public static RestResponse savePA(PictureAnalyze pictureAnalyze) {

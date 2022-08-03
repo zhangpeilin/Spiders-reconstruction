@@ -73,6 +73,7 @@ public class DownloadController {
     public void test() {
         getVideoList("4653374");
     }
+
     void downloadList(@NotNull List<String> list) {
         for (String string : list) {
             try {
@@ -85,8 +86,7 @@ public class DownloadController {
     }
 
 
-
-//    public static void main(String[] args) {
+    //    public static void main(String[] args) {
 //        SpringApplication.run(BilibiliApplication.class, args);
 //        BilibiliDownloadCoreWithoutDB bilibiliDownloadCore2 = new BilibiliDownloadCoreWithoutDB();
 //        bilibiliDownloadCore2.downloadTheVideo();
@@ -206,7 +206,8 @@ public class DownloadController {
             if (parts.isJsonArray()) {
                 result.getAsJsonObject().addProperty("videos", parts.getAsJsonArray().size());
                 for (JsonElement part : parts.getAsJsonArray()) {
-                    downLoadByAPI("", CommonIOUtils.getFromJson2Str(part, "cid"), result, part);
+                    Data partData = new Data();
+                    downLoadByAPI(partData, "", CommonIOUtils.getFromJson2Str(part, "cid"), result, part);
                 }
             }
             avid = CommonIOUtils.getFromJson2Str(result, "aid");
@@ -222,7 +223,7 @@ public class DownloadController {
         return RestResponse.ok();
     }
 
-    private void downLoadByAPI(@NotNull String quality_level, String cid, JsonElement mainJson, JsonElement partJson) {
+    private RestResponse downLoadByAPI(Data data, @NotNull String quality_level, String cid, JsonElement mainJson, JsonElement partJson) {
         String avid = CommonIOUtils.getFromJson2Str(mainJson, "aid");
         String bvid = CommonIOUtils.getFromJson2Str(mainJson, "bvid");
         int videos = CommonIOUtils.getFromJson2Integer(mainJson, "videos");
@@ -230,7 +231,7 @@ public class DownloadController {
         String part = CommonIOUtils.getFromJson2Str(partJson, "part");
         int page = CommonIOUtils.getFromJson2Integer(partJson, "page");
         String url = "https://api.bilibili.com/x/player/playurl?avid=" + avid + "&cid=" + cid + "&bvid=&qn=" + (quality_level.equals("") ? "112" : quality_level) + "&type=&otype=json&fnver=0&fnval=16&fourk=1";
-        Data data = new Data();
+//        Data data = new Data();
         data.setUrl(url);
         data.setHeader(configParams.properties.cookies);
         CommonIOUtils.withTimer(data);
@@ -238,7 +239,7 @@ public class DownloadController {
         int code = CommonIOUtils.getFromJson2Integer(json, "code");
         if (code == -404) {
             log.error("视频不存在！");
-            return;
+            return RestResponse.fail("视频不存在！");
         }
         title = CommonIOUtils.filterFileName2(title);
         VideoData videoData = new VideoData();
@@ -271,7 +272,7 @@ public class DownloadController {
         videoData.setTimeLength(videoInfo.getTimeLength());
         videoData.setVideoId(avid);
         if (FFMEPGToolsPatch.isExists(videoData)) {
-            return;
+            return RestResponse.fail(String.format("视频已存在：%s", videoData.getDesSavePath()));
         }
         JsonArray accept_quality =
                 CommonIOUtils.getFromJson2(json, "data-accept_quality").getAsJsonArray();
@@ -283,25 +284,28 @@ public class DownloadController {
         // 如果有高画质，则重新执行主方法，执行完后直接return
         if (!current_quality.equals(String.valueOf(quality.get(0)))) {
             log.error("画质重定位");
-            downLoadByAPI(String.valueOf(quality.get(0)), cid, mainJson, partJson);
-            return;
+            if (data.doRetry()) {
+                downLoadByAPI(data, String.valueOf(quality.get(0)), cid, mainJson, partJson);
+            } else {
+                return RestResponse.fail("画质重定向次数过多，请确认是否需要设置cookie信息");
+            }
         }
         //判断是否为1p多段，如果是，那么json中是flv的下载地址，否则是m4s的地址
         if (CommonIOUtils.getFromJson2(json, "data-dash-video").isJsonNull()) {
             //1p多段下载
             dealMultiplePart(json, avid, videoData, page, videoInfo);
             if (!FFMEPGToolsPatch.mergeBilibiliVideo(videoData)) {
-                log.error("不应该出现在这，video_id：" + avid);
-                System.exit(1);
+                log.error("不应该出现在这，video_id：{}", avid);
+                return RestResponse.fail("合并出错");
             }
         }
         if (!CommonIOUtils.getFromJson2(json, "data-dash-video").isJsonNull()) {
             doM4s(json, avid, bvid, current_quality, videoInfo, videoData);
             if (!FFMEPGToolsPatch.mergeBilibiliVideo2(videoData)) {
-                log.error("不应该出现在这，video_id：" + avid);
-                System.exit(1);
+                return RestResponse.fail("合并出错");
             }
         }
+        return RestResponse.ok();
     }
 
     private void dealMultiplePart(JsonElement json, String video_id, VideoData videoData, int page, VideoInfo video) {
