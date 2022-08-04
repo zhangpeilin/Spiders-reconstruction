@@ -4,6 +4,7 @@ import cn.zpl.common.bean.RestResponse;
 import cn.zpl.commondaocenter.service.IBikaService;
 import cn.zpl.commondaocenter.utils.SpringContext;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.google.common.base.CaseFormat;
@@ -56,12 +57,13 @@ public class ApiAnalysisController {
 
     }
 
-    @PostMapping("/api/save/{entity}")
-    public RestResponse commonEntitySave(@PathVariable("entity") String entity, @RequestBody Object data) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    @PostMapping("/api/save")
+    public RestResponse commonEntitySave(@RequestBody JSONObject requestJson) {
+        String entity = requestJson.getString("entity");
+        JSONObject data = requestJson.getJSONObject("data");
         if (checkEntityExists(entity)) {
             return RestResponse.fail("找不到实体类");
         }
-        Class<?> aClass;
         if (entityList.isEmpty()) {
             Reflections reflections = new Reflections("cn.zpl.common.bean");
             entityList.addAll(reflections.getSubTypesOf(Serializable.class));

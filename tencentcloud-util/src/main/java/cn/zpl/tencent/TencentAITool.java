@@ -14,6 +14,7 @@ import com.tencentcloudapi.tiia.v20190529.models.DetectMisbehaviorRequest;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +25,8 @@ import java.util.Base64;
 @Slf4j
 public class TencentAITool {
 
+    static
+    CrudTools<PictureAnalyze> tools;
     static final Credential credential = new Credential(TencentParams.SecretId, TencentParams.SecretKey);
     @SneakyThrows
     public static void dobusiness(File file) {
@@ -51,7 +54,7 @@ public class TencentAITool {
         jsonObject.put("labelResult", detectLabelResponse);
 //        jsonObject.put("behaviorResult", detectMisbehaviorResponse);
         pictureAnalyze.setTencentJsonResult(jsonObject.toJSONString());
-        CrudTools.savePA(pictureAnalyze);
+        CrudTools.commonApiSave(pictureAnalyze);
     }
 
     @SneakyThrows
@@ -63,7 +66,7 @@ public class TencentAITool {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("AssessQualityResult", assessQualityResponse);
         pictureAnalyze.setQualityResult(jsonObject.toJSONString());
-        CrudTools.savePA(pictureAnalyze);
+        CrudTools.commonApiSave(pictureAnalyze);
 
     }
 
@@ -86,7 +89,7 @@ public class TencentAITool {
 
     public static void main(String[] args) {
 
-        pictureQuality(CrudTools.getPAById("1527733848444903425").getObject(PictureAnalyze.class));
+        pictureQuality(tools.queryPA("1527733848444903425"));
 
     }
 }

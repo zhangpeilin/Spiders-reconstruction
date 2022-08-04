@@ -16,6 +16,7 @@ public class BaiduAITool {
     @SneakyThrows
     public static void dobusiness(File file){
         {
+            CrudTools<PictureAnalyze> tools = new CrudTools<>();
             // 初始化一个AipImageClassify
             AipImageClassify client = new AipImageClassify(BaiduAIParams.APP_ID, BaiduAIParams.API_KEY, BaiduAIParams.SECRET_KEY);
 
@@ -38,7 +39,7 @@ public class BaiduAITool {
             objectOutputStream.writeObject(res.toString());
             pictureAnalyze.setBaiduResult(byteArrayOutputStream.toByteArray());
             pictureAnalyze.setBaiduJsonResult(res.toString());
-            CrudTools.savePA(pictureAnalyze);
+            tools.commonSave(pictureAnalyze);
         }
     }
 }

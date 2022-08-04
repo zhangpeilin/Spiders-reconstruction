@@ -12,6 +12,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.util.Vector;
 
@@ -25,13 +26,15 @@ public class BikaChapterThread implements Runnable {
     private final String comicid;
 
     private final String chapterPath;
+    @Resource
+    BikaUtils utils;
 
     BikaChapterThread(String chapternum, String title, String comicid) {
         this.chapternum = chapternum;
         this.title = title;
         this.comicid = comicid;
         //路径不在固定，由数据库记录的路径确定上层目录
-        Bika exist = BikaUtils.getExists(comicid);
+        Bika exist = utils.getExists(comicid);
         if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
             this.chapterPath = exist.getLocalPath() + "\\" + chapternum;
         } else {

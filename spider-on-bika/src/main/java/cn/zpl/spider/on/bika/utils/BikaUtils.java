@@ -58,6 +58,8 @@ public class BikaUtils {
 
     @Resource
     BikaParams bikaParams;
+    @Resource
+    CrudTools<Bika> tools;
 
     public static final Map<String, AtomicInteger> progress = new HashMap<>();
     
@@ -71,26 +73,26 @@ public class BikaUtils {
         return utils;
     }
 
-    public static Bika getExists(String comicid) {
+    public Bika getExists(String comicid) {
         if (!BikaParams.writeDB){
             return null;
         }
         synchronized (BikaUtils.class) {
             if (exists.size() == 0) {
-                List<Bika> BikaList = CrudTools.commonApiQuery("", new String[]{"*"}, Bika.class);
+                List<Bika> BikaList = tools.queryAllBika();
                 BikaList.forEach(bika -> exists.put(bika.getId(), bika));
             }
             return exists.get(comicid);
         }
     }
 
-    public static boolean isNeedUpdate(String comicid) {
+    public boolean isNeedUpdate(String comicid) {
         if (!BikaParams.writeDB){
             return true;
         }
         synchronized (BikaUtils.class) {
             if (exists.size() == 0) {
-                List<Bika> BikaList = CrudTools.commonApiQuery("", new String[]{"*"}, Bika.class);
+                List<Bika> BikaList = tools.commonApiQuery("", "*", Bika.class);
                 BikaList.forEach(bika -> exists.put(bika.getId(), bika));
             }
         }
@@ -282,7 +284,7 @@ public class BikaUtils {
     }
 
 
-    public static void dosave(String comicid, JsonObject json, boolean isNeedDownload, String localPath) {
+    public void dosave(String comicid, JsonObject json, boolean isNeedDownload, String localPath) {
         //判断是否需要下载，如果数据存在：downloaded_at时间在一周之内，则认为不需要继续下载返回false，否则更新下载日期并且返回true
         if (json == null) {
             String getComicsInfo = "comics/" + comicid;
@@ -293,13 +295,13 @@ public class BikaUtils {
         list.setLocalPath(localPath);
         BikaDownloadFailed failed = new BikaDownloadFailed();
         failed.setId(comicid);
-        List<Bika> result = CrudTools.commonApiQuery(null, null, Bika.class);
+        List<Bika> result = tools.commonApiQuery(null, null, Bika.class);
         if (!CollectionUtils.isEmpty(result)) {
             CrudTools.commonApiDelete(null, Bika.class);
         }
         try {
             if (isNeedDownload) {
-                if (!CrudTools.saveBika(bika).isSuccess()) {
+                if (!tools.commonSave(bika).isSuccess()) {
                     log.error("保存失败" + bika);
                 }
             }
@@ -309,7 +311,7 @@ public class BikaUtils {
 //            base64ErrorCols(((GenericJDBCException) e.getCause()).getSQLException().getMessage(), list);
             if (isNeedDownload) {
 //                DBManager.ForceSave(bika);
-                if (!CrudTools.saveBika(bika).isSuccess()) {
+                if (!tools.commonSave(bika).isSuccess()) {
                     log.error("保存失败-->{}", bika);
                 }
             }
@@ -405,14 +407,14 @@ public class BikaUtils {
         }
     }
 
-    public static boolean needSkip(JsonObject info) {
+    public boolean needSkip(JsonObject info) {
         String categories = CommonIOUtils.getFromJson2(info, "data-comic-categories").toString();
         if (categories.contains("耽美") && !categories.contains("偽娘")) {
             log.debug("跳过BL本");
             Bika bika = getBika(info, "");
             bika.setIsDeleted(1);
 //            DBManager.update(bika);
-            if (BikaParams.writeDB && !CrudTools.saveBika(bika).isSuccess()) {
+            if (BikaParams.writeDB && !tools.commonSave(bika).isSuccess()) {
                 log.error("保存失败：" + bika);
             }
             return true;

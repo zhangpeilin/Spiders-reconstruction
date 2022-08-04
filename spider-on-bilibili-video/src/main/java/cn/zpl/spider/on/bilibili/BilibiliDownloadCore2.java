@@ -16,8 +16,6 @@ import cn.zpl.util.DownloadTools;
 import cn.zpl.util.FFMEPGToolsPatch;
 import cn.zpl.util.SaveLog;
 import cn.zpl.util.URLConnectionTool;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -31,6 +29,7 @@ import org.jsoup.nodes.Element;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,6 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
 import java.util.regex.Pattern;
+import java.util.zip.CRC32;
 
 @Slf4j
 public class BilibiliDownloadCore2 {
@@ -50,6 +50,11 @@ public class BilibiliDownloadCore2 {
     private boolean filter = true;
     private ThreadLocal<Integer> already = new ThreadLocal<>();
     private String avid;
+
+    @Resource
+    CrudTools<VideoInfo> videoInfoCrudTools;
+    @Resource
+    CrudTools<ExceptionList> exceptionListCrudTools;
 
     @Resource
     BilibiliConfigParams configParams;
@@ -147,7 +152,7 @@ public class BilibiliDownloadCore2 {
             log.debug(combinedId + "已下载");
             return true;
         } else {
-            VideoInfo videoById = CrudTools.getVideoById(cid + "|" + avid);
+            VideoInfo videoById = videoInfoCrudTools.commonApiQuery(cid + "|" + avid, VideoInfo.class);
             if (combinedId.equalsIgnoreCase(videoById.getVideoId() + "|" + videoById.getAid())) {
                 log.debug(combinedId + "已下载");
                 exists.add(combinedId);
@@ -164,13 +169,11 @@ public class BilibiliDownloadCore2 {
             log.debug(video_id + "已排除");
             return true;
         } else {
-            RestResponse response = CrudTools.getExceptionListById(video_id);
-            if (!response.isSuccess() && response.getItem() == null) {
+            ExceptionList exceptionItem = exceptionListCrudTools.commonApiQuery(video_id, ExceptionList.class);
+            if (exceptionItem == null) {
                 return false;
             }
-            response.getItem();
-            ExceptionList exceptionList = JSON.parseObject(JSONObject.toJSONString(response.getItem()), ExceptionList.class);
-            if (video_id.equalsIgnoreCase(exceptionList.getVideoId())) {
+            if (video_id.equalsIgnoreCase(exceptionItem.getVideoId())) {
                 log.debug(video_id + "已排除");
                 exception.add(video_id);
                 return true;
@@ -326,7 +329,7 @@ public class BilibiliDownloadCore2 {
         videoData.setTimeLength(videoInfo.getTimeLength());
         videoData.setVideoId(avid);
         if (FFMEPGToolsPatch.isExists(videoData)) {
-            RestResponse restResponse = CrudTools.saveVideoInfo(videoInfo);
+            RestResponse restResponse = videoInfoCrudTools.commonSave(videoInfo);
             if (!restResponse.isSuccess()) {
                 throw new RuntimeException("保存记录失败");
             }
@@ -361,7 +364,7 @@ public class BilibiliDownloadCore2 {
                 System.exit(1);
             }
         }
-        RestResponse restResponse = CrudTools.saveVideoInfo(videoInfo);
+        RestResponse restResponse = videoInfoCrudTools.commonSave(videoInfo);
         if (!restResponse.isSuccess()) {
             throw new RuntimeException("保存下载记录失败");
         }

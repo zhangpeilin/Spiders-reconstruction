@@ -20,14 +20,14 @@ import javax.annotation.Resource;
 @EnableConfigurationProperties(BilibiliConfigParams.BilibiliProperties.class)
 public class BilibiliConfigParams {
 
-//    @Resource
+    @Resource
     public BilibiliProperties properties;
 
-    @Bean
-    public BilibiliProperties setProperties(BilibiliProperties properties) {
-        this.properties = properties;
-        return this.properties;
-    }
+//    @Bean
+//    public BilibiliProperties setProperties(BilibiliProperties properties) {
+//        this.properties = properties;
+//        return this.properties;
+//    }
     @Data
     @ConfigurationProperties(prefix = "spider.bilibili")
     public static class BilibiliProperties{

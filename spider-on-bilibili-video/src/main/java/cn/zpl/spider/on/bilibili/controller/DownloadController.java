@@ -10,6 +10,7 @@ import cn.zpl.spider.on.bilibili.common.BilibiliCommonUtils;
 import cn.zpl.spider.on.bilibili.common.BilibiliConfigParams;
 import cn.zpl.spider.on.bilibili.common.TransformVideId;
 import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
 import cn.zpl.util.FFMEPGToolsPatch;
 import cn.zpl.util.SaveLog;
@@ -51,6 +52,8 @@ public class DownloadController {
 
     @Resource
     BilibiliConfigParams configParams;
+    @Resource
+    CrudTools<VideoInfo> tools;
 
     ThreadLocal<String> getNewPath() {
         return newPath;
@@ -61,6 +64,7 @@ public class DownloadController {
     @GetMapping("/download/{bid}")
     public RestResponse downloadById(@PathVariable("bid") String bid) {
         try {
+            List<VideoInfo> videoInfos = tools.queryAll(VideoInfo.class);
             return mainBusiness(bid);
         } catch (Exception e) {
             log.error("下载错误：", e);

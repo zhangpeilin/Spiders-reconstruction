@@ -13,6 +13,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -24,6 +25,9 @@ public class BikaComicThread extends CommonThread {
     private final String comicId;
     private final boolean isNeedDownload;
     private final Bika data = new Bika();
+
+    @Resource
+    BikaUtils bikaUtils;
 
     public BikaComicThread(String comicId, boolean isNeedDownload) {
         this.comicId = comicId;
@@ -70,7 +74,7 @@ public class BikaComicThread extends CommonThread {
     public void domain() {
         //获取画册信息
         String getComicsInfo = "comics/" + comicId;
-        if (!BikaUtils.isNeedUpdate(comicId) && !BikaParams.isForceDownload) {
+        if (!bikaUtils.isNeedUpdate(comicId) && !BikaParams.isForceDownload) {
             //删除错误日志表的记录
             BikaDownloadFailed failed = new BikaDownloadFailed();
             failed.setId(comicId);
@@ -81,20 +85,20 @@ public class BikaComicThread extends CommonThread {
             return;
         }
         JsonObject info = BikaUtils.getJsonByUrl(getComicsInfo);
-        if (!BikaParams.isForceDownload && BikaUtils.needSkip(info)) {
+        if (!BikaParams.isForceDownload && bikaUtils.needSkip(info)) {
             log.debug(comicId + "跳过");
             return;
         }
 
         if (!isNeedDownload) {
             if (BikaParams.writeDB){
-                BikaUtils.dosave(comicId, info, isNeedDownload, "");
+                bikaUtils.dosave(comicId, info, isNeedDownload, "");
             }
             return;
         }
 
         String title = CommonIOUtils.filterFileName(CommonIOUtils.getFromJson2Str(info, "data-comic-title"));
-        Bika exist = BikaUtils.getExists(comicId);
+        Bika exist = bikaUtils.getExists(comicId);
         //判断是否存在id编号相同但文件夹名不同的目录
         if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
             File ex = new File(exist.getLocalPath());
@@ -149,6 +153,6 @@ public class BikaComicThread extends CommonThread {
             }
         }
         if (BikaParams.writeDB)
-        BikaUtils.dosave(comicId, info, isNeedDownload, BikaUtils.getLocalPath(comicId, title));
+            bikaUtils.dosave(comicId, info, isNeedDownload, BikaUtils.getLocalPath(comicId, title));
     }
 }
