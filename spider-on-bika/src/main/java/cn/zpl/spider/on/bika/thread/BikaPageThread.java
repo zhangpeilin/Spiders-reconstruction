@@ -77,11 +77,6 @@ public class BikaPageThread implements Runnable {
         BikaList bikaList = new BikaList();
         bikaList.setId(CommonIOUtils.getFromJson2Str(jsonElement, "id"));
         CommonIOUtils.getFromJson2Str(jsonElement, "id");
-        BikaList exists = CrudTools.commonApiQuery(BikaList.class);
-//        BikaList exists = DBManager.getDTOById2(BikaList.class, );
-        if (exists != null) {
-            bikaList = exists;
-        }
         bikaList.setTitle(CommonIOUtils.getFromJson2Str(jsonElement, "title"));
         bikaList.setAuthor(CommonIOUtils.getFromJson2Str(jsonElement, "author"));
         bikaList.setPagesCount(CommonIOUtils.getFromJson2Integer(jsonElement, "pagesCount"));

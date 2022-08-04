@@ -43,7 +43,7 @@ public abstract class CommonThread implements Runnable {
         try {
             domain();
         } catch (Exception e) {
-            if (doRetry()) {
+            if (doWhenFailed(e) && doRetry()) {
                 log.error("执行出错：\n", e);
                 log.error("2秒后重试");
                 try {
@@ -55,6 +55,9 @@ public abstract class CommonThread implements Runnable {
                 run();
             }
         }
+    }
+    public boolean doWhenFailed(Exception e){
+        return true;
     }
 
     public abstract void domain();

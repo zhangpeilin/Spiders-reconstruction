@@ -18,13 +18,13 @@ import java.util.Vector;
 @Slf4j
 public class BikaChapterThread implements Runnable {
 
-    private String chapternum;
+    private final String chapternum;
 
-    private String title;
+    private final String title;
 
-    private String comicid;
+    private final String comicid;
 
-    private String chapterPath;
+    private final String chapterPath;
 
     BikaChapterThread(String chapternum, String title, String comicid) {
         this.chapternum = chapternum;
