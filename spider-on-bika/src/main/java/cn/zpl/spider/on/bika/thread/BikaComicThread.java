@@ -4,7 +4,9 @@ import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaDownloadFailed;
 import cn.zpl.spider.on.bika.common.BikaParams;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
+import cn.zpl.thread.CommonThread;
 import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -17,7 +19,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Paths;
 
 @Slf4j
-public class BikaComicThread implements Runnable {
+public class BikaComicThread extends CommonThread {
 
     private final String comicId;
     private final boolean isNeedDownload;
@@ -29,50 +31,57 @@ public class BikaComicThread implements Runnable {
         data.setId(comicId);
     }
 
+//    @Override
+//    public void run() {
+//        try {
+//            domain();
+//        } catch (RuntimeException runtimeException) {
+//
+//            if (data.canDoRetry()) {
+//                data.doRetry();
+//                run();
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            log.error("线程异常：" + comicId + "章节分析出错，重新分析");
+//            if (data.canDoRetry()) {
+//                data.doRetry();
+//                run();
+//            }
+//        }
+//    }
+
     @Override
-    public void run() {
-        try {
-            domain();
-        } catch (RuntimeException ee) {
-            ee.printStackTrace();
-            log.error(comicId + "下载失败，记录日志");
-            BikaDownloadFailed failed = new BikaDownloadFailed();
-            failed.setId(comicId);
-            failed.setDownloadAt(String.valueOf(System.currentTimeMillis()));
-            failed.setError(ee.getMessage());
-            if (BikaParams.writeDB)
-            DBManager.update(failed);
-            if (ee.getMessage().contains("错误代码：400")) {
-                return;
-            }
-            if (data.canDoRetry()) {
-                data.doRetry();
-                run();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("线程异常：" + comicId + "章节分析出错，重新分析");
-            if (data.canDoRetry()) {
-                data.doRetry();
-                run();
-            }
+    public boolean doWhenFailed(Exception e) {
+        e.printStackTrace();
+        log.error(comicId + "下载失败，记录日志");
+        BikaDownloadFailed failed = new BikaDownloadFailed();
+        failed.setId(comicId);
+        failed.setDownloadAt(String.valueOf(System.currentTimeMillis()));
+        failed.setError(e.getMessage());
+        if (BikaParams.writeDB)
+            CrudTools.commonApiSave(failed);
+        if (e.getMessage().contains("错误代码：400")) {
+            return false;
         }
+        return super.doWhenFailed(e);
     }
 
     public void domain() {
         //获取画册信息
         String getComicsInfo = "comics/" + comicId;
-        if (!BikaUtils.isNeedUpdate(comicId) && !data.isForceDownload()) {
+        if (!BikaUtils.isNeedUpdate(comicId) && !BikaParams.isForceDownload) {
             //删除错误日志表的记录
             BikaDownloadFailed failed = new BikaDownloadFailed();
             failed.setId(comicId);
             if (BikaParams.writeDB)
-            DBManager.delete(failed);
+//            DBManager.delete(failed);
+            CrudTools.commonApiDelete("", BikaDownloadFailed.class);
             log.debug(comicId + "漫画已下载且上次更新日期在7天内，跳过");
             return;
         }
         JsonObject info = BikaUtils.getJsonByUrl(getComicsInfo);
-        if (!data.isForceDownload() && BikaUtils.needSkip(info)) {
+        if (!BikaParams.isForceDownload && BikaUtils.needSkip(info)) {
             log.debug(comicId + "跳过");
             return;
         }
@@ -95,20 +104,20 @@ public class BikaComicThread implements Runnable {
                     if (!ex.renameTo(tmp)) {
                         log.error("更名失败");
                         log.error(ex + "--->" + tmp);
-                        data.setRetryCount(100);
+                        getDoRetry().setRetryMaxCount(20);
                         throw new RuntimeException("更名失败");
                     } else {
                         exist.setLocalPath(tmp.getPath());
-//                    DBManager.ForceSave(exist);
-                        if (!BikaUtils.saveBika(exist)) {
+                        if (!CrudTools.commonApiSave(exist).isSuccess()) {
                             log.error("保存失败" + exist);
-                        }                    }
+                        }
+                    }
                 }
                 if (Files.exists(Paths.get(tmp.getPath()), LinkOption.NOFOLLOW_LINKS)) {
                     log.debug("文件已更名，更新数据库");
                     exist.setLocalPath(tmp.getPath());
 //                    DBManager.ForceSave(exist);
-                    if (!BikaUtils.saveBika(exist)) {
+                    if (!CrudTools.commonApiSave(exist).isSuccess()) {
                         log.error("保存失败" + exist);
                     }
                     BikaUtils.exists.clear();
