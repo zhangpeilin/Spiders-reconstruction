@@ -2,6 +2,6 @@ spring:
   cloud:
     config:
       label: master
-      name: config,common
-      profile: bilibili
+      name: common,bilibili
+      profile: online
       uri: http://localhost:3344

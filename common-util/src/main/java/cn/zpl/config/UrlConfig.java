@@ -9,4 +9,5 @@ import org.springframework.stereotype.Component;
 public class UrlConfig {
     String commonSaveUrl;
     String commonQueryUrl;
+    String nothing;
 }

@@ -39,7 +39,7 @@ public class FFMEPGToolsPatch {
 
 
     @Bean
-    public CommonProperties fillNumber (CommonProperties properties) {
+    public CommonProperties setConfig(CommonProperties properties) {
         ffmpegPath = properties.getFfmpeg();
         return properties;
     }

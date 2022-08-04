@@ -1,3 +1,5 @@
-spring:
-  profiles:
-    include: a,b,c
+spider:
+  common:
+    url:
+      common-query-url:
+      common-save-url:

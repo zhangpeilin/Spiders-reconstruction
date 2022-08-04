@@ -20,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -116,14 +117,22 @@ public class CrudTools<T> {
     public <R> List<R> commonApiQuery(String condition, String fetchProperties, Class<R> tClass, int... size) {
         String entity = tClass.getSimpleName();
         if (StringUtils.isEmpty(fetchProperties)) {
-            fetchProperties = "*";
+            fetchProperties = config.getNothing();
+        }
+        if (StringUtils.isEmpty(condition)) {
+            condition = config.getNothing();
         }
         System.out.printf("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&size=%4$s", entity, fetchProperties, "condition", "999");
 //        String url = String.format("http://localhost:8080/common/dao/api/query/", "");
-        String requestUrl = formatRequestUrl(config.getCommonQueryUrl(), entity, fetchProperties, condition, size);
+        String requestUrl = formatRequestUrl(config.getCommonQueryUrl(), entity, fetchProperties, condition, size.length != 0 ? size[0] : 999);
         log.debug("请求url：-->{}", requestUrl);
         ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(requestUrl, RestResponse.class);
-        return Objects.requireNonNull(forEntity.getBody()).getList(tClass);
+        RestResponse response = forEntity.getBody();
+        if (response == null || !response.isSuccess()) {
+            return Collections.emptyList();
+        } else {
+            return Objects.requireNonNull(response).getList(tClass);
+        }
     }
 
     private String formatRequestUrl(String url, Object... args) {

@@ -2,6 +2,6 @@ spring:
   cloud:
     config:
       label: master
-      name: config
-      profile: dao-center
+      name: daocenter,common
+      profile: online
       uri: http://localhost:3344

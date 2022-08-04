@@ -3,6 +3,7 @@ package cn.zpl.commondaocenter.controller;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.commondaocenter.service.IBikaService;
 import cn.zpl.commondaocenter.utils.SpringContext;
+import cn.zpl.config.UrlConfig;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -43,6 +44,9 @@ public class ApiAnalysisController {
 
     @Resource
     IBikaService bikaService;
+
+    @Resource
+    UrlConfig config;
     public static Set<Class<? extends Serializable>> entityList = new HashSet<>();
 
     //路径规则：entity代表要查询的实体对象
@@ -105,9 +109,15 @@ public class ApiAnalysisController {
      */
     @GetMapping("/api/query/{entity}")
     public RestResponse apiAnalysis2(@PathVariable("entity") String entity, @RequestParam(value = "fetchProperties", required = false) String fetchProperties, @RequestParam(value = "condition", required = false) String condition, @RequestParam(value = "size", required = false) Integer size) {
-        Class<?> aClass;
         if (checkEntityExists(entity)) {
             return RestResponse.fail("找不到实体类");
+        }
+        //预处理为空的标记为[*]
+        if (StringUtils.isEmpty(fetchProperties)) {
+            fetchProperties = config.getNothing();
+        }
+        if (StringUtils.isEmpty(condition)) {
+            condition = config.getNothing();
         }
         log.debug(entity);
         log.debug(fetchProperties);
@@ -115,9 +125,9 @@ public class ApiAnalysisController {
         log.debug(String.valueOf(size));
         IService iService = loadServiceByEntity(entity);
         Pattern compile = Pattern.compile("[^=\\[\\],']+");
-        if (!StringUtils.hasText(condition)) {
+        if ("[*]".equals(condition)) {
             List list = iService.list();
-            return RestResponse.fail("没有传入有效查询信息");
+            return RestResponse.ok().list(list);
         }
         Matcher conditionMatcher = compile.matcher(condition);
         Matcher columnMatcher = compile.matcher(fetchProperties);
