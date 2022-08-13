@@ -1,6 +1,7 @@
 package cn.zpl.util;
 
 import cn.zpl.common.bean.Bika;
+import cn.zpl.common.bean.NasPage;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.UrlConfig;
 import cn.zpl.thirdParty.ObjectTypeAdapterRewrite;
@@ -20,7 +21,6 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -42,6 +42,12 @@ public class CrudTools<T> {
                 ((GsonHttpMessageConverter) messageConverter).setGson(gson);
             }
         }
+    }
+
+    public static CrudTools<Object> getInstance(UrlConfig config) {
+        CrudTools<Object> crudTools = new CrudTools<>();
+        crudTools.setConfig(config);
+        return crudTools;
     }
 
 //    public RestResponse saveBika(Bika bika) {
@@ -84,14 +90,17 @@ public class CrudTools<T> {
 
     public static RestResponse commonApiSave(Object bean) {
         String entity = bean.getClass().getSimpleName();
-        ResponseEntity<RestResponse> restResponseResponseEntity = restTemplate.postForEntity("http://localhost:8080/common/dao/api/save/" + entity, bean, RestResponse.class);
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("entity", entity);
+        params.put("data", bean);
+        ResponseEntity<RestResponse> restResponseResponseEntity = restTemplate.postForEntity("http://localhost:8080/common/dao/api/save/", params, RestResponse.class);
         log.debug(String.valueOf(restResponseResponseEntity));
         return restResponseResponseEntity.getBody();
 
     }
 
-    public static <T> List<T> commonApiQueryBySql(String sql, Class<T> tClass) {
-        return RestResponse.ok().getList(tClass);
+    public <T> List<T> commonApiQueryBySql(String sql, Class<T> tClass) {
+        return commonApiQuery(sql, null, tClass);
     }
 //    public PictureAnalyze queryPA(String id){
 //        List<PictureAnalyze> pictureAnalyzes = commonApiQuery("id=" + id, null, PictureAnalyze.class);
@@ -124,7 +133,7 @@ public class CrudTools<T> {
         }
         System.out.printf("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&size=%4$s", entity, fetchProperties, "condition", "999");
 //        String url = String.format("http://localhost:8080/common/dao/api/query/", "");
-        String requestUrl = formatRequestUrl(config.getCommonQueryUrl(), entity, fetchProperties, condition, size.length != 0 ? size[0] : 999);
+        String requestUrl = formatRequestUrl(config.getCommonQueryUrl(), entity, fetchProperties, condition, size.length == 0 ? 999 : size[0]);
         log.debug("请求url：-->{}", requestUrl);
         ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(requestUrl, RestResponse.class);
         RestResponse response = forEntity.getBody();
@@ -164,5 +173,11 @@ public class CrudTools<T> {
 //        return forEntity.getBody();
 //    }
 
+    public static void main(String[] args) {
+        NasPage pic = new NasPage();
+        pic.setOffset("5");
+        pic.setResult("blob".getBytes());
+        commonApiSave(pic);
+    }
 
 }

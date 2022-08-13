@@ -89,7 +89,7 @@ public class TencentAITool {
 
     public static void main(String[] args) {
 
-        pictureQuality(tools.queryPA("1527733848444903425"));
+        pictureQuality(tools.commonApiQuery("1527733848444903425", PictureAnalyze.class));
 
     }
 }

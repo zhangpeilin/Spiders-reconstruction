@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Collection;
 
 @Slf4j
@@ -27,13 +28,15 @@ public class ReadImgTypeAndRename {
      * 本地获取
      */
     public static void main(String[] args) {
+        boolean reName = false;
+        String[] extensions = new String[]{"mp4"};
 //        File picture = new File("C:\\Users\\zpl\\Pictures");
-        File base = new File("C:\\手机qq图片\\chatpic");
-        File toSave = new File("C:\\手机qq图片\\修改后");
-        Collection<File> list = FileUtils.listFiles(base, null, true);
+        File base = new File("C:\\nas");
+        File toSave = new File("C:\\nas第一批");
+        Collection<File> list = FileUtils.listFiles(base, extensions, true);
 //        File[] files = base.listFiles((FilenameFilter) FileFilterUtils.fileFileFilter());
         for (File file : list) {
-            String id = String.valueOf(CruxIdGenerator.generate());
+            String id = reName ? String.valueOf(CruxIdGenerator.generate()) : file.getName().substring(0, file.getName().indexOf("."));
 //        System.out.println(files.length);
 //        BufferedImage sourceImg = ImageIO.read(Files.newInputStream(file.toPath()));
 //        String[] propertyNames = sourceImg.getPropertyNames();
@@ -59,7 +62,7 @@ public class ReadImgTypeAndRename {
 //                System.out.println(tagName);
 //                System.out.println(desc);
                     if (tagName.equalsIgnoreCase("Detected File Type Name")) {
-                        if (!file.getName().contains(".") || file.getName().endsWith(".tmp")) {
+                        if (Arrays.stream(extensions).anyMatch(s -> file.getName().contains(s)) || !file.getName().contains(".") || file.getName().endsWith(".tmp")) {
                             switch (desc) {
                                 case "JPEG":
                                     file.renameTo(new File(toSave, id + ".jpg"));
@@ -108,5 +111,10 @@ class CopyThread extends CommonThread {
             return;
         }
         FileUtils.copyFileToDirectory(file, new File("C:\\big"));
+    }
+
+    public static void main(String[] args) {
+        String str = "abcd.mp4";
+        System.out.println(str.substring(0, str.indexOf(".")));
     }
 }

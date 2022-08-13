@@ -4,6 +4,7 @@ import cn.zpl.config.CommonParams;
 import cn.zpl.pojo.Data;
 import cn.zpl.pojo.DoRetry;
 import cn.zpl.pojo.DownloadDTO;
+import com.alibaba.fastjson.JSONObject;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
@@ -508,6 +509,10 @@ public class CommonIOUtils {
             log.error(str);
         }
         return JsonNull.INSTANCE;
+    }
+
+    public static JSONObject parseJson(String str){
+        return JSONObject.parseObject(str);
     }
 
     /**
@@ -1344,6 +1349,13 @@ public class CommonIOUtils {
         int begin = str.indexOf(key + "=") + key.length() + 1;
         int end = str.indexOf("&", begin);
         return str.replace(key + "=" + str.substring(begin, end), key + "=" + value);
+    }
+
+    public static String format(String str, Object... args) {
+        for (Object arg : args) {
+            str = str.replaceFirst("\\{\\}", String.valueOf(arg));
+        }
+        return str;
     }
 
     public void domain() {

@@ -27,6 +27,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -138,8 +139,12 @@ public class BikaUtils {
         if (currentToken != null && !"".equals(currentToken)) {
             return currentToken;
         }
+            CrudTools<Token> crudTools;
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            crudTools = context.getBean("crudTools", CrudTools.class);
+        }
         //id是字符串，需要转换成数字后排序
-        List<Token> list0 = CrudTools.commonApiQueryBySql("SELECT * from token ORDER BY CAST(id as UNSIGNED) desc LIMIT 0,1", Token.class);
+        List<Token> list0 = crudTools.commonApiQueryBySql("SELECT * from token ORDER BY CAST(id as UNSIGNED) desc LIMIT 0,1", Token.class);
         if (list0.size() == 1) {
             currentToken = list0.get(0).getToken();
         }

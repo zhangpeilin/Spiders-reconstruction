@@ -12,6 +12,7 @@ import com.google.common.base.CaseFormat;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
+import org.reflections.Store;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,12 +22,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import sun.reflect.CallerSensitive;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.annotation.Resource;
 import java.beans.Introspector;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -62,7 +63,8 @@ public class ApiAnalysisController {
     }
 
     @PostMapping("/api/save")
-    public RestResponse commonEntitySave(@RequestBody JSONObject requestJson) {
+    @SuppressWarnings("unchecked")
+    public <T> RestResponse  commonEntitySave(@RequestBody JSONObject requestJson) {
         String entity = requestJson.getString("entity");
         JSONObject data = requestJson.getJSONObject("data");
         if (checkEntityExists(entity)) {
@@ -71,21 +73,21 @@ public class ApiAnalysisController {
         if (entityList.isEmpty()) {
             Reflections reflections = new Reflections("cn.zpl.common.bean");
             entityList.addAll(reflections.getSubTypesOf(Serializable.class));
-            reflections = new Reflections("cn.zpl.commondaocenter.bean");
+            reflections = new Reflections("BOOT-INF.classes.cn.zpl.commondaocenter.bean");
             entityList.addAll(reflections.getSubTypesOf(Serializable.class));
         }
+        T serializable = null;
         Optional<Class<? extends Serializable>> first = entityList.stream().filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(entity)).findFirst();
         if (first.isPresent()) {
-            Serializable serializable = null;
-            List<? extends Serializable> serializables = null;
+            List<T> serializables = null;
             try {
-                serializable = JSON.parseObject(JSON.toJSONString(data), first.get());
+                serializable = (T) JSON.parseObject(JSON.toJSONString(data), first.get());
             } catch (Exception e) {
                 //如果解析失败尝试解析为array
-                serializables = JSON.parseArray(JSON.toJSONString(data), first.get());
+                serializables = (List<T>) JSON.parseArray(JSON.toJSONString(data), first.get());
             }
             boolean flag = false;
-            IService iService = loadServiceByEntity(entity);
+            IService<T> iService = (IService<T>) SpringContext.getBeanDefinitionName(entity);
             assert iService != null;
             if (serializable == null && serializables != null) {
                 flag = iService.saveBatch(serializables);
@@ -123,7 +125,13 @@ public class ApiAnalysisController {
         log.debug(fetchProperties);
         log.debug(condition);
         log.debug(String.valueOf(size));
-        IService iService = loadServiceByEntity(entity);
+//        IService iService = loadServiceByEntity(entity);
+        @SuppressWarnings("unchecked")
+        IService<Object> iService = (IService<Object>) SpringContext.getBeanDefinitionName(entity);
+        if (iService == null) {
+            log.error("未找到service类");
+            return RestResponse.fail("未找到service类");
+        }
         Pattern compile = Pattern.compile("[^=\\[\\],']+");
         if ("[*]".equals(condition)) {
             List list = iService.list();
@@ -151,9 +159,8 @@ public class ApiAnalysisController {
         if (!columns.isEmpty()) {
             objectQueryWrapper.select(columns.toArray(new String[0]));
         }
-
-        Object one = iService.getOne(objectQueryWrapper);
-        return RestResponse.ok(one);
+        List<Object> list = iService.list(objectQueryWrapper);
+        return RestResponse.ok().list(list);
 
     }
 
@@ -162,9 +169,18 @@ public class ApiAnalysisController {
         if (entityList.isEmpty()) {
             Reflections reflections = new Reflections("cn.zpl.common.bean");
             entityList.addAll(reflections.getSubTypesOf(Serializable.class));
-            reflections = new Reflections("cn.zpl.commondaocenter.bean");
+            reflections = new Reflections("BOOT-INF.classes.cn.zpl.commondaocenter.bean");
+//            ConfigurationBuilder builder = new ConfigurationBuilder();
+//            builder.addClassLoaders(this.getClass().getClassLoader());
+//            builder.forPackage("cn.zpl.commondaocenter.bean", this.getClass().getClassLoader());
+//            Reflections reflections1 = new Reflections(builder);
+//            Set<Class<? extends Serializable>> subTypesOf = reflections1.getSubTypesOf(Serializable.class);
+//            log.debug("找到的类：{}", subTypesOf);
+
+//            subTypesOf.forEach(System.out::println);
             entityList.addAll(reflections.getSubTypesOf(Serializable.class));
         }
+        entityList.forEach(System.out::println);
         Optional<Class<? extends Serializable>> first = entityList.stream().filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(entity)).findFirst();
         log.debug(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, "PictureAnalyze"));
         if (first.isPresent()) {
@@ -177,8 +193,12 @@ public class ApiAnalysisController {
 
     @SneakyThrows
     private IService loadServiceByEntity(String entity) {
-        Reflections reflections = new Reflections("cn.zpl.commondaocenter.service.impl");
+
+        Reflections reflections = new Reflections("classpath:\\cn.zpl.commondaocenter.service.impl");
         Set<Class<? extends IService>> serviceImplements = reflections.getSubTypesOf(IService.class);
+        for (Class<? extends IService> serviceImplement : serviceImplements) {
+            System.out.println(serviceImplement.getName());
+        }
         Optional<Class<? extends IService>> first = serviceImplements.stream().filter(aClass -> {
             return !aClass.isInterface() && (aClass.getGenericSuperclass() instanceof ParameterizedType) && ((Class<?>) ((ParameterizedTypeImpl) aClass.getGenericSuperclass()).getActualTypeArguments()[1]).getSimpleName().equalsIgnoreCase(entity);
         }).findFirst();

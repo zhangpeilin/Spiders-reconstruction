@@ -60,7 +60,7 @@ public abstract class CommonThread implements Runnable {
         return true;
     }
 
-    public abstract void domain();
+    public abstract void domain() throws Exception;
 
     public boolean doRetry(){
         if (doRetry.canDoRetry()) {
