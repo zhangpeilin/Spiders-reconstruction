@@ -1,7 +1,7 @@
 package cn.zpl.util;
 
 import cn.zpl.common.bean.Bika;
-import cn.zpl.common.bean.NasPage;
+import cn.zpl.common.bean.NasPic;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.UrlConfig;
 import cn.zpl.thirdParty.ObjectTypeAdapterRewrite;
@@ -11,7 +11,6 @@ import com.google.gson.reflect.TypeToken;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.GsonHttpMessageConverter;
@@ -20,7 +19,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,43 +50,11 @@ public class CrudTools<T> {
         return crudTools;
     }
 
-//    public RestResponse saveBika(Bika bika) {
-//        ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(config.getSaveOrUpdateBika(), bika, RestResponse.class);
-//        log.debug(String.valueOf(responseEntity));
-//        return responseEntity.getBody();
-//    }
-
-//    public RestResponse saveVideoInfo(VideoInfo videoInfo) {
-//        ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(config.getSaveOrUpdateVideoInfo(), videoInfo, RestResponse.class);
-//        log.debug(String.valueOf(responseEntity));
-//        return responseEntity.getBody();
-//    }
-
     public RestResponse commonSave(Object data) {
         ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(config.getCommonSaveUrl(), data, RestResponse.class);
         log.debug(String.valueOf(responseEntity));
         return responseEntity.getBody();
     }
-
-//    public VideoInfo getVideoById(String id) {
-////        restTemplate.setMessageConverters(Collections.singletonList(new FastJsonHttpMessageConverter()));
-//        ResponseEntity<VideoInfo> forEntity = restTemplate.getForEntity(config.getGetVideoInfoById() + id, VideoInfo.class, id);
-//        log.debug(String.valueOf(forEntity));
-//        return forEntity.getBody();
-//    }
-
-//    public RestResponse getExceptionListById(String id) {
-////        restTemplate.setMessageConverters(Collections.singletonList(new FastJsonHttpMessageConverter()));
-//        ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(config.getGetexceptionlistbyid() + id, RestResponse.class, id);
-//        log.debug(String.valueOf(forEntity));
-//        return forEntity.getBody();
-//    }
-
-//    public RestResponse saveEhentai(Ehentai ehentai) {
-//        ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(config.getSaveOrUpdateEhentai(), ehentai, RestResponse.class);
-//        log.debug(String.valueOf(responseEntity));
-//        return responseEntity.getBody();
-//    }
 
     public static RestResponse commonApiSave(Object bean) {
         String entity = bean.getClass().getSimpleName();
@@ -102,15 +70,6 @@ public class CrudTools<T> {
     public <T> List<T> commonApiQueryBySql(String sql, Class<T> tClass) {
         return commonApiQuery(sql, null, tClass);
     }
-//    public PictureAnalyze queryPA(String id){
-//        List<PictureAnalyze> pictureAnalyzes = commonApiQuery("id=" + id, null, PictureAnalyze.class);
-//        return pictureAnalyzes.get(0);
-//    }
-
-//    public VideoInfo queryVideoInfo(String id) {
-//        return commonApiQuery("id=" + id, null, VideoInfo.class).get(0);
-//    }
-
     public T commonApiQuery(String id, Class<T> tClass) {
         return commonApiQuery("id=" + id, null, tClass).get(0);
     }
@@ -152,31 +111,10 @@ public class CrudTools<T> {
         return RestResponse.ok().isSuccess();
     }
 
-//    public RestResponse savePA(PictureAnalyze pictureAnalyze) {
-//        ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(config.getSaveOrUpdatePA(), pictureAnalyze, RestResponse.class);
-//        log.debug(String.valueOf(responseEntity));
-//        return responseEntity.getBody();
-//    }
-
-//    public RestResponse getPAById(String id) {
-//        ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(config.getGetPAById() + id, RestResponse.class);
-//        return forEntity.getBody();
-//    }
-
-//    public RestResponse queryListWithKey(String key) {
-//        ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(config.getQueryPAList() + key, RestResponse.class);
-//        return forEntity.getBody();
-//    }
-
-//    public RestResponse queryPAListByCondition(String condition) {
-//        ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(config.getQueryPAListByCondition() + condition, RestResponse.class);
-//        return forEntity.getBody();
-//    }
-
     public static void main(String[] args) {
-        NasPage pic = new NasPage();
-        pic.setOffset("5");
-        pic.setResult("blob".getBytes());
+        NasPic pic = new NasPic();
+        pic.setId("234234");
+        pic.setUnitId("asfdas");
         commonApiSave(pic);
     }
 
