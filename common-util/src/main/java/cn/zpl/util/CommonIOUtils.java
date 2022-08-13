@@ -109,7 +109,7 @@ public class CommonIOUtils {
     public static String removeStr2 = "[\\[\\]]";
     public static String removeStr3 = "[']";
 
-    static {
+    public static void preBusiness() {
         byteHandler = new AbstractResponseHandler<byte[]>() {
             @Override
             public byte[] handleEntity(HttpEntity entity) throws IOException {
@@ -788,7 +788,7 @@ public class CommonIOUtils {
 
     private static void buildClientAndGet(@NotNull Data result) {
 
-
+        preBusiness();
         String headers = null;
         if (result.getHeader() != null && !result.getHeader().equals("")) {
             headers = result.getHeader() + "\n";

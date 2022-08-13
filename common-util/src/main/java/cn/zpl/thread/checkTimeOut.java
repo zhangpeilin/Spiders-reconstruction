@@ -42,7 +42,7 @@ public class checkTimeOut extends Thread {
         try {
             setBegin();
             log.debug("开始计时");
-            Thread.sleep(seconds * 1000);
+            Thread.sleep(seconds * 1000L);
             run.setTimeOut(true);
         } catch (InterruptedException e) {
             log.debug("计时停止");

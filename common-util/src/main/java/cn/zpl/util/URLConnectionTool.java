@@ -205,6 +205,7 @@ public class URLConnectionTool {
         }
         httpconn.disconnect();
         System.out.println("文件大小：" + length);
+        data.setFileLength(length);
         return length;
     }
 

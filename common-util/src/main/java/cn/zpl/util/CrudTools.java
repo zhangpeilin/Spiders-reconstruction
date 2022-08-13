@@ -2,6 +2,7 @@ package cn.zpl.util;
 
 import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.NasPic;
+import cn.zpl.common.bean.Page;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.UrlConfig;
 import cn.zpl.thirdParty.ObjectTypeAdapterRewrite;
@@ -82,7 +83,10 @@ public class CrudTools<T> {
         return commonApiQuery("", null, tClass);
     }
 
-    public <R> List<R> commonApiQuery(String condition, String fetchProperties, Class<R> tClass, int... size) {
+    public <R> List<R> commonApiQuery(String condition, String fetchProperties, Class<R> tClass) {
+        return commonApiQuery(condition, fetchProperties, tClass, new Page(1, 20));
+    }
+    public <R> List<R> commonApiQuery(String condition, String fetchProperties, Class<R> tClass, Page page) {
         String entity = tClass.getSimpleName();
         if (StringUtils.isEmpty(fetchProperties)) {
             fetchProperties = config.getNothing();
@@ -90,9 +94,9 @@ public class CrudTools<T> {
         if (StringUtils.isEmpty(condition)) {
             condition = config.getNothing();
         }
-        System.out.printf("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&size=%4$s", entity, fetchProperties, "condition", "999");
+//        System.out.printf("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&page=%4$s", entity, fetchProperties, "condition", page);
 //        String url = String.format("http://localhost:8080/common/dao/api/query/", "");
-        String requestUrl = formatRequestUrl(config.getCommonQueryUrl(), entity, fetchProperties, condition, size.length == 0 ? 999 : size[0]);
+        String requestUrl = formatRequestUrl(config.getCommonQueryUrl(), entity, fetchProperties, condition, page);
         log.debug("请求url：-->{}", requestUrl);
         ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(requestUrl, RestResponse.class);
         RestResponse response = forEntity.getBody();

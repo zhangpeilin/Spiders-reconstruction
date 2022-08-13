@@ -64,7 +64,7 @@ public class DownloadWithMultipleThread implements Runnable, DownloadThreadInter
                 randomfile.seek(startIndex);
                 byte[] getData = new byte[7000000];
                 int len;
-                Thread timer = new checkTimeOut(this, 350);
+                Thread timer = new checkTimeOut(this, 600);
                 timer.start();
                 //读取到内容并且标志未超时
                 while ((len = is.read(getData)) != -1 && !timeOut) {
@@ -80,11 +80,7 @@ public class DownloadWithMultipleThread implements Runnable, DownloadThreadInter
         } catch (RuntimeException e1) {
             //runtime错误表示超时，切换到代理下载
             CommonIOUtils.close(randomfile, is, conn);
-            if (data.isProxy()) {
-                data.setProxy(false);
-            } else {
-                data.setProxy(true);
-            }
+            data.setProxy(!data.isProxy());
             log.error("下载超时：", e1);
             new DownloadWithMultipleThread(data).run();
         } catch (SocketException e) {

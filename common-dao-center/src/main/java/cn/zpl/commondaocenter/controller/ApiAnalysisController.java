@@ -51,16 +51,6 @@ public class ApiAnalysisController {
 
     //路径规则：entity代表要查询的实体对象
     ///api/mofdiv?size=999999&fetchProperties=*,parent[id,name,code,lastModifiedVersion]&sort=code,asc
-    @GetMapping("/api/{entity}")
-    public RestResponse apiAnalysis(@PathVariable("entity") String entity, int size, @RequestParam("fetchProperties") List<String> fetchProperties, @RequestParam("sort") List<String> sort) {
-        System.out.println(entity);
-        System.out.println(size);
-        System.out.println(fetchProperties);
-        System.out.println(sort);
-        return RestResponse.ok();
-
-    }
-
     @PostMapping("/api/save")
     @SuppressWarnings("unchecked")
     public <T> RestResponse  commonEntitySave(@RequestBody JSONObject requestJson) {
@@ -161,7 +151,6 @@ public class ApiAnalysisController {
         }
         List<Object> list = iService.list(objectQueryWrapper);
         return RestResponse.ok().list(list);
-
     }
 
     private boolean checkEntityExists(String entity) {
@@ -191,6 +180,7 @@ public class ApiAnalysisController {
     }
 
     @SneakyThrows
+    @Deprecated
     private IService loadServiceByEntity(String entity) {
 
         Reflections reflections = new Reflections("classpath:\\cn.zpl.commondaocenter.service.impl");

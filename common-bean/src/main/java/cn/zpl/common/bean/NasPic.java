@@ -106,16 +106,18 @@ public class NasPic implements Serializable {
     @Override
     public String toString() {
         return "NasPic{" +
-            "id=" + id +
-            ", cacheKey=" + cacheKey +
-            ", type=" + type +
-            ", size=" + size +
-            ", passphrase=" + passphrase +
-            ", api=" + api +
-            ", method=" + method +
-            ", version=" + version +
-            ", sharingId=" + sharingId +
-        "}";
+                "id='" + id + '\'' +
+                ", unitId='" + unitId + '\'' +
+                ", cacheKey='" + cacheKey + '\'' +
+                ", type='" + type + '\'' +
+                ", url='" + url + '\'' +
+                ", size='" + size + '\'' +
+                ", passphrase='" + passphrase + '\'' +
+                ", api='" + api + '\'' +
+                ", method='" + method + '\'' +
+                ", version='" + version + '\'' +
+                ", sharingId='" + sharingId + '\'' +
+                '}';
     }
 
     public String getUrl() {
