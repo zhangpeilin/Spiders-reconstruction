@@ -19,6 +19,8 @@ public class NasPic implements Serializable {
 
     private String id;
 
+    private String unitId;
+
     private String cacheKey;
 
     private String type;
@@ -122,5 +124,13 @@ public class NasPic implements Serializable {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getUnitId() {
+        return unitId;
+    }
+
+    public void setUnitId(String unitId) {
+        this.unitId = unitId;
     }
 }
