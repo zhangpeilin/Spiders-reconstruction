@@ -41,13 +41,14 @@ public class SpiderOnNASThreadV2 extends CommonThread {
                 "X-SYNO-SHARING: pKQcitKUk\n" +
                 "Cookie: sharing_sid=8HoM3CssjugSIfjO8mFjPfFCQ5wDlLuN; _SSID=wyfTjApLCEBKopZrHjj8SyDvz1yB5tpFHOOZ9zYHjmI; arp_scroll_position=1400.800048828125\n";
         UrlConfig config = new UrlConfig();
+        config.setNothing("*");
         config.setCommonQueryUrl("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&size=%4$s");
         config.setCommonSaveUrl("http://localhost:8080/common/dao/api/save");
         CrudTools<Object> crudTools = CrudTools.getInstance(config);
         List<NasPage> nasPages = crudTools.commonApiQueryBySql("offset=" + offset, NasPage.class);
         String json = new String(nasPages.get(0).getResult());
         JsonElement list = CommonIOUtils.getFromJson2(json, "data-list");
-        if (list.isJsonArray()) {
+        if (list.isJsonArray() && list.getAsJsonArray().size() != 0) {
             for (JsonElement jsonElement : list.getAsJsonArray()) {
                 String type = CommonIOUtils.getFromJson2Str(jsonElement, "type");
                 if (type.equalsIgnoreCase("video")) {
@@ -94,7 +95,8 @@ public class SpiderOnNASThreadV2 extends CommonThread {
                 d2.setUrl(String.format("http://www.ariess.info:5000/mo/sharing/webapi/entry.cgi/%1$s?", URLEncoder.encode(filename, "UTF-8")) + format);
                 d2.setType("byte");
                 NasPic pic = new NasPic();
-                pic.setId(unit_id);
+                pic.setUnitId(unit_id);
+                pic.setId(CommonIOUtils.getFromJson2Str(jsonElement, "id"));
                 pic.setCacheKey(String.format("\"%1$s\"", cache_key));
                 pic.setType(String.format("\"%1$s\"", "unit"));
                 pic.setSize(String.format("\"%1$s\"", "xl"));
