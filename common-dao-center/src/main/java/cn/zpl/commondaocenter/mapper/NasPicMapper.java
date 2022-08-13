@@ -1,6 +1,6 @@
 package cn.zpl.commondaocenter.mapper;
 
-import cn.zpl.commondaocenter.entity.NasPic;
+import cn.zpl.common.bean.NasPic;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

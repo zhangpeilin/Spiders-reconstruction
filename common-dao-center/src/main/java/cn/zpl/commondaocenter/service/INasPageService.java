@@ -1,6 +1,6 @@
 package cn.zpl.commondaocenter.service;
 
-import cn.zpl.commondaocenter.entity.NasPage;
+import cn.zpl.common.bean.NasPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**

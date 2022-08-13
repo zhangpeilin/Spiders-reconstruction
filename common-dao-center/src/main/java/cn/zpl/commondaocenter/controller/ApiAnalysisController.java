@@ -7,12 +7,12 @@ import cn.zpl.config.UrlConfig;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.google.common.base.CaseFormat;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
-import org.reflections.Store;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import sun.reflect.CallerSensitive;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.annotation.Resource;
@@ -110,7 +109,8 @@ public class ApiAnalysisController {
      * @return 返回json
      */
     @GetMapping("/api/query/{entity}")
-    public RestResponse apiAnalysis2(@PathVariable("entity") String entity, @RequestParam(value = "fetchProperties", required = false) String fetchProperties, @RequestParam(value = "condition", required = false) String condition, @RequestParam(value = "size", required = false) Integer size) {
+    @SuppressWarnings("unchecked")
+    public RestResponse apiAnalysis2(@PathVariable("entity") String entity, @RequestParam(value = "fetchProperties", required = false) String fetchProperties, @RequestParam(value = "condition", required = false) String condition, @RequestParam(value = "size", required = false) Integer size, @RequestParam(value = "page", required = false) Page<Object> page) {
         if (checkEntityExists(entity)) {
             return RestResponse.fail("找不到实体类");
         }
@@ -125,8 +125,6 @@ public class ApiAnalysisController {
         log.debug(fetchProperties);
         log.debug(condition);
         log.debug(String.valueOf(size));
-//        IService iService = loadServiceByEntity(entity);
-        @SuppressWarnings("unchecked")
         IService<Object> iService = (IService<Object>) SpringContext.getBeanDefinitionName(entity);
         if (iService == null) {
             log.error("未找到service类");
@@ -134,13 +132,15 @@ public class ApiAnalysisController {
         }
         Pattern compile = Pattern.compile("[^=\\[\\],']+");
         if ("[*]".equals(condition)) {
-            List list = iService.list();
-            return RestResponse.ok().list(list);
+            if (page == null) {
+                page = new Page<>(0, 100);
+            }
+            iService.page(page);
+            return RestResponse.ok().list(page.getRecords());
         }
         Matcher conditionMatcher = compile.matcher(condition);
         Matcher columnMatcher = compile.matcher(fetchProperties);
         QueryWrapper<Object> objectQueryWrapper = new QueryWrapper<>();
-        int i = 0;
         while (conditionMatcher.find()) {
             log.debug(conditionMatcher.group());
             String key = conditionMatcher.group();
@@ -180,9 +180,8 @@ public class ApiAnalysisController {
 //            subTypesOf.forEach(System.out::println);
             entityList.addAll(reflections.getSubTypesOf(Serializable.class));
         }
-        entityList.forEach(System.out::println);
         Optional<Class<? extends Serializable>> first = entityList.stream().filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(entity)).findFirst();
-        log.debug(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, "PictureAnalyze"));
+//        log.debug(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, "PictureAnalyze"));
         if (first.isPresent()) {
             aClass = first.get();
         } else {

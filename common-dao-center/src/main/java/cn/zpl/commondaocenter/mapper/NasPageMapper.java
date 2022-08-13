@@ -1,6 +1,6 @@
 package cn.zpl.commondaocenter.mapper;
 
-import cn.zpl.commondaocenter.entity.NasPage;
+import cn.zpl.common.bean.NasPage;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

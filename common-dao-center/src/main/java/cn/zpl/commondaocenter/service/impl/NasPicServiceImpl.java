@@ -1,6 +1,6 @@
 package cn.zpl.commondaocenter.service.impl;
 
-import cn.zpl.commondaocenter.entity.NasPic;
+import cn.zpl.common.bean.NasPic;
 import cn.zpl.commondaocenter.mapper.NasPicMapper;
 import cn.zpl.commondaocenter.service.INasPicService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
