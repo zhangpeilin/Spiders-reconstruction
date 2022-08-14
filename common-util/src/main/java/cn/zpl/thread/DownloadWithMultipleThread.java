@@ -18,10 +18,10 @@ import java.net.SocketException;
 @Slf4j
 public class DownloadWithMultipleThread implements Runnable, DownloadThreadInterface {
 
-    private long startIndex;
-    private long endIndex;
-    private String url;
-    private DownloadDTO data;
+    private final long startIndex;
+    private final long endIndex;
+    private final String url;
+    private final DownloadDTO data;
 
     private boolean timeOut = false;
 

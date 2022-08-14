@@ -75,7 +75,7 @@ class NASDownload {
         List<NasPic> nasPics;
         int i = 1;
         for (;i < 400; i++) {
-            nasPics = crudTools.commonApiQuery(null, null, NasPic.class, new Page(i, 100));
+            nasPics = crudTools.commonApiQuery("type=\"unit\"", null, NasPic.class, new Page(i, 100));
             if (nasPics.isEmpty()) {
                 return;
             }
@@ -84,6 +84,7 @@ class NASDownload {
     }
 
     private static void dubusiness(DownloadTools tools, String headers, List<NasPic> nasPics, int i) {
+        tools.restart(50);
         log.debug("当前下载：page->{}", i);
         for (NasPic nasPic : nasPics) {
             DownloadDTO dto = new DownloadDTO();

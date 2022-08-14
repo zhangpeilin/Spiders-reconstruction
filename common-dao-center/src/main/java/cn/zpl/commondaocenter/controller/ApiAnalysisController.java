@@ -149,7 +149,7 @@ public class ApiAnalysisController {
         if (!columns.isEmpty()) {
             objectQueryWrapper.select(columns.toArray(new String[0]));
         }
-        List<Object> list = iService.list(objectQueryWrapper);
+        List<Object> list = iService.page(page, objectQueryWrapper).getRecords();
         return RestResponse.ok().list(list);
     }
 
