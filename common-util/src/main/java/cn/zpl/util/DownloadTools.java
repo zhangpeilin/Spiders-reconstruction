@@ -146,14 +146,18 @@ public class DownloadTools {
                     log.error("创建目录失败：" + saveDir);
                 }
             }
-            long threadcount = parts == 0 ? executor.getCorePoolSize() : parts;
-            long size = length / Long.parseLong(String.valueOf(threadcount));
-            for (int i = 0; i < threadcount; i++) {
+            long threadCount = parts == 0 ? executor.getCorePoolSize() : parts;
+            //如果大小超过500MB，则按照20MB一份切割
+            if (length > 524288000) {
+                threadCount = length / 20971520;
+            }
+            long size = length / Long.parseLong(String.valueOf(threadCount));
+            for (int i = 0; i < threadCount; i++) {
                 DownloadDTO copy = new DownloadDTO();
                 BeanUtils.copyProperties(copy, data);
                 long startIndex = i * size;
                 long endIndex = (i + 1) * size - 1;
-                if (i == threadcount - 1) {
+                if (i == threadCount - 1) {
                     endIndex = length - 1;
                 }
                 copy.setStartIndex(startIndex);
