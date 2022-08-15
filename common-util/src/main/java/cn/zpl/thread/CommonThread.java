@@ -3,13 +3,15 @@ package cn.zpl.thread;
 
 import cn.zpl.pojo.DoRetry;
 import cn.zpl.pojo.DownloadDTO;
+import cn.zpl.pojo.MultiPartInfoHolder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Vector;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public abstract class CommonThread implements Runnable {
+public abstract class CommonThread implements Runnable, Callable<MultiPartInfoHolder> {
 
 
     Vector<DownloadDTO> dtoList = new Vector<>();
@@ -70,5 +72,10 @@ public abstract class CommonThread implements Runnable {
             return false;
         }
 
+    }
+
+    @Override
+    public MultiPartInfoHolder call() throws Exception {
+        return null;
     }
 }

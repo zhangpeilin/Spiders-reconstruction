@@ -5,6 +5,7 @@ import cn.zpl.common.bean.NasPic;
 import cn.zpl.common.bean.Page;
 import cn.zpl.config.UrlConfig;
 import cn.zpl.pojo.DownloadDTO;
+import cn.zpl.pojo.MultiPartInfoHolder;
 import cn.zpl.spider.on.ehentai.config.Params;
 import cn.zpl.spider.on.ehentai.thread.SpiderOnNASThread;
 import cn.zpl.spider.on.ehentai.thread.SpiderOnNASThreadV2;
@@ -69,13 +70,22 @@ class NASDownload {
         config.setCommonQueryUrl("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&page=%4$s");
         config.setCommonSaveUrl("http://localhost:8080/common/dao/api/save");
         CrudTools<Object> crudTools = CrudTools.getInstance(config);
-        String headers = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36\n" +
-                "X-SYNO-SHARING: pKQcitKUk\n" +
-                "Cookie: sharing_sid=8HoM3CssjugSIfjO8mFjPfFCQ5wDlLuN; _SSID=wyfTjApLCEBKopZrHjj8SyDvz1yB5tpFHOOZ9zYHjmI; arp_scroll_position=1400.800048828125\n";
+        String headers = "Accept: */*\n" +
+                "Accept-Encoding: gzip, deflate\n" +
+                "Accept-Language: zh-CN,zh;q=0.9\n" +
+                "Connection: keep-alive\n" +
+//                "Content-Length: 281\n" +
+//                "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\n" +
+                "Cookie: sharing_sid=uzo-AmyC8gr1bNxj5tz38vjAvSpLxxIZ\n" +
+                "Host: www.ariess.info:5000\n" +
+                "Origin: http://www.ariess.info:5000\n" +
+                "Referer: http://www.ariess.info:5000/mo/sharing/pKQcitKUk\n" +
+                "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36\n" +
+                "X-SYNO-SHARING: pKQcitKUk";
         List<NasPic> nasPics;
         int i = 1;
         for (;i < 400; i++) {
-            nasPics = crudTools.commonApiQuery("type=\"unit\"", null, NasPic.class, new Page(i, 100));
+            nasPics = crudTools.commonApiQuery("type=video", null, NasPic.class, new Page(i, 2));
             if (nasPics.isEmpty()) {
                 log.debug("查询第{}页结果为空", i);
                 return;
@@ -86,6 +96,7 @@ class NASDownload {
 
     private static void dubusiness(DownloadTools tools, String headers, List<NasPic> nasPics, int i) {
         tools.restart(50);
+        List<MultiPartInfoHolder> holders = new ArrayList<>();
         log.debug("当前下载：page->{}", i);
         for (NasPic nasPic : nasPics) {
             DownloadDTO dto = new DownloadDTO();
@@ -93,7 +104,8 @@ class NASDownload {
             dto.setFileName(nasPic.getId());
             dto.setHeader(headers);
             List<String> path = new ArrayList<>();
-            path.add("L:\\nas");
+            path.add("/Users/zpl/Downloads/nas");
+            dto.setReferer(dto.getUrl());
             dto.setSavePath(CommonIOUtils.makeFilePath(path, dto.getFileName()));
             dto.setAlwaysRetry();
             if (new File(dto.getSavePath()).exists() && SaveLogForImages.isCompelete(dto)) {
@@ -103,10 +115,16 @@ class NASDownload {
             if ("video".equalsIgnoreCase(nasPic.getType())) {
                 URLConnectionTool.getDataLength(dto);
                 tools.MultipleThread(dto);
+                holders.add(dto.getInfoHolder());
             } else {
                 tools.ThreadExecutorAdd(new OneFileOneThread(dto));
             }
         }
         tools.shutdown();
+        for (MultiPartInfoHolder holder : holders) {
+            if (holder.isComplete()) {
+                SaveLogForImages.saveLog(holder.getDownloadDTO());
+            }
+        }
     }
 }

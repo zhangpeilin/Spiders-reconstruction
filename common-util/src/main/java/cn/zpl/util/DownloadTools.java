@@ -1,6 +1,7 @@
 package cn.zpl.util;
 
 import cn.zpl.pojo.DownloadDTO;
+import cn.zpl.pojo.MultiPartInfoHolder;
 import cn.zpl.thread.CommonThread;
 import cn.zpl.thread.DownloadWithMultipleThread;
 import lombok.extern.slf4j.Slf4j;
@@ -117,6 +118,41 @@ public class DownloadTools {
                 }
                 copy.setStartIndex(startIndex);
                 copy.setEndIndex(endIndex);
+                executor.execute(new DownloadWithMultipleThread(copy));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            MultipleThread(data);
+        }
+    }
+
+    public void MultipleThreadWithLog(DownloadDTO data) {
+        try {
+            long length = data.getFileLength();
+            if (0 == length) {
+                URLConnectionTool.getDataLength(data);
+            }
+            MultiPartInfoHolder infoHolder = data.getInfoHolder();
+            File saveDir = new File(data.getSavePath());
+            if (!saveDir.getParentFile().exists()) {
+                if (!saveDir.getParentFile().mkdirs()) {
+                    log.error("创建目录失败：" + saveDir);
+                }
+            }
+            long threadcount = parts == 0 ? executor.getCorePoolSize() : parts;
+            long size = length / Long.parseLong(String.valueOf(threadcount));
+            for (int i = 0; i < threadcount; i++) {
+                DownloadDTO copy = new DownloadDTO();
+                BeanUtils.copyProperties(copy, data);
+                long startIndex = i * size;
+                long endIndex = (i + 1) * size - 1;
+                if (i == threadcount - 1) {
+                    endIndex = length - 1;
+                }
+                copy.setStartIndex(startIndex);
+                copy.setEndIndex(endIndex);
+                infoHolder.addPartInfo(startIndex, endIndex);
+                copy.setInfoHolder(infoHolder);
                 executor.execute(new DownloadWithMultipleThread(copy));
             }
         } catch (Exception e) {

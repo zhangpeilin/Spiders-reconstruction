@@ -1,15 +1,21 @@
 package cn.zpl.pojo;
 
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
+@Slf4j
 public class DownloadDTO implements Serializable {
     private static final long serialVersionUID = -7236529950036387800L;
     private String url;
@@ -38,6 +44,8 @@ public class DownloadDTO implements Serializable {
     private SynchronizeLock synchronizeLock;
     private long fileLength = 0;
 
+    private MultiPartInfoHolder infoHolder;
+
     public DownloadDTO() {
         this.isProxy = false;
         this.doRetry = new DoRetry();
@@ -45,6 +53,7 @@ public class DownloadDTO implements Serializable {
         this.needLog = true;
         this.synchronizeLock = new SynchronizeLock();
         this.isImage = false;
+        this.infoHolder = new MultiPartInfoHolder(this);
         this.charsetName = "gbk";
         this.isStrict = false;
     }
@@ -235,6 +244,14 @@ public class DownloadDTO implements Serializable {
             return false;
         }
 
+    }
+
+    public MultiPartInfoHolder getInfoHolder() {
+        return infoHolder;
+    }
+
+    public void setInfoHolder(MultiPartInfoHolder infoHolder) {
+        this.infoHolder = infoHolder;
     }
 }
 
