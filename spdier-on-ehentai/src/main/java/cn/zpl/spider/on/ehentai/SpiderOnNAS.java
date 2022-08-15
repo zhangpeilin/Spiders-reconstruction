@@ -77,6 +77,7 @@ class NASDownload {
         for (;i < 400; i++) {
             nasPics = crudTools.commonApiQuery("type=\"unit\"", null, NasPic.class, new Page(i, 100));
             if (nasPics.isEmpty()) {
+                log.debug("查询第{}页结果为空", i);
                 return;
             }
             dubusiness(tools, headers, nasPics, i);
