@@ -5,6 +5,7 @@ import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.MultiPartInfoHolder;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.SaveLog;
+import cn.zpl.util.SaveLogForImages;
 import cn.zpl.util.URLConnectionTool;
 import cn.zpl.util.UrlContainer;
 import lombok.extern.slf4j.Slf4j;
@@ -167,9 +168,10 @@ public class DownloadWithMultipleThread extends CommonThread implements Runnable
 //    }
 
     public MultiPartInfoHolder doBusiness() {
+        MultiPartInfoHolder infoHolder = data.getInfoHolder();
         if (new File(data.getSavePath()).exists() && SaveLog.isCompeleteMultiple(data)) {
             log.debug(data.getSavePath() + "已下载，跳过");
-            return data.getInfoHolder().setCompleteInfo(startIndex, endIndex);
+            return infoHolder.setCompleteInfo(startIndex, endIndex);
         }
         UrlContainer container = new UrlContainer(data);
         HttpURLConnection conn = container.isHttps() ?
@@ -225,7 +227,13 @@ public class DownloadWithMultipleThread extends CommonThread implements Runnable
         } finally {
             CommonIOUtils.close(randomfile, is, conn);
         }
-        return data.getInfoHolder().setCompleteInfo(startIndex, endIndex);
+        infoHolder.setCompleteInfo(startIndex, endIndex);
+        if (infoHolder.isComplete()) {
+            SaveLogForImages.saveLog(infoHolder.getDownloadDTO());
+            return infoHolder;
+        } else {
+            return new MultiPartInfoHolder(data);
+        }
     }
 
     @Override
