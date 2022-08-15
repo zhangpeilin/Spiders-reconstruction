@@ -100,6 +100,7 @@ public class DownloadTools {
     public void MultipleThread(DownloadDTO data) {
         try {
             long length = data.getFileLength();
+            MultiPartInfoHolder infoHolder = data.getInfoHolder();
             File saveDir = new File(data.getSavePath());
             if (!saveDir.getParentFile().exists()) {
                 if (!saveDir.getParentFile().mkdirs()) {
@@ -118,6 +119,7 @@ public class DownloadTools {
                 }
                 copy.setStartIndex(startIndex);
                 copy.setEndIndex(endIndex);
+                copy.setInfoHolder(infoHolder);
                 executor.execute(new DownloadWithMultipleThread(copy));
             }
         } catch (Exception e) {
