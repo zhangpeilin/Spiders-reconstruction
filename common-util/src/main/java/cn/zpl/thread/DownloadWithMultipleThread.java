@@ -210,7 +210,7 @@ public class DownloadWithMultipleThread extends CommonThread implements Runnable
         } catch (RuntimeException e1) {
             //runtime错误表示超时，切换到代理下载
             CommonIOUtils.close(randomfile, is, conn);
-            data.setProxy(!data.isProxy());
+//            data.setProxy(!data.isProxy());
             log.error("下载超时：", e1);
             new DownloadWithMultipleThread(data).run();
         } catch (SocketException e) {

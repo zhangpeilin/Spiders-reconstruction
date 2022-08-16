@@ -85,7 +85,7 @@ class NASDownload {
         List<NasPic> nasPics;
         int i = 1;
         for (;i < 400; i++) {
-            nasPics = crudTools.commonApiQuery("type=video", null, NasPic.class, new Page(i, 2));
+            nasPics = crudTools.commonApiQuery(null, null, NasPic.class, new Page(i, 100));
             if (nasPics.isEmpty()) {
                 log.debug("查询第{}页结果为空", i);
                 return;
@@ -104,7 +104,7 @@ class NASDownload {
             dto.setFileName(nasPic.getId());
             dto.setHeader(headers);
             List<String> path = new ArrayList<>();
-            path.add("/Users/zpl/Downloads/nas");
+            path.add("C:\\视频爬虫\\nas2");
             dto.setReferer(dto.getUrl());
             dto.setSavePath(CommonIOUtils.makeFilePath(path, dto.getFileName()));
             dto.setAlwaysRetry();
@@ -114,17 +114,17 @@ class NASDownload {
             }
             if ("video".equalsIgnoreCase(nasPic.getType())) {
                 URLConnectionTool.getDataLength(dto);
-                tools.MultipleThread(dto);
+                tools.MultipleThreadWithLog(dto);
                 holders.add(dto.getInfoHolder());
             } else {
                 tools.ThreadExecutorAdd(new OneFileOneThread(dto));
             }
         }
         tools.shutdown();
-        for (MultiPartInfoHolder holder : holders) {
-            if (holder.isComplete()) {
-                SaveLogForImages.saveLog(holder.getDownloadDTO());
-            }
-        }
+//        for (MultiPartInfoHolder holder : holders) {
+//            if (holder.isComplete()) {
+//                SaveLogForImages.saveLog(holder.getDownloadDTO());
+//            }
+//        }
     }
 }

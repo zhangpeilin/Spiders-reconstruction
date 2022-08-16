@@ -28,15 +28,19 @@ public class ReadImgTypeAndRename {
      * 本地获取
      */
     public static void main(String[] args) {
+        extracted();
+    }
+
+    private static void extracted() {
         boolean reName = false;
-        String[] extensions = new String[]{"mp4"};
+        String[] extensions = new String[]{};
 //        File picture = new File("C:\\Users\\zpl\\Pictures");
-        File base = new File("C:\\nas");
-        File toSave = new File("C:\\nas第一批");
-        Collection<File> list = FileUtils.listFiles(base, extensions, true);
+        File base = new File("C:\\视频爬虫\\nas2");
+        File toSave = new File("C:\\视频爬虫\\nas");
+        Collection<File> list = FileUtils.listFiles(base, extensions.length == 0 ? null : extensions, true);
 //        File[] files = base.listFiles((FilenameFilter) FileFilterUtils.fileFileFilter());
         for (File file : list) {
-            String id = reName ? String.valueOf(CruxIdGenerator.generate()) : file.getName().substring(0, file.getName().indexOf("."));
+            String id = reName ? String.valueOf(CruxIdGenerator.generate()) : file.getName().contains(".") ? file.getName().substring(0, file.getName().indexOf(".")) : file.getName();
 //        System.out.println(files.length);
 //        BufferedImage sourceImg = ImageIO.read(Files.newInputStream(file.toPath()));
 //        String[] propertyNames = sourceImg.getPropertyNames();
@@ -73,6 +77,10 @@ public class ReadImgTypeAndRename {
                                 case "GIF":
                                     file.renameTo(new File(toSave, id + ".gif"));
                                     break;
+                                case "MP4":
+                                    file.renameTo(new File(toSave, id + ".mp4"));
+                                default:
+                                    file.renameTo(new File(toSave, id + "." + desc));
                             }
                         }
 
