@@ -10,8 +10,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.google.common.base.CaseFormat;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.reflections.Reflections;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -33,6 +37,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,6 +54,18 @@ public class ApiAnalysisController {
     @Resource
     UrlConfig config;
     public static Set<Class<? extends Serializable>> entityList = new HashSet<>();
+
+    public ThreadLocal<Class<?>> entityCache = new ThreadLocal<>();
+    private static final LoadingCache<String, Class<?>> cache = CacheBuilder.newBuilder()
+            .maximumSize(2000)
+                .expireAfterWrite(12, TimeUnit.HOURS)
+                .build(new CacheLoader<String, Class<?>>() {
+                    @Override
+                    public Class<?> load(@NotNull String key) {
+                        return getEntityExists(key);
+                    }
+                });
+
 
     //路径规则：entity代表要查询的实体对象
     ///api/mofdiv?size=999999&fetchProperties=*,parent[id,name,code,lastModifiedVersion]&sort=code,asc
@@ -111,20 +129,26 @@ public class ApiAnalysisController {
         if (StringUtils.isEmpty(condition)) {
             condition = config.getNothing();
         }
+        if (page == null) {
+            page = new Page<>(1, 20);
+        }
         log.debug(entity);
         log.debug(fetchProperties);
         log.debug(condition);
         log.debug(String.valueOf(size));
-        IService<Object> iService = (IService<Object>) SpringContext.getBeanDefinitionName(entity);
+//        IService<Object> iService = (IService<Object>) SpringContext.getBeanDefinitionName(entity);
+        IService<Object> iService = null;
+        try {
+            iService = SpringContext.getBeanWithGenerics((Class<Object>) cache.get(entity));
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
         if (iService == null) {
             log.error("未找到service类");
             return RestResponse.fail("未找到service类");
         }
         Pattern compile = Pattern.compile("[^=\\[\\],']+");
         if ("[*]".equals(condition)) {
-            if (page == null) {
-                page = new Page<>(0, 100);
-            }
             iService.page(page);
             return RestResponse.ok().list(page.getRecords());
         }
@@ -153,7 +177,13 @@ public class ApiAnalysisController {
         return RestResponse.ok().list(list);
     }
 
-    private boolean checkEntityExists(String entity) {
+    @SneakyThrows
+    private boolean checkEntityExists(String entity){
+        Class<?> aClass = cache.get(entity);
+        return aClass == null;
+    }
+
+    private static Class<?> getEntityExists(String entity) {
         Class<?> aClass;
         if (entityList.isEmpty()) {
             Reflections reflections = new Reflections("cn.zpl.common.bean");
@@ -171,12 +201,7 @@ public class ApiAnalysisController {
         }
         Optional<Class<? extends Serializable>> first = entityList.stream().filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(entity)).findFirst();
 //        log.debug(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, "PictureAnalyze"));
-        if (first.isPresent()) {
-            aClass = first.get();
-        } else {
-            return true;
-        }
-        return false;
+        return first.orElse(null);
     }
 
     @SneakyThrows
