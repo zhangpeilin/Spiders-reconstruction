@@ -49,9 +49,6 @@ public class ApiAnalysisController {
 
 
     @Resource
-    IBikaService bikaService;
-
-    @Resource
     UrlConfig config;
     public static Set<Class<? extends Serializable>> entityList = new HashSet<>();
 
@@ -137,7 +134,7 @@ public class ApiAnalysisController {
         log.debug(condition);
         log.debug(String.valueOf(size));
 //        IService<Object> iService = (IService<Object>) SpringContext.getBeanDefinitionName(entity);
-        IService<Object> iService = null;
+        IService<Object> iService;
         try {
             iService = SpringContext.getBeanWithGenerics((Class<Object>) cache.get(entity));
         } catch (ExecutionException e) {
@@ -204,24 +201,4 @@ public class ApiAnalysisController {
         return first.orElse(null);
     }
 
-    @SneakyThrows
-    @Deprecated
-    private IService loadServiceByEntity(String entity) {
-
-        Reflections reflections = new Reflections("classpath:\\cn.zpl.commondaocenter.service.impl");
-        Set<Class<? extends IService>> serviceImplements = reflections.getSubTypesOf(IService.class);
-        for (Class<? extends IService> serviceImplement : serviceImplements) {
-            System.out.println(serviceImplement.getName());
-        }
-        Optional<Class<? extends IService>> first = serviceImplements.stream().filter(aClass -> {
-            return !aClass.isInterface() && (aClass.getGenericSuperclass() instanceof ParameterizedType) && ((Class<?>) ((ParameterizedTypeImpl) aClass.getGenericSuperclass()).getActualTypeArguments()[1]).getSimpleName().equalsIgnoreCase(entity);
-        }).findFirst();
-        if (first.isPresent()) {
-            Object bean = SpringContext.getBean(Introspector.decapitalize(ClassUtils.getShortName(first.get())));
-            log.debug("注入的service：{}", bikaService);
-            log.debug("自己解析的service：{}", bean);
-            return (IService) bean;
-        }
-        return null;
-    }
 }
