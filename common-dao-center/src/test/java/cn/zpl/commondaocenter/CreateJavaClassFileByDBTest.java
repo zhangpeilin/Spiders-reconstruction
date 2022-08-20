@@ -21,7 +21,7 @@ public class CreateJavaClassFileByDBTest {
     String userName;
     @Value("${spring.datasource.password}")
     String password;
-    String tableName = "nas_page";
+    String tableName = "bika_list_new2";
     String outPutDir = "/Users/zpl/dev/" + tableName;
     @Test
     void test() throws IOException {

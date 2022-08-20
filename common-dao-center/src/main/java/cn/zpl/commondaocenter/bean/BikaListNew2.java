@@ -1,8 +1,9 @@
-package cn.zpl.common.bean;
+package cn.zpl.commondaocenter.bean;
 
-import io.swagger.annotations.ApiModel;
-
+import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * <p>
@@ -12,8 +13,9 @@ import java.io.Serializable;
  * @author zpl
  * @since 2022-08-20
  */
-@ApiModel(value = "BikaList对象", description = "")
-public class BikaList implements Serializable {
+@TableName("bika_list_new2")
+@ApiModel(value = "BikaListNew2对象", description = "")
+public class BikaListNew2 implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -200,7 +202,7 @@ public class BikaList implements Serializable {
 
     @Override
     public String toString() {
-        return "BikaList{" +
+        return "BikaListNew2{" +
             "id=" + id +
             ", title=" + title +
             ", description=" + description +

@@ -1,53 +1,47 @@
 package cn.zpl.spider.on.bika.thread;
 
 import cn.zpl.common.bean.BikaList;
+import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.bika.common.BikaParams;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
+import cn.zpl.thread.CommonThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Resource;
 import java.net.URLEncoder;
 import java.util.Vector;
 
 @Slf4j
-public class BikaPageThread implements Runnable {
+public class BikaPageThread extends BikaCommonThread {
 
     private final int page;
 
     private final String keyword;
     private final boolean isNeedDownload;
 
-    @Contract(pure = true)
+
     public BikaPageThread(int page, String keyword, boolean isNeedDownload) {
         this.page = page;
         this.keyword = keyword;
         this.isNeedDownload = isNeedDownload;
     }
 
-    @Override
-    public void run() {
-        try {
-            domain();
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("线程异常：第" + page + "页分析出错，重新分析");
-            run();
-        }
-    }
-
+    @SneakyThrows
     public void domain() {
         try {
             String part;
             Vector<BikaList> listVector = new Vector<>();
             part = "comics?page=" + page + "&c=" + URLEncoder.encode(keyword, "utf-8") + "&s=ua";
-            JsonObject partJson = BikaUtils.getJsonByUrl(part);
+            JsonObject partJson = bikaUtils.getJsonByUrl(part);
             JsonElement comics = CommonIOUtils.getFromJson2(partJson, "data-comics-docs");
             if (comics instanceof JsonArray) {
                 DownloadTools tool = DownloadTools.getInstance(20);
@@ -67,8 +61,9 @@ public class BikaPageThread implements Runnable {
                 tool.shutdown();
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            domain();
+            log.error("线程异常：第" + page + "页分析出错，重新分析");
+            log.error("错误原因", e);
+            throw e;
         }
     }
 

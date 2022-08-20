@@ -57,8 +57,18 @@ public class CrudTools<T> {
         return responseEntity.getBody();
     }
 
+
+    @SuppressWarnings("unchecked")
     public static RestResponse commonApiSave(Object bean) {
-        String entity = bean.getClass().getSimpleName();
+
+        String entity;
+        if (bean instanceof List) {
+            List<Object> list = (List<Object>) bean;
+            entity = list.get(0).getClass().getSimpleName();
+        } else {
+            entity = bean.getClass().getSimpleName();
+
+        }
         HashMap<String, Object> params = new HashMap<>();
         params.put("entity", entity);
         params.put("data", bean);
@@ -71,6 +81,7 @@ public class CrudTools<T> {
     public <T> List<T> commonApiQueryBySql(String sql, Class<T> tClass) {
         return commonApiQuery(sql, null, tClass);
     }
+
     public T commonApiQuery(String id, Class<T> tClass) {
         return commonApiQuery("id=" + id, null, tClass).get(0);
     }
@@ -86,6 +97,7 @@ public class CrudTools<T> {
     public <R> List<R> commonApiQuery(String condition, String fetchProperties, Class<R> tClass) {
         return commonApiQuery(condition, fetchProperties, tClass, new Page(1, 20));
     }
+
     public <R> List<R> commonApiQuery(String condition, String fetchProperties, Class<R> tClass, Page page) {
         String entity = tClass.getSimpleName();
         if (StringUtils.isEmpty(fetchProperties)) {

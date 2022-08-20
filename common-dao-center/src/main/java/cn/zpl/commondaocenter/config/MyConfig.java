@@ -36,6 +36,11 @@ public class MyConfig {
     }
 
     @Bean
+    public OriSqlInjector oriSqlInjector() {
+        return new OriSqlInjector();
+    }
+
+    @Bean
     public WebMvcConfigurer webMvcConfigurer(){
         return new WebMvcConfigurer() {
             @Override
