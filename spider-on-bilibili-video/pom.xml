@@ -51,6 +51,12 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>31.1-android</version>
+            <scope>test</scope>
+        </dependency>
         <!--        <dependency>-->
 <!--            <groupId>cn.zpl</groupId>-->
 <!--            <artifactId>common-bean</artifactId>-->
