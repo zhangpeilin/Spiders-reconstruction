@@ -14,6 +14,8 @@ import java.util.concurrent.TimeUnit;
 public abstract class CommonThread implements Runnable, Callable<MultiPartInfoHolder> {
 
 
+    public void init() {
+    }
     Vector<DownloadDTO> dtoList = new Vector<>();
 
     public DoRetry getDoRetry() {
@@ -43,6 +45,7 @@ public abstract class CommonThread implements Runnable, Callable<MultiPartInfoHo
     @Override
     public void run() {
         try {
+            init();
             domain();
         } catch (Exception e) {
             if (doWhenFailed(e) && doRetry()) {

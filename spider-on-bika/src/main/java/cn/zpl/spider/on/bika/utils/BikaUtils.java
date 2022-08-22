@@ -6,6 +6,7 @@ import cn.zpl.common.bean.BikaDownloadFailed;
 import cn.zpl.common.bean.BikaList;
 import cn.zpl.common.bean.Token;
 import cn.zpl.config.CommonParams;
+import cn.zpl.config.UrlConfig;
 import cn.zpl.pojo.Data;
 import cn.zpl.spider.on.bika.common.BikaParams;
 import cn.zpl.util.CommonIOUtils;
@@ -28,6 +29,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -48,6 +50,7 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @EnableConfigurationProperties(BikaParams.class)
+@Component
 public class BikaUtils {
 
     public static Map<String, Bika> exists = new ConcurrentHashMap<>();
@@ -64,16 +67,6 @@ public class BikaUtils {
 
     public static final Map<String, AtomicInteger> progress = new HashMap<>();
     
-    public static BikaUtils getInstance() {
-        synchronized (BikaUtils.class) {
-            if (utils == null) {
-                utils = new BikaUtils();
-            }
-            else return utils;
-        }
-        return utils;
-    }
-
     public Bika getExists(String comicid) {
         if (!BikaParams.writeDB){
             return null;
@@ -128,7 +121,7 @@ public class BikaUtils {
             Token dto = new Token();
             dto.setId(String.valueOf(System.currentTimeMillis()));
             dto.setToken(token);
-            CrudTools.commonApiSave(token);
+            CrudTools.commonApiSave(dto);
             currentToken = token;
         } catch (Exception e) {
             Login();
@@ -139,19 +132,20 @@ public class BikaUtils {
         if (currentToken != null && !"".equals(currentToken)) {
             return currentToken;
         }
-            CrudTools<Token> crudTools;
-        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
-            crudTools = context.getBean("crudTools", CrudTools.class);
-        }
+        UrlConfig config = new UrlConfig();
+        config.setNothing("*");
+        config.setCommonQueryUrl("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&page=%4$s");
+        config.setCommonSaveUrl("http://localhost:8080/common/dao/api/save");
+        CrudTools<Object> crudTools = CrudTools.getInstance(config);
         //id是字符串，需要转换成数字后排序
-        List<Token> list0 = crudTools.commonApiQueryBySql("SELECT * from token ORDER BY CAST(id as UNSIGNED) desc LIMIT 0,1", Token.class);
+        List<Token> list0 = crudTools.commonApiQueryBySql("sql:SELECT * from token ORDER BY CAST(id as UNSIGNED) desc LIMIT 0,1", Token.class);
         if (list0.size() == 1) {
             currentToken = list0.get(0).getToken();
         }
         return currentToken;
     }
 
-    public static JsonObject post(String path, String params) {
+    public JsonObject post(String path, String params) {
         try {
             return postUrl(path, params);
         } catch (IOException e) {
@@ -159,7 +153,7 @@ public class BikaUtils {
         }
     }
 
-    public static JsonObject postUrl(String path, String params) throws IOException {
+    public JsonObject postUrl(String path, String params) throws IOException {
         JsonObject json = new JsonObject();
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpHost proxy = new HttpHost(CommonParams.hostName, CommonParams.proxyPort);
@@ -179,7 +173,7 @@ public class BikaUtils {
         log.debug(content);
         json = Objects.requireNonNull(CommonIOUtils.paraseJsonFromStr(content)).getAsJsonObject();
         if ("401".equals(json.get("code").getAsString()) && "unauthorized".equals(json.get("message").getAsString())) {
-            BikaUtils.getInstance().Login();
+            Login();
             return postUrl(path, params);
         }
         return json;
@@ -256,7 +250,7 @@ public class BikaUtils {
         }
     }
 
-    public static JsonObject getJsonByUrl(String path) {
+    public JsonObject getJsonByUrl(String path) {
         Data data = new Data();
         data.setProxy(true);
         data.setType("json");
@@ -265,7 +259,7 @@ public class BikaUtils {
         data.setWaitSeconds(1000);
         CommonIOUtils.withTimer(data);
         if (data.getStatusCode() == 401) {
-            BikaUtils.getInstance().Login();
+            Login();
             return getJsonByUrl(path);
         }
         if (data.getStatusCode() == 400) {
@@ -279,7 +273,7 @@ public class BikaUtils {
             throw new RuntimeException("获取json失败");
         }
         if ("401".equals(json.get("code").getAsString()) && "unauthorized".equals(json.get("message").getAsString())) {
-            BikaUtils.getInstance().Login();
+            Login();
             return getJsonByUrl(path);
         }
         if (!"200".equals(json.get("code").getAsString())) {

@@ -1,6 +1,7 @@
 package cn.zpl.commondaocenter.controller;
 
 import cn.zpl.common.bean.RestResponse;
+import cn.zpl.commondaocenter.mapper.OriSqlMapper;
 import cn.zpl.commondaocenter.service.IBikaService;
 import cn.zpl.commondaocenter.utils.SpringContext;
 import cn.zpl.config.UrlConfig;
@@ -15,8 +16,12 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.jetbrains.annotations.NotNull;
+import org.mybatis.spring.SqlSessionTemplate;
 import org.reflections.Reflections;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,9 +37,16 @@ import javax.annotation.Resource;
 import java.beans.Introspector;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -47,6 +59,15 @@ import java.util.regex.Pattern;
 @RequestMapping("common/dao")
 public class ApiAnalysisController {
 
+
+    @Resource
+    IBikaService bikaService;
+
+    @Resource
+    OriSqlMapper oriSqlMapper;
+
+    @Resource
+    private SqlSessionTemplate sqlSessionTemplate;
 
     @Resource
     UrlConfig config;
@@ -70,7 +91,7 @@ public class ApiAnalysisController {
     @SuppressWarnings("unchecked")
     public <T> RestResponse  commonEntitySave(@RequestBody JSONObject requestJson) {
         String entity = requestJson.getString("entity");
-        JSONObject data = requestJson.getJSONObject("data");
+        Object data = requestJson.get("data");
         if (checkEntityExists(entity)) {
             return RestResponse.fail("找不到实体类");
         }
@@ -134,7 +155,7 @@ public class ApiAnalysisController {
         log.debug(condition);
         log.debug(String.valueOf(size));
 //        IService<Object> iService = (IService<Object>) SpringContext.getBeanDefinitionName(entity);
-        IService<Object> iService;
+        IService<Object> iService = null;
         try {
             iService = SpringContext.getBeanWithGenerics((Class<Object>) cache.get(entity));
         } catch (ExecutionException e) {
@@ -145,6 +166,26 @@ public class ApiAnalysisController {
             return RestResponse.fail("未找到service类");
         }
         Pattern compile = Pattern.compile("[^=\\[\\],']+");
+        if (condition.startsWith("[sql:")) {
+            List<Map<String, Object>> list = new ArrayList<>();
+            SqlSession sqlSession = openSession();
+            String sql = condition.replaceAll("\\[sql:|]", "");
+            try (PreparedStatement preparedStatement = sqlSession.getConnection().prepareStatement(sql)) {
+                ResultSet resultSet = preparedStatement.executeQuery();
+                ResultSetMetaData md = resultSet.getMetaData(); //获得结果集结构信息,元数据
+                int columnCount = md.getColumnCount();   //获得列数
+                while (resultSet.next()) {
+                    Map<String,Object> rowData = new HashMap<String,Object>();
+                    for (int i = 1; i <= columnCount; i++) {
+                        rowData.put(md.getColumnName(i), resultSet.getObject(i));
+                    }
+                    list.add(rowData);
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            return RestResponse.ok().list(list);
+        }
         if ("[*]".equals(condition)) {
             iService.page(page);
             return RestResponse.ok().list(page.getRecords());
@@ -201,4 +242,29 @@ public class ApiAnalysisController {
         return first.orElse(null);
     }
 
+    @SneakyThrows
+    @Deprecated
+    private IService loadServiceByEntity(String entity) {
+
+        Reflections reflections = new Reflections("classpath:\\cn.zpl.commondaocenter.service.impl");
+        Set<Class<? extends IService>> serviceImplements = reflections.getSubTypesOf(IService.class);
+        for (Class<? extends IService> serviceImplement : serviceImplements) {
+            System.out.println(serviceImplement.getName());
+        }
+        Optional<Class<? extends IService>> first = serviceImplements.stream().filter(aClass -> {
+            return !aClass.isInterface() && (aClass.getGenericSuperclass() instanceof ParameterizedType) && ((Class<?>) ((ParameterizedTypeImpl) aClass.getGenericSuperclass()).getActualTypeArguments()[1]).getSimpleName().equalsIgnoreCase(entity);
+        }).findFirst();
+        if (first.isPresent()) {
+            Object bean = SpringContext.getBean(Introspector.decapitalize(ClassUtils.getShortName(first.get())));
+            log.debug("注入的service：{}", bikaService);
+            log.debug("自己解析的service：{}", bean);
+            return (IService) bean;
+        }
+        return null;
+    }
+
+    private SqlSession openSession() {
+        SqlSessionFactory sqlSessionFactory = sqlSessionTemplate.getSqlSessionFactory();
+        return sqlSessionFactory.openSession();
+    }
 }

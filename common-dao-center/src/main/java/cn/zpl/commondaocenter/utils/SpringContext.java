@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-@Configuration
+@Configuration("dao.SpringContext")
 public class SpringContext implements ApplicationContextAware {
     private static ApplicationContext applicationContext;
 

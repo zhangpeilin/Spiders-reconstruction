@@ -20,44 +20,19 @@ import java.nio.file.LinkOption;
 import java.nio.file.Paths;
 
 @Slf4j
-public class BikaComicThread extends CommonThread {
+public class BikaComicThread extends BikaCommonThread {
 
     private final String comicId;
     private final boolean isNeedDownload;
-    private final Bika data = new Bika();
-
-    @Resource
-    BikaUtils bikaUtils;
 
     public BikaComicThread(String comicId, boolean isNeedDownload) {
         this.comicId = comicId;
         this.isNeedDownload = isNeedDownload;
-        data.setId(comicId);
     }
-
-//    @Override
-//    public void run() {
-//        try {
-//            domain();
-//        } catch (RuntimeException runtimeException) {
-//
-//            if (data.canDoRetry()) {
-//                data.doRetry();
-//                run();
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            log.error("线程异常：" + comicId + "章节分析出错，重新分析");
-//            if (data.canDoRetry()) {
-//                data.doRetry();
-//                run();
-//            }
-//        }
-//    }
 
     @Override
     public boolean doWhenFailed(Exception e) {
-        e.printStackTrace();
+        log.error("下载失败，错误原因：", e);
         log.error(comicId + "下载失败，记录日志");
         BikaDownloadFailed failed = new BikaDownloadFailed();
         failed.setId(comicId);
@@ -84,7 +59,7 @@ public class BikaComicThread extends CommonThread {
             log.debug(comicId + "漫画已下载且上次更新日期在7天内，跳过");
             return;
         }
-        JsonObject info = BikaUtils.getJsonByUrl(getComicsInfo);
+        JsonObject info = bikaUtils.getJsonByUrl(getComicsInfo);
         if (!BikaParams.isForceDownload && bikaUtils.needSkip(info)) {
             log.debug(comicId + "跳过");
             return;
@@ -136,7 +111,7 @@ public class BikaComicThread extends CommonThread {
         int maxPage = 1;
         for (; page <= maxPage; page++) {
             String getChapters = "comics/" + comicId + "/eps?page=" + page;
-            JsonObject chapters = BikaUtils.getJsonByUrl(getChapters);
+            JsonObject chapters = bikaUtils.getJsonByUrl(getChapters);
 
             maxPage = CommonIOUtils.getFromJson2(chapters, "data-eps-pages").getAsInt();
             JsonElement chapter_list = CommonIOUtils.getFromJson2(chapters, "data-eps-docs");

@@ -64,7 +64,7 @@ public class BikaChapterThread implements Runnable {
         while (true) {
 
             String getImgs = "comics/" + comicid + "/order/" + chapternum + "/pages?page=" + i;
-            JsonObject imgJson = BikaUtils.getJsonByUrl(getImgs);
+            JsonObject imgJson = utils.getJsonByUrl(getImgs);
             int max_age = CommonIOUtils.getFromJson2Integer(imgJson, "data-pages-pages");
             JsonElement img_list = CommonIOUtils.getFromJson2(imgJson, "data-pages-docs");
             for (JsonElement img_detail : img_list.getAsJsonArray()) {
