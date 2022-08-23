@@ -115,7 +115,7 @@ public class ApiAnalysisController {
             IService<T> iService = (IService<T>) SpringContext.getBeanDefinitionName(entity);
             assert iService != null;
             if (serializable == null && serializables != null) {
-                flag = iService.saveBatch(serializables);
+                flag = iService.saveOrUpdateBatch(serializables);
             }
             if (serializable != null) {
                 flag = iService.save(serializable);
