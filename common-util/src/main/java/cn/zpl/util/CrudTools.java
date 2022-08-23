@@ -51,6 +51,7 @@ public class CrudTools<T> {
         return crudTools;
     }
 
+    @Deprecated
     public RestResponse commonSave(Object data) {
         ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(config.getCommonSaveUrl(), data, RestResponse.class);
         log.debug(String.valueOf(responseEntity));
