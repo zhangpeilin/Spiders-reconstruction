@@ -4,7 +4,6 @@ import cn.zpl.tencent.common.TencentParams;
 import cn.zpl.tencent.config.TencentConfig;
 import cn.zpl.util.CommonIOUtils;
 import com.google.gson.JsonElement;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -36,14 +35,14 @@ public class TestCorpWx {
             Calendar instance = Calendar.getInstance();
             DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             String format = dateFormat.format(instance.getTime());
-            int hour = instance.get(Calendar.HOUR_OF_DAY);
+//            int hour = instance.get(Calendar.HOUR_OF_DAY);
             String postdata = null;
-            hour = instance.get(Calendar.HOUR_OF_DAY);
+//            hour = instance.get(Calendar.HOUR_OF_DAY);
             ResponseEntity<String> exchange = restTemplate.exchange("http://www.szse.cn/api/report/ShowReport/data?SHOWTYPE=JSON&CATALOGID=option_hybg&loading=first", HttpMethod.GET, new HttpEntity<String>(headers), String.class);
             JsonElement jsonElement = CommonIOUtils.paraseJsonFromStr(exchange.getBody());
             if (jsonElement.isJsonArray()) {
                 JsonElement element = jsonElement.getAsJsonArray().get(0);
-                JsonElement data = CommonIOUtils.getFromJson2(element, "data");
+//                JsonElement data = CommonIOUtils.getFromJson2(element, "data");
                 JsonElement conditions = CommonIOUtils.getFromJson2(element, "metadata-conditions");
                 if (conditions.isJsonArray()) {
                     String defaultValue = conditions.getAsJsonArray().get(0).getAsJsonObject().get("defaultValue").getAsString();
@@ -62,7 +61,7 @@ public class TestCorpWx {
             }
             String token = swx.getToken(tencentParams.getCorpId(), tencentParams.getCorpSecret());
             swx.post("utf-8", WeChatMsgSend.CONTENT_TYPE, (new WeChatUrlData()).getSendMessage_Url(), postdata, token);
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(5);
             postdata = swx.createpostdata(tencentParams.getToUser(), "text", tencentParams.getApplicationId(), "content", "记得吃药");
             String resp = swx.post("utf-8", WeChatMsgSend.CONTENT_TYPE, (new WeChatUrlData()).getSendMessage_Url(), postdata, token);
             String errcode = CommonIOUtils.getFromJson2Str(CommonIOUtils.paraseJsonFromStr(resp), "errcode");
