@@ -142,6 +142,7 @@ public class CommonIOUtils {
                 return false;
             }
             log.error("执行出错：\n", exception);
+            log.error("重新请求，当前重试次数：{}", executionCount);
             if (exception != null) {
                 return true;
             }
