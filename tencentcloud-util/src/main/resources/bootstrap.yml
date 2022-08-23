@@ -1,0 +1,7 @@
+spring:
+  cloud:
+    config:
+      label: master
+      name: common,tencent
+      profile: online
+      uri: http://localhost:3344

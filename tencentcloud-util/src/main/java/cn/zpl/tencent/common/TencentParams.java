@@ -18,4 +18,6 @@ public class TencentParams {
     public String corpSecret;
 
     public int applicationId;
+
+    public String toUser;
 }
