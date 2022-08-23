@@ -47,7 +47,7 @@ public class TestCorpWx {
                         if (conditions.isJsonArray()) {
                             String defaultValue = conditions.getAsJsonArray().get(0).getAsJsonObject().get("defaultValue").getAsString();
                             if (defaultValue.equals(format)) {
-                                postdata = swx.createpostdata("@all", "text", tencentParams.getApplicationId(), "content", "网站更新了");
+                                postdata = swx.createpostdata(tencentParams.getToUser(), "text", tencentParams.getApplicationId(), "content", "网站更新了");
                                 break;
                             }
 //                        if (data.isJsonArray() && data.getAsJsonArray().size() == 0 && ) {
@@ -60,7 +60,9 @@ public class TestCorpWx {
 
                 TimeUnit.SECONDS.sleep(10);
             }
-
+            if (postdata == null) {
+                return;
+            }
             String token = swx.getToken(tencentParams.getCorpId(), tencentParams.getCorpSecret());
             String resp = swx.post("utf-8", WeChatMsgSend.CONTENT_TYPE, (new WeChatUrlData()).getSendMessage_Url(), postdata, token);
             System.out.println("获取到的token======>" + token);
