@@ -2,16 +2,20 @@ package cn.zpl.tencent.common;
 
 import cn.zpl.annotation.Value;
 import cn.zpl.util.InitConfigFactory;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
+@Data
+@ConfigurationProperties(prefix = "spider.tencent")
 public class TencentParams {
 
-    @Value("SecretId")
     public static String SecretId;
-    @Value("SecretKey")
     public static String SecretKey;
-    @Value("region")
     public static String region;
-    static {
-        InitConfigFactory.loadPropertyByClass(TencentParams.class,"tencent-ai-params.properties");
-    }
+
+    public String corpId;
+
+    public String corpSecret;
+
+    public int applicationId;
 }
