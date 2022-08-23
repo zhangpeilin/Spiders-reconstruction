@@ -331,6 +331,8 @@ public class FFMEPGToolsPatch {
     public static boolean mergeXDFTs(VideoInfo video) {
         List<String> command = new ArrayList<>();
         command.add("E:\\ffmpeg-master-latest-win64-gpl-shared\\bin\\ffmpeg");
+        command.add("-protocol_whitelist");
+        command.add("file,http,https,rtp,udp,tcp,crypto,tls");
         command.add("-allowed_extensions");
         command.add("ALL");
         command.add("-y");
