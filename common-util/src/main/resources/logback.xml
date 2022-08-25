@@ -23,7 +23,7 @@
     <!--</logger>-->
 
     <!-- TRACE < DEBUG < INFO < WARN < ERROR -->
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT" />
     </root>
 
