@@ -1,5 +1,6 @@
 package cn.zpl.commondaocenter;
 
+import cn.zpl.commondaocenter.config.MyProperties;
 import com.baomidou.mybatisplus.generator.FastAutoGenerator;
 import com.baomidou.mybatisplus.generator.config.OutputFile;
 import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -21,10 +23,14 @@ public class CreateJavaClassFileByDBTest {
     String userName;
     @Value("${spring.datasource.password}")
     String password;
-    String tableName = "bika_list_new2";
-    String outPutDir = "/Users/zpl/dev/" + tableName;
+    String tableName = "cron";
+
+    @Resource
+    MyProperties myProperties;
     @Test
     void test() throws IOException {
+        String outPutDir = myProperties.getCreateTablePath() + tableName;
+
         if (!new File(outPutDir).exists()) {
             FileUtils.forceMkdir(new File(outPutDir));
         }
