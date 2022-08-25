@@ -175,7 +175,7 @@ public class ApiAnalysisController {
                 ResultSetMetaData md = resultSet.getMetaData(); //获得结果集结构信息,元数据
                 int columnCount = md.getColumnCount();   //获得列数
                 while (resultSet.next()) {
-                    Map<String,Object> rowData = new HashMap<String,Object>();
+                    Map<String,Object> rowData = new HashMap<>();
                     for (int i = 1; i <= columnCount; i++) {
                         rowData.put(md.getColumnName(i), resultSet.getObject(i));
                     }
@@ -184,6 +184,7 @@ public class ApiAnalysisController {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
+            sqlSession.close();
             return RestResponse.ok().list(list);
         }
         if ("[*]".equals(condition)) {
