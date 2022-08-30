@@ -17,14 +17,13 @@ public class Download {
     public static void main(String[] args) throws IOException, InterruptedException {
         m3u8Core core = new m3u8Core();
         String[] extensions = new String[]{"m3u8"};
-        File base = new File("E:\\m3u8\\temp");
+        File base = new File("E:\\m3u8\\1\\新建文件夹");
         Collection<File> list = FileUtils.listFiles(base, extensions.length == 0 ? null : extensions, true);
 //        core.setHost("https://play.bo588588.com");
         core.setDirectory("E:\\m3u8\\");
 //        core.setFileName("ph601ec79ccbbbd" + ".ts");
 //        core.downloadCore("https://jdvv009.microclassonline.com/20220726/Ql6PS69p/index.m3u8");
         DownloadTools tools = DownloadTools.getInstance(5);
-        String path = "E:\\m3u8\\temp";
         for (File file : list) {
             tools.ThreadExecutorAdd(new M3u8FileDownloadThread(file.getPath()));
         }

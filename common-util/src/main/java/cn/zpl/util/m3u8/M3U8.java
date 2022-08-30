@@ -1,15 +1,19 @@
 package cn.zpl.util.m3u8;
 
 import com.alibaba.fastjson.JSON;
+import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Data
 public class M3U8 {
         private String basepath;
         private String fpath;
         private List<M3U8Ts> tsList = new ArrayList<>();
         private List<M3U8> m3u8List = new ArrayList<>();
+
+        private String keyUrl;
 
         private String filePath;
         private String fileName;

@@ -5,6 +5,7 @@ import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.thread.CommonThread;
 import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.CruxIdGenerator;
 import cn.zpl.util.FFMEPGToolsPatch;
 import cn.zpl.util.m3u8.M3U8;
 import cn.zpl.util.m3u8.M3U8Ts;
@@ -21,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
@@ -36,6 +38,7 @@ import java.util.regex.Pattern;
 public class M3u8FileDownloadThread extends CommonThread {
 
     String path;
+
     public M3u8FileDownloadThread(String path) {
         this.path = path;
     }
@@ -102,6 +105,7 @@ public class M3u8FileDownloadThread extends CommonThread {
      * 下载完的文件所放的文件夹名字
      */
     private String foldername = UUID.randomUUID().toString().replaceAll("-", "");
+
     public void downloadCore(String url) throws IOException, InterruptedException {
         //通过剪切板获取复制的url
         if (url != null && (url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"))) {
@@ -152,7 +156,12 @@ public class M3u8FileDownloadThread extends CommonThread {
         System.out.println("下载完成，文件在: " + folderpath);
     }
 
-    public void domain() throws Exception{
+    public static void main(String[] args) {
+        M3u8FileDownloadThread m3u8FileDownloadThread = new M3u8FileDownloadThread("E:\\333\\index.m3u8");
+        m3u8FileDownloadThread.run();
+    }
+
+    public void domain() throws Exception {
         downloadByM3U8(path);
     }
 
@@ -167,18 +176,21 @@ public class M3u8FileDownloadThread extends CommonThread {
             System.out.println("文件夹：" + folderpath + "已存在！");
             return;
         }
-        //获取到地址里面的m3u8文件名称
         final String m3u8name = m3u8File.getName();
         //解析M3U8地址为对象
         M3U8 m3u8 = parseIndex(m3u8File.getParent(), m3u8name, "http://test.com");
 
         //根据M3U8对象获取时长
         float duration = getDuration(m3u8);
+        m3u8.setFileName(m3u8name);
+        m3u8.setFilePath(path);
         System.out.println("时长: " + ((int) duration / 60) + "分" + (int) duration % 60 + "秒");
         //重命名文件名
         //根据M3U8对象下载视频段
+        String m3u8Path = buildM3U8File(m3u8);
+        download(m3u8);
         VideoInfo info = new VideoInfo();
-        info.setSavedLocalName(new File(folderpath, CommonIOUtils.filterFileName2(m3u8name)).getPath());
+        info.setSavedLocalName(m3u8Path);
         info.setTimeLength(String.valueOf(duration * 1000));
         FFMEPGToolsPatch.mergeXDFTs(info);
 
@@ -312,7 +324,7 @@ public class M3u8FileDownloadThread extends CommonThread {
      * @param m3u8
      */
     public void download(final M3U8 m3u8) {
-        ExecutorService executor = Executors.newFixedThreadPool(10);
+        ExecutorService executor = Executors.newFixedThreadPool(20);
         final File dir = new File(m3u8.getFpath());
         if (!dir.exists()) {
             dir.mkdirs();
@@ -426,6 +438,7 @@ public class M3u8FileDownloadThread extends CommonThread {
         String line;
         int num = 0;
         float seconds = 0;
+        String keyUrl = "";
         while ((line = reader.readLine()) != null && !"".equalsIgnoreCase(line)) {
             if (line.startsWith("#")) {
                 if (line.startsWith("#EXTINF:")) {
@@ -438,6 +451,10 @@ public class M3u8FileDownloadThread extends CommonThread {
                     }
                     //解析每个分段的长度
                     seconds = Float.parseFloat(line);
+                }
+                if (line.startsWith("#EXT-X-KEY")) {
+                    keyUrl = line.substring(line.indexOf("URI=") + 4);
+                    ret.setKeyUrl(keyUrl);
                 }
                 continue;
             }
@@ -491,5 +508,41 @@ public class M3u8FileDownloadThread extends CommonThread {
 
     public void setHost(String host) {
         this.host = host;
+    }
+
+
+    public String buildM3U8File(M3U8 m3u8) {
+
+        String top = "#EXTM3U\n" +
+                "#EXT-X-VERSION:3\n" +
+                "#EXT-X-TARGETDURATION:10\n" +
+                "#EXT-X-MEDIA-SEQUENCE:0\n";
+        long generate = CruxIdGenerator.generate();
+        File m3u8File = new File(m3u8.getFpath(), generate + ".m3u8");
+        m3u8.setFpath(new File(m3u8.getFpath(), String.valueOf(generate)).getPath());
+        FileWriter fileWriter = null;
+        List<M3U8Ts> part = m3u8.getTsList();
+        try {
+            fileWriter = new FileWriter(m3u8File);
+            fileWriter.write(top);
+            fileWriter.write(String.format("#EXT-X-KEY:METHOD=AES-128,URI=%1$s\n", m3u8.getKeyUrl()));
+            for (M3U8Ts m3U8Ts : part) {
+                fileWriter.write("#EXTINF:" + m3U8Ts.getSeconds() + ",\n");
+                fileWriter.write((new File(m3u8.getFpath(), m3U8Ts.getFile()).getPath()).replaceAll("\\\\", "/") +
+                        "\n");
+            }
+            fileWriter.write("#EXT-X-ENDLIST");
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            if (fileWriter != null) {
+                try {
+                    fileWriter.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+        return m3u8File.getPath();
     }
 }

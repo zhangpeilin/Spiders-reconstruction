@@ -341,7 +341,7 @@ public class FFMEPGToolsPatch {
         command.add("-c");
         command.add("copy");
         //合并后的文件存放在temp文件夹内，然后移动到目标文件夹
-        command.add(video.getSavedLocalName().replace(".m3u8", ".ts"));
+        command.add(video.getSavedLocalName().replace(".m3u8", ".mp4"));
         if (process(command, "")) {
             if (!check) {
                 return true;
