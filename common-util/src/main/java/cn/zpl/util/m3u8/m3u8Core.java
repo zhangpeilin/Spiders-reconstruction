@@ -23,7 +23,6 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -175,7 +174,7 @@ public class m3u8Core {
         m3u8.setFilePath(directory);
         m3u8.setFileName(fileName);
         if (host != null && !"".equals(host)) {
-            m3u8.setBasepath(host);
+            m3u8.setBasePath(host);
         }
         //根据M3U8对象获取时长
         float duration = getDuration(m3u8);
@@ -408,7 +407,7 @@ public class m3u8Core {
         DownloadDTO dto = new DownloadDTO();
         dto.setProxy(true);
         dto.setAlwaysRetry();
-        dto.setUrl(ts.getSubUrl().startsWith("http") ? ts.getSubUrl() : m3u8.getBasepath() + ts.getSubUrl());
+        dto.setUrl(ts.getSubUrl().startsWith("http") ? ts.getSubUrl() : m3u8.getBasePath() + ts.getSubUrl());
         dto.setSavePath(new File(dir, ts.getFile()).getPath());
         new OneFileOneThread(dto).run();
 
@@ -486,7 +485,7 @@ public class m3u8Core {
             }
         }
         //基本url路径
-        ret.setBasepath(basepath);
+        ret.setBasePath(basepath);
         //基本存放文件夹地址
         ret.setFpath(folderpath);
 

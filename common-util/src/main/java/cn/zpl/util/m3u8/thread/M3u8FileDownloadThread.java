@@ -9,7 +9,6 @@ import cn.zpl.util.CruxIdGenerator;
 import cn.zpl.util.FFMEPGToolsPatch;
 import cn.zpl.util.m3u8.M3U8;
 import cn.zpl.util.m3u8.M3U8Ts;
-import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
@@ -26,11 +25,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,8 +47,6 @@ public class M3u8FileDownloadThread extends CommonThread {
     /**
      * 正式文件存储地址(合并之后的文件)
      */
-    private String tofile = "E:\\m3u8\\";
-
     private String directory;
 
     private String fileName;
@@ -71,32 +69,6 @@ public class M3u8FileDownloadThread extends CommonThread {
         this.fileName = fileName;
     }
 
-    private ExecutorService executor = Executors.newFixedThreadPool(10);
-
-    public String getTofile() {
-        return tofile;
-    }
-
-    public void setTofile(String tofile) {
-        this.tofile = tofile;
-    }
-
-    public String getFolderpath() {
-        return folderpath;
-    }
-
-    public void setFolderpath(String folderpath) {
-        this.folderpath = folderpath;
-    }
-
-    public String getFoldername() {
-        return foldername;
-    }
-
-    public void setFoldername(String foldername) {
-        this.foldername = foldername;
-    }
-
     /**
      * 临时文件存储地址(M3U8视频段)
      */
@@ -106,7 +78,7 @@ public class M3u8FileDownloadThread extends CommonThread {
      */
     private String foldername = UUID.randomUUID().toString().replaceAll("-", "");
 
-    public void downloadCore(String url) throws IOException, InterruptedException {
+    public void downloadCore(String url) throws IOException {
         //通过剪切板获取复制的url
         if (url != null && (url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"))) {
             /* m3u8地址 */
@@ -134,7 +106,7 @@ public class M3u8FileDownloadThread extends CommonThread {
         m3u8.setFilePath(directory);
         m3u8.setFileName(fileName);
         if (host != null && !"".equals(host)) {
-            m3u8.setBasepath(host);
+            m3u8.setBasePath(host);
         }
         //根据M3U8对象获取时长
         float duration = getDuration(m3u8);
@@ -157,7 +129,7 @@ public class M3u8FileDownloadThread extends CommonThread {
     }
 
     public static void main(String[] args) {
-        M3u8FileDownloadThread m3u8FileDownloadThread = new M3u8FileDownloadThread("E:\\333\\index.m3u8");
+        M3u8FileDownloadThread m3u8FileDownloadThread = new M3u8FileDownloadThread("/Users/zpl/Downloads/index (1).m3u8");
         m3u8FileDownloadThread.run();
     }
 
@@ -166,16 +138,8 @@ public class M3u8FileDownloadThread extends CommonThread {
     }
 
     public void downloadByM3U8(String path) throws IOException {
-        //设置好初始路径
-//        folderpath += File.separator + foldername;
 
         File m3u8File = new File(path);
-        File dir = new File(folderpath + foldername);
-        //防止文件夹里有其他文件，做好分类
-        if (dir.exists()) {
-            System.out.println("文件夹：" + folderpath + "已存在！");
-            return;
-        }
         final String m3u8name = m3u8File.getName();
         //解析M3U8地址为对象
         M3U8 m3u8 = parseIndex(m3u8File.getParent(), m3u8name, "http://test.com");
@@ -190,12 +154,13 @@ public class M3u8FileDownloadThread extends CommonThread {
         String m3u8Path = buildM3U8File(m3u8);
         download(m3u8);
         VideoInfo info = new VideoInfo();
-        info.setSavedLocalName(m3u8Path);
+        info.setM3u8FilePath(m3u8Path);
+        info.setSavePath(m3u8Path);
         info.setTimeLength(String.valueOf(duration * 1000));
         FFMEPGToolsPatch.mergeXDFTs(info);
         delFolder(m3u8.getFpath());
 
-        System.out.println("下载完成，文件在: " + folderpath);
+        System.out.println("下载完成，文件在: " + info.getSavePath());
 
         //关闭线程池
 
@@ -308,7 +273,7 @@ public class M3u8FileDownloadThread extends CommonThread {
         for (M3U8Ts ts : m3u8.getTsList()) {
             File fileTemp = new File(m3u8.getFpath(), ts.getFile());
             if (fileTemp.exists()) {
-                IOUtils.copyLarge(new FileInputStream(fileTemp), fos);
+                IOUtils.copyLarge(Files.newInputStream(fileTemp.toPath()), fos);
             } else {
                 throw new RuntimeException(ts.getFile() + "文件不存在，合成失败！");
             }
@@ -343,7 +308,7 @@ public class M3u8FileDownloadThread extends CommonThread {
         System.out.println("等待下载中...");
         while (!executor.isTerminated()) {
             try {
-                Thread.sleep(500);
+                TimeUnit.MILLISECONDS.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -354,13 +319,9 @@ public class M3u8FileDownloadThread extends CommonThread {
         DownloadDTO dto = new DownloadDTO();
         dto.setProxy(true);
         dto.setAlwaysRetry();
-        dto.setUrl(ts.getSubUrl().startsWith("http") ? ts.getSubUrl() : m3u8.getBasepath() + ts.getSubUrl());
+        dto.setUrl(ts.getSubUrl().startsWith("http") ? ts.getSubUrl() : m3u8.getBasePath() + ts.getSubUrl());
         dto.setSavePath(new File(dir, ts.getFile()).getPath());
         new OneFileOneThread(dto).run();
-
-//            FileOutputStream writer = new FileOutputStream(new File(dir, ts.getFile()));
-//            IOUtils.copyLarge(new URL(ts.getSubUrl().startsWith("http") ? ts.getSubUrl() : m3u8.getBasepath() + ts.getSubUrl()).openStream(), writer);
-//            writer.close();
         System.out.println("视频段: " + ts + "下载完成");
     }
 
@@ -413,14 +374,14 @@ public class M3u8FileDownloadThread extends CommonThread {
      * @date: 2019年2月20日 下午3:43:49
      */
     @NotNull
-    public static M3U8 parseIndex(String folderpath, String m3u8name, @NotNull String url) throws IOException {
+    public static M3U8 parseIndex(String folderPath, String m3u8name, @NotNull String url) throws IOException {
 
         m3u8name = CommonIOUtils.filterFileName2(m3u8name);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(folderpath, m3u8name))));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(new File(folderPath, m3u8name).toPath())));
         //解析请求的相关路径
-        String basepath;
+        String basePath;
 
-        basepath = url.substring(0, url.lastIndexOf("/") + 1);
+        basePath = url.substring(0, url.lastIndexOf("/") + 1);
         M3U8 ret = new M3U8();
         Pattern pattern = Pattern.compile("\\D*(\\d+)p.*.m3u8");
         Matcher matcher = pattern.matcher(m3u8name);
@@ -432,9 +393,9 @@ public class M3u8FileDownloadThread extends CommonThread {
             }
         }
         //基本url路径
-        ret.setBasepath(basepath);
+        ret.setBasePath(basePath);
         //基本存放文件夹地址
-        ret.setFpath(folderpath);
+        ret.setFpath(folderPath);
 
         String line;
         int num = 0;
@@ -464,25 +425,25 @@ public class M3u8FileDownloadThread extends CommonThread {
                 if (line.toLowerCase().startsWith("http://") || line.toLowerCase().startsWith("https://")) {
                     String linetag = line.substring(line.lastIndexOf("/"), line.toLowerCase().indexOf(".m3u8", line.lastIndexOf("/")));
                     String linename = linetag + ".m3u8";
-                    int tp = basepath.indexOf(line);
-                    String nfpath = folderpath;
+                    int tp = basePath.indexOf(line);
+                    String nfpath = folderPath;
                     if (tp != -1) {
-                        if ((line.lastIndexOf("/") + 1) > (tp + basepath.length())) {//判断路径是否重复
-                            line.substring(tp + basepath.length(), line.lastIndexOf("/") + 1);
+                        if ((line.lastIndexOf("/") + 1) > (tp + basePath.length())) {//判断路径是否重复
+//                            line.substring(tp + basePath.length(), line.lastIndexOf("/") + 1);
                         } else {
-                            nfpath = folderpath;
+                            nfpath = folderPath;
                         }
                     } else {
-                        nfpath = folderpath + linetag + File.separator;
+                        nfpath = folderPath + linetag + File.separator;
                     }
                     //获取远程文件
                     saveM3u8File(nfpath, line, linename);
                     //进行递归获取数据
                     ret.addM3u8(parseIndex(nfpath, linename, line));
                 } else {//不是使用http协议的 TODO
-                    String nurl = basepath + line;
+                    String nurl = basePath + line;
                     //传入新的文件夹地址
-                    String nfpath = folderpath;
+                    String nfpath = folderPath;
                     if (line.lastIndexOf("/") != -1) {
                         nfpath += line.substring(0, line.lastIndexOf("/") + 1);
                     }
@@ -502,15 +463,6 @@ public class M3u8FileDownloadThread extends CommonThread {
 
         return ret;
     }
-
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
-    }
-
 
     public String buildM3U8File(M3U8 m3u8) {
 

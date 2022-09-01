@@ -1,7 +1,6 @@
 package cn.zpl.util;
 
 import cn.zpl.common.bean.VideoInfo;
-import cn.zpl.config.CommonParams;
 import cn.zpl.pojo.VideoData;
 import it.sauronsoftware.jave.Encoder;
 import lombok.extern.slf4j.Slf4j;
@@ -10,8 +9,8 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
-import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -328,7 +327,7 @@ public class FFMEPGToolsPatch {
         return true;
     }
 
-    public static boolean mergeXDFTs(VideoInfo video) {
+    public static void mergeXDFTs(VideoInfo video) {
         List<String> command = new ArrayList<>();
         command.add("E:\\ffmpeg-master-latest-win64-gpl-shared\\bin\\ffmpeg");
         command.add("-protocol_whitelist");
@@ -337,29 +336,24 @@ public class FFMEPGToolsPatch {
         command.add("ALL");
         command.add("-y");
         command.add("-i");
-        command.add(video.getSavedLocalName());
+        command.add(video.getM3u8FilePath());
         command.add("-c");
         command.add("copy");
-        //合并后的文件存放在temp文件夹内，然后移动到目标文件夹
-        command.add(video.getSavedLocalName().replace(".m3u8", ".mp4"));
+        //如果没有设置保存文件路径，则存放到m3u8文件所在位置，并且名称使用同名存储
+        command.add(StringUtils.isEmpty(video.getSavePath()) ? video.getSavedLocalName().replace(".m3u8", ".mp4") : video.getSavePath());
         if (process(command, "")) {
             if (!check) {
-                return true;
+                return;
             }
             if (checkMP4(video, command.get(command.size() - 1))) {
                 video.setSavedLocalName(command.get(command.size() - 1));
                 video.setLength(String.valueOf((new File(command.get(command.size() - 1))).length()));
                 //移动文件到目标文件夹内
 //				Arrays.stream(video.getFileList().split("\\|")).forEach(s -> deleteTS(s));
-                return true;
             }
         } else {
-            //第一次合并失败，尝试重新合并
-//			RetryCombine(list.getParentFile());
             System.out.println("合并失败");
-//			System.exit(0);
         }
-        return false;
     }
 
     /**
