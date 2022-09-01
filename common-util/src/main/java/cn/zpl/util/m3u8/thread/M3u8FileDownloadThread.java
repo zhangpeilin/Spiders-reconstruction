@@ -193,6 +193,7 @@ public class M3u8FileDownloadThread extends CommonThread {
         info.setSavedLocalName(m3u8Path);
         info.setTimeLength(String.valueOf(duration * 1000));
         FFMEPGToolsPatch.mergeXDFTs(info);
+        delFolder(m3u8.getFpath());
 
         System.out.println("下载完成，文件在: " + folderpath);
 
@@ -390,7 +391,7 @@ public class M3u8FileDownloadThread extends CommonThread {
     public static void delAllFile(String path) {
         try {
             System.gc();
-            FileUtils.forceDeleteOnExit(new File(path));
+            FileUtils.forceDelete(new File(path));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -412,7 +413,7 @@ public class M3u8FileDownloadThread extends CommonThread {
      * @date: 2019年2月20日 下午3:43:49
      */
     @NotNull
-    static M3U8 parseIndex(String folderpath, String m3u8name, @NotNull String url) throws IOException {
+    public static M3U8 parseIndex(String folderpath, String m3u8name, @NotNull String url) throws IOException {
 
         m3u8name = CommonIOUtils.filterFileName2(m3u8name);
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(folderpath, m3u8name))));
@@ -459,7 +460,7 @@ public class M3u8FileDownloadThread extends CommonThread {
                 continue;
             }
             //文件包含另一个m3u8文件
-            if (line.contains("m3u8")) {
+            if (line.endsWith("m3u8")) {
                 if (line.toLowerCase().startsWith("http://") || line.toLowerCase().startsWith("https://")) {
                     String linetag = line.substring(line.lastIndexOf("/"), line.toLowerCase().indexOf(".m3u8", line.lastIndexOf("/")));
                     String linename = linetag + ".m3u8";
