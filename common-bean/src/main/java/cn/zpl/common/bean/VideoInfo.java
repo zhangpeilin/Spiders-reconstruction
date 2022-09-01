@@ -24,6 +24,10 @@ public class VideoInfo implements Serializable {
 
     private String videoId;
 
+    private String m3u8FilePath;
+
+    private String savePath;
+
     @ApiModelProperty("存储下载的url地址，如果是分段的，每个分段存储一次，最后视频合并后存储一个总的，url地址为空，parent_id为空")
     private String url;
 
@@ -80,10 +84,12 @@ public class VideoInfo implements Serializable {
     public void setVideoName(String videoName) {
         this.videoName = videoName;
     }
+    @Deprecated
     public String getSavedLocalName() {
         return savedLocalName;
     }
 
+    @Deprecated
     public void setSavedLocalName(String savedLocalName) {
         this.savedLocalName = savedLocalName;
     }
