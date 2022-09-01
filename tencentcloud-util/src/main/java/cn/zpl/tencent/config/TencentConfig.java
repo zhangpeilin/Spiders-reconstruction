@@ -30,8 +30,8 @@ public class TencentConfig {
 
     //每天8:30开始每5分钟执行一次
     @SneakyThrows
-    @Scheduled(cron = "0 30/5 8 * * *")
-//    @Scheduled(cron = "0/5 * 16 * * *")
+    @Scheduled(cron = "0 35 8 * * *")
+//    @Scheduled(cron = "0/5 * 9 * * *")
     private void configureTask(){
         if (cache.get("isNotice")) {
             return;

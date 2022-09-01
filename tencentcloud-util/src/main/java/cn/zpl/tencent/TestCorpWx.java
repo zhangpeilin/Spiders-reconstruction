@@ -38,30 +38,32 @@ public class TestCorpWx {
 //            int hour = instance.get(Calendar.HOUR_OF_DAY);
             String postdata = null;
 //            hour = instance.get(Calendar.HOUR_OF_DAY);
-            ResponseEntity<String> exchange = restTemplate.exchange("http://www.szse.cn/api/report/ShowReport/data?SHOWTYPE=JSON&CATALOGID=option_hybg&loading=first", HttpMethod.GET, new HttpEntity<String>(headers), String.class);
-            JsonElement jsonElement = CommonIOUtils.paraseJsonFromStr(exchange.getBody());
-            if (jsonElement.isJsonArray()) {
-                JsonElement element = jsonElement.getAsJsonArray().get(0);
+            String token = swx.getToken(tencentParams.getCorpId(), tencentParams.getCorpSecret());
+            if (tencentParams.watchWebsite) {
+                ResponseEntity<String> exchange = restTemplate.exchange("", HttpMethod.GET, new HttpEntity<String>(headers), String.class);
+                JsonElement jsonElement = CommonIOUtils.paraseJsonFromStr(exchange.getBody());
+                if (jsonElement.isJsonArray()) {
+                    JsonElement element = jsonElement.getAsJsonArray().get(0);
 //                JsonElement data = CommonIOUtils.getFromJson2(element, "data");
-                JsonElement conditions = CommonIOUtils.getFromJson2(element, "metadata-conditions");
-                if (conditions.isJsonArray()) {
-                    String defaultValue = conditions.getAsJsonArray().get(0).getAsJsonObject().get("defaultValue").getAsString();
-                    if (defaultValue.equals(format)) {
-                        postdata = swx.createpostdata(tencentParams.getToUser(), "text", tencentParams.getApplicationId(), "content", "网站更新了");
-                    }
+                    JsonElement conditions = CommonIOUtils.getFromJson2(element, "metadata-conditions");
+                    if (conditions.isJsonArray()) {
+                        String defaultValue = conditions.getAsJsonArray().get(0).getAsJsonObject().get("defaultValue").getAsString();
+                        if (defaultValue.equals(format)) {
+                            postdata = swx.createpostdata(tencentParams.getToUser(), "text", tencentParams.getApplicationId(), "content", "网站更新了");
+                        }
 //                        if (data.isJsonArray() && data.getAsJsonArray().size() == 0 && ) {
 //                            postdata = swx.createpostdata("@all", "text", tencentParams.getApplicationId(), "content","网站更新了");
 //                        } else {
 //                            postdata = swx.createpostdata("@all", "text", tencentParams.getApplicationId(), "content","这是一条测试信息");
 //                        }
+                    }
                 }
+                if (postdata == null) {
+                    return;
+                }
+                swx.post("utf-8", WeChatMsgSend.CONTENT_TYPE, (new WeChatUrlData()).getSendMessage_Url(), postdata, token);
+                TimeUnit.SECONDS.sleep(5);
             }
-            if (postdata == null) {
-                return;
-            }
-            String token = swx.getToken(tencentParams.getCorpId(), tencentParams.getCorpSecret());
-            swx.post("utf-8", WeChatMsgSend.CONTENT_TYPE, (new WeChatUrlData()).getSendMessage_Url(), postdata, token);
-            TimeUnit.SECONDS.sleep(5);
             postdata = swx.createpostdata(tencentParams.getToUser(), "text", tencentParams.getApplicationId(), "content", "记得吃药");
             String resp = swx.post("utf-8", WeChatMsgSend.CONTENT_TYPE, (new WeChatUrlData()).getSendMessage_Url(), postdata, token);
             String errcode = CommonIOUtils.getFromJson2Str(CommonIOUtils.paraseJsonFromStr(resp), "errcode");

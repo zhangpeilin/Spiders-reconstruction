@@ -20,4 +20,6 @@ public class TencentParams {
     public int applicationId;
 
     public String toUser;
+
+    public boolean watchWebsite;
 }
