@@ -44,6 +44,8 @@ public class m3u8Core {
 
     private String host;
 
+    FFMEPGToolsPatch ffmepgToolsPatch;
+
     public String getDirectory() {
         return directory;
     }
@@ -190,7 +192,7 @@ public class m3u8Core {
         VideoInfo info = new VideoInfo();
         info.setSavedLocalName(new File(folderpath, CommonIOUtils.filterFileName2(m3u8name)).getPath());
         info.setTimeLength(String.valueOf(duration * 1000));
-        FFMEPGToolsPatch.mergeXDFTs(info);
+        ffmepgToolsPatch.mergeXDFTs(info);
 //        download(m3u8);
 
         //关闭线程池

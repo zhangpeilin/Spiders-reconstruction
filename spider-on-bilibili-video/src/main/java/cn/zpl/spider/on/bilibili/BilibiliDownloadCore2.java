@@ -59,6 +59,9 @@ public class BilibiliDownloadCore2 {
     @Resource
     BilibiliConfigParams configParams;
 
+    @Resource
+    FFMEPGToolsPatch ffmepgToolsPatch;
+
     ThreadLocal<String> getNewPath() {
         return newPath;
     }
@@ -359,7 +362,7 @@ public class BilibiliDownloadCore2 {
         }
         if (!CommonIOUtils.getFromJson2(json, "data-dash-video").isJsonNull()) {
             doM4s(json, avid, bvid, current_quality, videoInfo, videoData);
-            if (!FFMEPGToolsPatch.mergeBilibiliVideo2(videoData)) {
+            if (!ffmepgToolsPatch.mergeBilibiliVideo2(videoData)) {
                 log.error("不应该出现在这，video_id：" + avid);
                 System.exit(1);
             }

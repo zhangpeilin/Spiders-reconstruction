@@ -55,6 +55,9 @@ public class DownloadController {
     @Resource
     CrudTools<VideoInfo> tools;
 
+    @Resource
+    FFMEPGToolsPatch ffmepgToolsPatch;
+
     ThreadLocal<String> getNewPath() {
         return newPath;
     }
@@ -305,7 +308,7 @@ public class DownloadController {
         }
         if (!CommonIOUtils.getFromJson2(json, "data-dash-video").isJsonNull()) {
             doM4s(json, avid, bvid, current_quality, videoInfo, videoData);
-            if (!FFMEPGToolsPatch.mergeBilibiliVideo2(videoData)) {
+            if (!ffmepgToolsPatch.mergeBilibiliVideo2(videoData)) {
                 return RestResponse.fail("合并出错");
             }
         }

@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,8 +28,9 @@ import java.util.List;
 public class FFMEPGToolsPatch {
 
 
+    @Resource
+    CommonProperties commonProperties;
 
-    public static String ffmpegPath;
     /**
      * 判断是否检查已存在，false时表示不检查，已存在时也会被覆盖；true表示检查，存在时会跳过
      */
@@ -36,12 +38,6 @@ public class FFMEPGToolsPatch {
 
     public static boolean check = true;
 
-
-    @Bean
-    public CommonProperties setConfig(CommonProperties properties) {
-        ffmpegPath = properties.getFfmpeg();
-        return properties;
-    }
 
     public static boolean isExists(@NotNull VideoData video) {
         if (!checkExist) {
@@ -159,7 +155,7 @@ public class FFMEPGToolsPatch {
      * @param videoData 视频信息
      * @return 返回真假
      */
-    public static boolean mergeBilibiliVideo2(@NotNull VideoData videoData) {
+    public boolean mergeBilibiliVideo2(@NotNull VideoData videoData) {
 
         File desFile = new File(videoData.getDesSavePath());
         File tmp_des_file = new File(videoData.GetTmpSaveDirectory(), videoData.getDesSaveName());
@@ -178,7 +174,7 @@ public class FFMEPGToolsPatch {
             return true;
         }
         List<String> command = new ArrayList<String>();
-        command.add(ffmpegPath);
+        command.add(commonProperties.ffmpeg);
         command.add("-i");
         command.add("\"" + videoData.getVideo().getSavePath() + "\"");
         command.add("-i");
@@ -327,9 +323,9 @@ public class FFMEPGToolsPatch {
         return true;
     }
 
-    public static void mergeXDFTs(VideoInfo video) {
+    public boolean mergeXDFTs(VideoInfo video) {
         List<String> command = new ArrayList<>();
-        command.add("E:\\ffmpeg-master-latest-win64-gpl-shared\\bin\\ffmpeg");
+        command.add(commonProperties.ffmpeg);
         command.add("-protocol_whitelist");
         command.add("file,http,https,rtp,udp,tcp,crypto,tls");
         command.add("-allowed_extensions");
@@ -343,7 +339,7 @@ public class FFMEPGToolsPatch {
         command.add(StringUtils.isEmpty(video.getSavePath()) ? video.getSavedLocalName().replace(".m3u8", ".mp4") : video.getSavePath());
         if (process(command, "")) {
             if (!check) {
-                return;
+                return true;
             }
             if (checkMP4(video, command.get(command.size() - 1))) {
                 video.setSavedLocalName(command.get(command.size() - 1));
@@ -353,7 +349,9 @@ public class FFMEPGToolsPatch {
             }
         } else {
             System.out.println("合并失败");
+            return false;
         }
+        return false;
     }
 
     /**
