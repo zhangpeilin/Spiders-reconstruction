@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -70,6 +71,7 @@ public class M3u8FileDownloadThread extends CommonThread {
     }
 
     public static void main(String[] args) {
+        Properties properties = System.getProperties();
         AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext(UtilSpringConfig.class);
         M3u8FileDownloadThread thread = annotationConfigApplicationContext.getBean(M3u8FileDownloadThread.class);
         thread.setPath("/Users/zpl/Downloads/index (1).m3u8");
@@ -400,8 +402,9 @@ public class M3u8FileDownloadThread extends CommonThread {
         String m3u8Path = buildM3U8File(m3u8);
         download(m3u8);
         VideoInfo info = new VideoInfo();
+//        info.setCheckResult(false);
         info.setM3u8FilePath(m3u8Path);
-        info.setSavePath(m3u8Path);
+        info.setSavePath(m3u8Path.replace(".m3u8", ".mp4"));
         info.setTimeLength(String.valueOf(duration * 1000));
         boolean mergeFlag = ffmepgToolsPatch.mergeXDFTs(info);
         if (mergeFlag) {

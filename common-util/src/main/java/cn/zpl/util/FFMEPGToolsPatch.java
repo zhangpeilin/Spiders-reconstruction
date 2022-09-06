@@ -363,6 +363,9 @@ public class FFMEPGToolsPatch {
      * @Description: TODO
      */
     public static boolean checkMP4(VideoInfo video, String des_file) {
+        if (!video.isCheckResult()) {
+            return false;
+        }
         Encoder encoder = new Encoder();
         try {
             if (!new File(des_file).exists()) {

@@ -63,6 +63,8 @@ public class VideoInfo implements Serializable {
 
     private String bid;
 
+    private boolean checkResult = true;
+
     public String getVideoId() {
         return videoId;
     }
