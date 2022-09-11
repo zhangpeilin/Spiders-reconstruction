@@ -22,8 +22,11 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Data
 @Slf4j
@@ -80,11 +83,24 @@ public class CrudTools<T> {
     }
 
     public <T> List<T> commonApiQueryBySql(String sql, Class<T> tClass) {
+        if (!sql.startsWith("sql:")) {
+            sql = "sql:" + sql;
+        }
         return commonApiQuery(sql, null, tClass);
     }
 
     public T commonApiQuery(String id, Class<T> tClass) {
         return commonApiQuery("id=" + id, null, tClass).get(0);
+    }
+
+    public RestResponse commonDelete(String sql, List<LinkedHashMap<String, Object>> paramObjects) {
+        Map<String, Object> requestMap = new HashMap<>();
+        List<String> params = paramObjects.stream().map(soMap -> soMap.values().stream().map(String::valueOf).collect(Collectors.joining(","))).collect(Collectors.toList());
+        requestMap.put("sql", sql);
+        requestMap.put("params", params);
+        ResponseEntity<RestResponse> forEntity = restTemplate.postForEntity(config.getCommonDelete(), requestMap, RestResponse.class);
+//        ResponseEntity<RestResponse> restResponseResponseEntity = restTemplate.postForEntity("http://localhost:8080/common/dao/api/save/", params, RestResponse.class);
+        return forEntity.getBody();
     }
 
     public List<Bika> queryAllBika() {
@@ -125,6 +141,7 @@ public class CrudTools<T> {
     }
 
     public static <T> boolean commonApiDelete(String condition, Class<T> tClass) {
+
         return RestResponse.ok().isSuccess();
     }
 

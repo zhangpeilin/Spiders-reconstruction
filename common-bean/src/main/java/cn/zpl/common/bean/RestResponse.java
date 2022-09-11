@@ -1,6 +1,8 @@
 package cn.zpl.common.bean;
 
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.PropertyNamingStrategy;
+import com.alibaba.fastjson.parser.ParserConfig;
 import org.springframework.lang.NonNull;
 
 import java.util.HashMap;
@@ -28,7 +30,9 @@ public class RestResponse extends HashMap<String, Object> {
 
     public <T> List<T> getList(Class<T> clazz){
         assert get(AppConstant.LIST) != null;
-        return JSONObject.parseArray(JSONObject.toJSONString(get(AppConstant.LIST)), clazz);
+        ParserConfig parserConfig = new ParserConfig();
+        parserConfig.propertyNamingStrategy = PropertyNamingStrategy.SnakeCase;
+        return JSONObject.parseArray(JSONObject.toJSONString(get(AppConstant.LIST)), clazz, parserConfig);
     }
 
     public <T> T getObject(Class<T> clazz) {

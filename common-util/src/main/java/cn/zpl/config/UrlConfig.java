@@ -10,4 +10,5 @@ public class UrlConfig {
     String commonSaveUrl;
     String commonQueryUrl;
     String nothing;
+    String commonDelete;
 }

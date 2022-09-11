@@ -1,6 +1,7 @@
 package cn.zpl.common.bean;
 
 import io.swagger.annotations.ApiModel;
+import lombok.Data;
 
 import java.io.Serializable;
 
@@ -56,6 +57,10 @@ public class BikaList implements Serializable {
     private Integer isDeleted;
 
     private String localPath;
+
+    private String updateTime;
+
+    private String uuidStr;
 
     public String getId() {
         return id;
@@ -222,5 +227,21 @@ public class BikaList implements Serializable {
             ", isDeleted=" + isDeleted +
             ", localPath=" + localPath +
         "}";
+    }
+
+    public String getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(String updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public String getUuidStr() {
+        return uuidStr;
+    }
+
+    public void setUuidStr(String uuidStr) {
+        this.uuidStr = uuidStr;
     }
 }

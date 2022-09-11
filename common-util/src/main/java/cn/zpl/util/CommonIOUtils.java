@@ -368,6 +368,10 @@ public class CommonIOUtils {
         SimpleDateFormat formater = new SimpleDateFormat(pattern);
         return formater.format(new Date(Long.parseLong(milliseconds)));
     }
+    public static String paraseSystemTime13(long milliseconds, String pattern) {
+        SimpleDateFormat formater = new SimpleDateFormat(pattern);
+        return formater.format(new Date(milliseconds));
+    }
 
     public static void saveString2Local(String fileName, String str) {
         File file = new File("e:" + File.separator + fileName + "升级脚本.sql");

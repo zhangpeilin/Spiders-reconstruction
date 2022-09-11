@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import javax.activation.DataHandler;
 import javax.annotation.Resource;
 import java.net.URLEncoder;
 import java.util.Vector;
@@ -76,6 +77,7 @@ public class BikaPageThread extends BikaCommonThread {
         bikaList.setAuthor(CommonIOUtils.getFromJson2Str(jsonElement, "author"));
         bikaList.setPagesCount(CommonIOUtils.getFromJson2Integer(jsonElement, "pagesCount"));
         bikaList.setEpsCount(CommonIOUtils.getFromJson2Integer(jsonElement, "epsCount"));
+        bikaList.setUpdateTime(CommonIOUtils.paraseSystemTime13(System.currentTimeMillis(), "yyyy-MM-dd HH:mm:ss.SSS"));
         bikaList.setFinished(CommonIOUtils.getFromJson2Boolean(jsonElement, "finished") ? 1 : 0);
         bikaList.setCategories(CommonIOUtils.getFromJson2(jsonElement, "categories").toString());
         bikaList.setLikesCount(CommonIOUtils.getFromJson2Integer(jsonElement, "likesCount"));

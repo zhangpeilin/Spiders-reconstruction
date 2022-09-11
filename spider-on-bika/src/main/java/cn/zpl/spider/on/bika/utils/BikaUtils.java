@@ -300,7 +300,7 @@ public class BikaUtils {
         }
         try {
             if (isNeedDownload) {
-                if (!tools.commonSave(bika).isSuccess()) {
+                if (!tools.commonApiSave(bika).isSuccess()) {
                     log.error("保存失败" + bika);
                 }
             }

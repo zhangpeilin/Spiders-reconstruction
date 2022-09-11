@@ -20,11 +20,11 @@ public class SpringContext implements ApplicationContextAware {
     public static Object getBean(String beanName) {
         return applicationContext.getBean(beanName);
     }
-
-    public  static <T,R> Object getBeanWithGenerics(Class<R> rClass, Class<?>... tClass) {
+    @SuppressWarnings("unchecked")
+    public  static <T,R> R getBeanWithGenerics(Class<R> rClass, Class<?>... tClass) {
         ResolvableType resolvableType = ResolvableType.forClassWithGenerics(rClass, tClass);
         ObjectProvider<T> beanProvider = applicationContext.getBeanProvider(resolvableType);
-        return beanProvider.getIfAvailable();
+        return (R) beanProvider.getIfAvailable();
     }
 
     @Override

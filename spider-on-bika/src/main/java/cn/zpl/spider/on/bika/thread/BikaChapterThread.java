@@ -2,9 +2,11 @@ package cn.zpl.spider.on.bika.thread;
 
 
 import cn.zpl.common.bean.Bika;
+import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.SynchronizeLock;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
+import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.DownloadTools;
 import cn.zpl.util.SaveLog;
@@ -12,33 +14,32 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.Resource;
 import java.io.File;
 import java.util.Vector;
 
 @Slf4j
 public class BikaChapterThread implements Runnable {
 
-    private final String chapternum;
+    private final String chapterNum;
 
     private final String title;
 
     private final String comicid;
 
     private final String chapterPath;
-    @Resource
     BikaUtils utils;
 
-    BikaChapterThread(String chapternum, String title, String comicid) {
-        this.chapternum = chapternum;
+    BikaChapterThread(String chapterNum, String title, String comicid) {
+        this.chapterNum = chapterNum;
         this.title = title;
         this.comicid = comicid;
+        utils = SpringContext.getBeanWithGenerics(BikaUtils.class);
         //路径不在固定，由数据库记录的路径确定上层目录
         Bika exist = utils.getExists(comicid);
         if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
-            this.chapterPath = exist.getLocalPath() + "\\" + chapternum;
+            this.chapterPath = exist.getLocalPath() + "\\" + chapterNum;
         } else {
-            this.chapterPath = BikaUtils.defaultSavePath + "\\(" + comicid + ")" + title + "\\" + chapternum;
+            this.chapterPath = BikaUtils.defaultSavePath + "\\(" + comicid + ")" + title + "\\" + chapterNum;
         }
     }
 
@@ -63,7 +64,7 @@ public class BikaChapterThread implements Runnable {
         Vector<DownloadDTO> dtoVector = new Vector<>();
         while (true) {
 
-            String getImgs = "comics/" + comicid + "/order/" + chapternum + "/pages?page=" + i;
+            String getImgs = "comics/" + comicid + "/order/" + chapterNum + "/pages?page=" + i;
             JsonObject imgJson = utils.getJsonByUrl(getImgs);
             int max_age = CommonIOUtils.getFromJson2Integer(imgJson, "data-pages-pages");
             JsonElement img_list = CommonIOUtils.getFromJson2(imgJson, "data-pages-docs");
@@ -105,7 +106,7 @@ public class BikaChapterThread implements Runnable {
         dtoVector.forEach(dto -> {
             dto.setSynchronizeLock(lock);
             dto.setProgress(BikaUtils.progress);
-//            tools.ThreadExecutorAdd(new OneFileOneThread2(dto));
+            tools.ThreadExecutorAdd(new OneFileOneThread(dto));
         });
         //启动一个线程读取完成的次数
         tools.shutdown();
