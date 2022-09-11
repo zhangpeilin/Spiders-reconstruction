@@ -6,6 +6,7 @@ import cn.zpl.commondaocenter.service.IBikaService;
 import cn.zpl.commondaocenter.utils.SpringContext;
 import cn.zpl.config.UrlConfig;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -42,6 +43,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -76,20 +78,20 @@ public class ApiAnalysisController {
     public ThreadLocal<Class<?>> entityCache = new ThreadLocal<>();
     private static final LoadingCache<String, Class<?>> cache = CacheBuilder.newBuilder()
             .maximumSize(2000)
-                .expireAfterWrite(12, TimeUnit.HOURS)
-                .build(new CacheLoader<String, Class<?>>() {
-                    @Override
-                    public Class<?> load(@NotNull String key) {
-                        return getEntityExists(key);
-                    }
-                });
+            .expireAfterWrite(12, TimeUnit.HOURS)
+            .build(new CacheLoader<String, Class<?>>() {
+                @Override
+                public Class<?> load(@NotNull String key) {
+                    return getEntityExists(key);
+                }
+            });
 
 
     //路径规则：entity代表要查询的实体对象
     ///api/mofdiv?size=999999&fetchProperties=*,parent[id,name,code,lastModifiedVersion]&sort=code,asc
     @PostMapping("/api/save")
     @SuppressWarnings("unchecked")
-    public <T> RestResponse  commonEntitySave(@RequestBody JSONObject requestJson) {
+    public <T> RestResponse commonEntitySave(@RequestBody JSONObject requestJson) {
         String entity = requestJson.getString("entity");
         Object data = requestJson.get("data");
         if (checkEntityExists(entity)) {
@@ -118,7 +120,7 @@ public class ApiAnalysisController {
                 flag = iService.saveOrUpdateBatch(serializables);
             }
             if (serializable != null) {
-                flag = iService.save(serializable);
+                flag = iService.saveOrUpdate(serializable);
             }
             return flag ? RestResponse.ok("保存成功") : RestResponse.fail("保存失败");
         } else {
@@ -175,7 +177,7 @@ public class ApiAnalysisController {
                 ResultSetMetaData md = resultSet.getMetaData(); //获得结果集结构信息,元数据
                 int columnCount = md.getColumnCount();   //获得列数
                 while (resultSet.next()) {
-                    Map<String,Object> rowData = new HashMap<>();
+                    Map<String, Object> rowData = new HashMap<>();
                     for (int i = 1; i <= columnCount; i++) {
                         rowData.put(md.getColumnName(i), resultSet.getObject(i));
                     }
@@ -216,8 +218,38 @@ public class ApiAnalysisController {
         return RestResponse.ok().list(list);
     }
 
+    /**
+     * 公共api解析器，获取实体名称和要查询的字段，条件
+     *
+     * @return 返回json
+     */
+    @PostMapping("/api/delete")
+    public RestResponse delete(@RequestBody JSONObject requestJson) {
+        //预处理为空的标记为[*]
+        RestResponse ok = RestResponse.ok();
+        String sql = requestJson.getString("sql");
+        JSONArray objects = requestJson.getJSONArray("params");
+        SqlSession sqlSession = openSession();
+        try (PreparedStatement preparedStatement = sqlSession.getConnection().prepareStatement(sql)) {
+            for (Object object : objects) {
+                String[] paramsArray = object.toString().split(",");
+                for (int i = 0; i < paramsArray.length; i++) {
+                    preparedStatement.setObject(i + 1, paramsArray[i]);
+                }
+                preparedStatement.addBatch();
+            }
+            int[] i = preparedStatement.executeBatch();
+            log.debug("删除条数：{}", i);
+            ok.msg("删除条数：" + Arrays.stream(i).filter(value -> value == 1).count());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        sqlSession.close();
+        return ok;
+    }
+
     @SneakyThrows
-    private boolean checkEntityExists(String entity){
+    private boolean checkEntityExists(String entity) {
         Class<?> aClass = cache.get(entity);
         return aClass == null;
     }
