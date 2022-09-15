@@ -6,7 +6,9 @@ import cn.zpl.util.UrlContainer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -16,7 +18,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 
+@Component
 public class BilibiliCommonUtils {
+
+    @Resource
+    BilibiliMangaProperties bilibiliMangaProperties;
 
     public static String getUserInfo(String uid) throws JsonIOException, JsonSyntaxException {
 
@@ -60,9 +66,9 @@ public class BilibiliCommonUtils {
         return null;
     }
 
-    public static String postUrl(String path, String params, String headers) {
+    public String postUrl(String path, String params, String headers) {
         if (headers == null)
-            headers = BilibiliStaticParams.commonHeaders;
+            headers = bilibiliMangaProperties.commonHeaders;
         return URLConnectionTool.postUrl(path, params, headers);
     }
 }
