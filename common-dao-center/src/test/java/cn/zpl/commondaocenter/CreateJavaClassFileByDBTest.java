@@ -23,7 +23,7 @@ public class CreateJavaClassFileByDBTest {
     String userName;
     @Value("${spring.datasource.password}")
     String password;
-    String tableName = "cron";
+    String tableName = "bilibili_manga";
 
     @Resource
     MyProperties myProperties;
