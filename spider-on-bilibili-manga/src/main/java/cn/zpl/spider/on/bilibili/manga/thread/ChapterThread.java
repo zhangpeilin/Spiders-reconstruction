@@ -1,9 +1,10 @@
 package cn.zpl.spider.on.bilibili.manga.thread;
 
+import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.SynchronizeLock;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliCommonUtils;
-import cn.zpl.spider.on.bilibili.manga.util.BilibiliStaticParams;
+import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
 import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.DownloadTools;
@@ -35,9 +36,12 @@ public class ChapterThread implements Callable<Map<String, Object>> {
     private JsonElement element;
     private Vector<Future<DownloadDTO>> futureVector = new Vector<>();
 
+    BilibiliMangaProperties bilibiliMangaProperties;
+
 
     public ChapterThread(JsonElement element) {
         this.element = element;
+        this.bilibiliMangaProperties = SpringContext.getBeanWithGenerics(BilibiliMangaProperties.class);
     }
 
     @Override
@@ -63,7 +67,7 @@ public class ChapterThread implements Callable<Map<String, Object>> {
         int comic_id = CommonIOUtils.getIntegerFromJson(element, "comic_id");
         String comic_name = CommonIOUtils.getFromJson2Str(element, "comic_name");
         List<String> pathMake = new ArrayList<>();
-        pathMake.add(BilibiliStaticParams.manga_save_path);
+        pathMake.add(bilibiliMangaProperties.mangaSavePath);
         pathMake.add(CommonIOUtils.generateComicFolderName(comic_name, comic_id));
         result.put("save_path", CommonIOUtils.makeFilePath(pathMake, null));
         pathMake.add("".equalsIgnoreCase(title) ? order : CommonIOUtils.generateChapterName(title, order));
@@ -84,9 +88,9 @@ public class ChapterThread implements Callable<Map<String, Object>> {
         }
 
         //获取加密的index.dat文件请求路径
-        String IndexInfo = URLConnectionTool.postUrl(BilibiliStaticParams.getImageIndexUrl,
+        String IndexInfo = URLConnectionTool.postUrl(bilibiliMangaProperties.getImageIndexUrl,
                 "{\"ep_id\":" + chapter_id +
-                        "}", BilibiliStaticParams.commonHeaders + BilibiliStaticParams.bilibiliCookies);
+                        "}", bilibiliMangaProperties.commonHeaders + bilibiliMangaProperties.bilibiliCookies);
         //https://manga.hdslb.com/bfs/manga/26484/309850/data.index?token=529914acc997e3166f4504a4adac4130&ts=5e425614
         //https://manga.hdslb.com
         ///bfs/manga/26484/309850/data.index?token=9b57200fa0112d3685feaecca338559a&ts=5e425676
@@ -100,7 +104,7 @@ public class ChapterThread implements Callable<Map<String, Object>> {
                 , "data-host").getAsString();
         String path = CommonIOUtils.getFromJson2(Objects.requireNonNull(CommonIOUtils.paraseJsonFromStr(IndexInfo))
                 , "data-path").getAsString();
-        byte[] encryption = URLConnectionTool.getMethod(host + path, BilibiliStaticParams.commonHeaders);
+        byte[] encryption = URLConnectionTool.getMethod(host + path, bilibiliMangaProperties.commonHeaders);
         JsonElement picsJson = BilibiliCommonUtils.decryptIndexFile(encryption, comic_id, chapter_id);
         JsonElement clips = CommonIOUtils.getFromJson2(picsJson, "clips");
         JsonElement pics = CommonIOUtils.getFromJson2(picsJson, "pics");

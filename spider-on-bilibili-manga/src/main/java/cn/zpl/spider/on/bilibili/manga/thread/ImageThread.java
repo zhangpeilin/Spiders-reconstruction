@@ -1,7 +1,8 @@
 package cn.zpl.spider.on.bilibili.manga.thread;
 
+import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.DownloadDTO;
-import cn.zpl.spider.on.bilibili.manga.util.BilibiliStaticParams;
+import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.URLConnectionTool;
 import com.google.gson.JsonElement;
@@ -15,6 +16,7 @@ import java.util.concurrent.Callable;
 public class ImageThread implements Callable<DownloadDTO> {
 
     private JsonElement clip;
+    BilibiliMangaProperties bilibiliMangaProperties;
     private JsonElement pic;
     private JsonElement chapter;
 
@@ -22,6 +24,7 @@ public class ImageThread implements Callable<DownloadDTO> {
         this.clip = clip;
         this.pic = pic;
         this.chapter = chapter;
+        this.bilibiliMangaProperties = SpringContext.getBeanWithGenerics(BilibiliMangaProperties.class);
     }
 
     @Override
@@ -39,14 +42,14 @@ public class ImageThread implements Callable<DownloadDTO> {
         //{"urls":"[\"/bfs/manga/8dd9d08a2fdf684d0fda366c072ee93c98917d17.jpg@748w.jpg\"]"}
         List<String> pathMake = new ArrayList<>();
         //漫画保存位置
-        pathMake.add(BilibiliStaticParams.manga_save_path);
+        pathMake.add(bilibiliMangaProperties.mangaSavePath);
         String imgUrl = pic.getAsString();
         String fileType = imgUrl.substring(imgUrl.lastIndexOf("."));
         String width = CommonIOUtils.getFromJson2Str(clip, "r");
         String order = CommonIOUtils.getFromJson2Str(clip, "pic");
-        String response = URLConnectionTool.postUrl(BilibiliStaticParams.ImageTokenUrl,
+        String response = URLConnectionTool.postUrl(bilibiliMangaProperties.ImageTokenUrl,
                 "{\"urls\":\"[\\\"" + imgUrl +
-                        "@" + width + "w" + fileType + "\\\"]\"}", BilibiliStaticParams.commonHeaders);
+                        "@" + width + "w" + fileType + "\\\"]\"}", bilibiliMangaProperties.commonHeaders);
         JsonElement token = CommonIOUtils.paraseJsonFromStr(response);
         JsonElement[] urlStr = CommonIOUtils.getFromJson3(token, "data-url");
         JsonElement[] tokenStr = CommonIOUtils.getFromJson3(token, "data-token");
@@ -64,7 +67,7 @@ public class ImageThread implements Callable<DownloadDTO> {
         pathMake.add("".equalsIgnoreCase(title) ? chapter_order : CommonIOUtils.generateChapterName(title, chapter_order));
         DownloadDTO dto = new DownloadDTO();
         dto.setUrl(imgUrlWithToken);
-        dto.setHeader(BilibiliStaticParams.commonHeaders);
+        dto.setHeader(bilibiliMangaProperties.commonHeaders);
         dto.setSavePath(CommonIOUtils.makeFilePath(pathMake, order + fileType));
         return dto;
     }

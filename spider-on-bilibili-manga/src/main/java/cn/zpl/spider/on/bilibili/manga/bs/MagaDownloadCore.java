@@ -1,34 +1,33 @@
 package cn.zpl.spider.on.bilibili.manga.bs;
 
+import cn.zpl.common.bean.BilibiliManga;
 import cn.zpl.pojo.OrigionalDTO;
 import cn.zpl.spider.on.bilibili.manga.thread.ChapterThread;
-import cn.zpl.spider.on.bilibili.manga.util.BilibiliStaticParams;
+import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
 import cn.zpl.util.URLConnectionTool;
 import com.google.gson.JsonElement;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 @Slf4j
+@Component
 public class MagaDownloadCore {
 
     private static MagaDownloadCore core;
 
-    static MagaDownloadCore getInstance() {
-        if (core == null) {
-            core = new MagaDownloadCore();
-        }
-        return core;
-    }
-
+    @Resource
+    BilibiliMangaProperties mangaProperties;
     public void test() {
-        getComicDetail("mc27306".replace("mc", "").replaceAll("[()]", ""), true);
+        getComicDetail("28932".replace("mc", "").replaceAll("[()]", ""), true);
 //        getComicDetailForFree("mc26787");
     }
 
@@ -39,10 +38,10 @@ public class MagaDownloadCore {
     String getComicDetail(String comic_id, boolean needLogin) {
         try {
             Vector<Future<Map<String, Object>>> futureVector = new Vector<>();
-            String detailStr = URLConnectionTool.postUrl(BilibiliStaticParams.getComicDetailUrl,
+            String detailStr = URLConnectionTool.postUrl(mangaProperties.getComicDetailUrl,
                     "{\"comic_id\":" + comic_id +
-                            "}", needLogin ? BilibiliStaticParams.commonHeaders + BilibiliStaticParams.bilibiliCookies :
-                            BilibiliStaticParams.commonHeaders);
+                            "}", needLogin ? mangaProperties.commonHeaders + mangaProperties.bilibiliCookies :
+                            mangaProperties.commonHeaders);
             JsonElement detailJson = CommonIOUtils.paraseJsonFromStr(detailStr);
             if (CommonIOUtils.getFromJson2Integer(detailJson, "code") != 0) {
                 log.error("返回结果不符合预期，请检查" + detailStr);
@@ -70,12 +69,10 @@ public class MagaDownloadCore {
             }
             tools.shutdown();
             final double[] min = {0, 0};
-            OrigionalDTO data2Save = new OrigionalDTO();
+            BilibiliManga manga = new BilibiliManga();
             futureVector.forEach(mapFuture -> {
                 try {
-                    if (data2Save.get("save_path") == null) {
-                        data2Save.put("save_path", mapFuture.get().get("save_path"));
-                    }
+                    manga.setSavePath(manga.getSavePath() == null ? String.valueOf(mapFuture.get().get("save_path")) : manga.getSavePath());
                     //过滤完成并且buy_status状态是1的结果
                     if (mapFuture.isDone() && mapFuture.get().get("buy_status").equals(0)) {
                         if (min[0] == 0) {
@@ -91,14 +88,13 @@ public class MagaDownloadCore {
                 }
             });
             log.debug("最小的未购买章节是：" + min[1]);
-            data2Save.put("comic_id", comic_id);
-            data2Save.put("title", comic_name);
-            data2Save.put("chapter_wait_buy", min[1]);
-            data2Save.put("wait_free_at", wait_free_at);
-            data2Save.put("allow_wait_free", allow_wait_free);
-//            DBManager.getInstance().saveOrUpdateByTableName("bilibili_manga", data2Save);
-            CrudTools.commonApiSave(data2Save);
-            return data2Save.get("save_path") == null ? "" : data2Save.get("save_path").toString();
+            manga.setComicId(comic_id);
+            manga.setTitle(comic_name);
+            manga.setChapterWaitBuy(String.valueOf(min[1]));
+            manga.setWaitFreeAt(wait_free_at);
+            manga.setAllowWaitFree("false".equalsIgnoreCase(allow_wait_free) ? 0 : 1);
+            CrudTools.commonApiSave(manga);
+            return manga.getSavePath() == null ? "" : manga.getSavePath();
         } catch (Exception e) {
             log.error("漫画第一层解析失败：\n", e);
             return getComicDetail(comic_id, needLogin);
