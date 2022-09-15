@@ -20,6 +20,8 @@
         <module>baidu-ai-platform</module>
         <module>spider-on-bika</module>
         <module>common-app-eureka</module>
+        <module>common-gateway</module>
+        <module>spider-on-bilibili-manga</module>
     </modules>
 
     <properties>
