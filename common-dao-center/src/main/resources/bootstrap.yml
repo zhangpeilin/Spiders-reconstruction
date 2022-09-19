@@ -4,4 +4,4 @@ spring:
       label: master
       name: daocenter,common
       profile: online
-      uri: http://localhost:3344
+      uri: http://localhost:8089/common-config-center
