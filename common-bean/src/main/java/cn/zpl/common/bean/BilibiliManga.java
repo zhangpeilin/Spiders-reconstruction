@@ -2,6 +2,7 @@ package cn.zpl.common.bean;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import io.swagger.annotations.ApiModel;
+import lombok.Data;
 
 import java.io.Serializable;
 
@@ -13,6 +14,7 @@ import java.io.Serializable;
  * @author zpl
  * @since 2022-09-16
  */
+@Data
 @ApiModel(value = "BilibiliManga对象", description = "")
 public class BilibiliManga implements Serializable {
 
@@ -29,6 +31,8 @@ public class BilibiliManga implements Serializable {
     private String waitFreeAt;
 
     private Integer allowWaitFree;
+
+    private String mark;
 
     public String getComicId() {
         return comicId;
