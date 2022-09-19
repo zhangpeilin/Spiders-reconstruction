@@ -1,0 +1,11 @@
+spider:
+  bilibili:
+    manga:
+      manga-save-path: /users/zpl/dev/manga
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:7001/eureka/
+  instance:
+    ip-address: true
