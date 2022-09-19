@@ -14,4 +14,6 @@ public class CommonProperties {
 
     @Value("${spider.common.ffmpeg}")
     public String ffmpeg;
+    @Value("${spider.common.m3u8SavePath}")
+    public String m3u8SavePath;
 }

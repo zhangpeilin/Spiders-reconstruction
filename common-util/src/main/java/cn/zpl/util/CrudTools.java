@@ -36,9 +36,10 @@ public class CrudTools<T> {
     @Resource
     UrlConfig config;
 
-    private static RestTemplate restTemplate = new RestTemplate();
+    @Resource
+    private RestTemplate restTemplate;
 
-    static {
+    public void init(){
         for (HttpMessageConverter<?> messageConverter : restTemplate.getMessageConverters()) {
             if (messageConverter instanceof GsonHttpMessageConverter) {
                 Gson gson = new GsonBuilder().registerTypeAdapter(new TypeToken<RestResponse>() {
@@ -63,7 +64,7 @@ public class CrudTools<T> {
 
 
     @SuppressWarnings("unchecked")
-    public static RestResponse commonApiSave(Object bean) {
+    public RestResponse commonApiSave(Object bean) {
 
         String entity;
         if (bean instanceof List) {
@@ -149,7 +150,7 @@ public class CrudTools<T> {
         NasPic pic = new NasPic();
         pic.setId("234234");
         pic.setUnitId("asfdas");
-        commonApiSave(pic);
+//        commonApiSave(pic);
     }
 
 }

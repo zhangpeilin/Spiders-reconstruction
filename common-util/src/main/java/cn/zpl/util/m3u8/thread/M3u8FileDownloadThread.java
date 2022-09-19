@@ -7,6 +7,7 @@ import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.thread.CommonThread;
 import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.CommonProperties;
 import cn.zpl.util.CruxIdGenerator;
 import cn.zpl.util.FFMEPGToolsPatch;
 import cn.zpl.util.m3u8.M3U8;
@@ -48,6 +49,9 @@ public class M3u8FileDownloadThread extends CommonThread {
     String path;
     @Resource
     FFMEPGToolsPatch ffmepgToolsPatch;
+
+    @Resource
+    CommonProperties commonProperties;
     /**
      * 正式文件存储地址(合并之后的文件)
      */
@@ -57,25 +61,25 @@ public class M3u8FileDownloadThread extends CommonThread {
     /**
      * 临时文件存储地址(M3U8视频段)
      */
-    private String folderpath = "E:\\m3u8\\temp";
+//    private String folderpath = "E:\\m3u8\\temp";
     /**
      * 下载完的文件所放的文件夹名字
      */
     private String foldername = UUID.randomUUID().toString().replaceAll("-", "");
 
     public M3u8FileDownloadThread(){}
-
     public M3u8FileDownloadThread(String path) {
         this.path = path;
         ffmepgToolsPatch = (FFMEPGToolsPatch) SpringContext.getBeanWithGenerics(FFMEPGToolsPatch.class);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Properties properties = System.getProperties();
         AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext(UtilSpringConfig.class);
         M3u8FileDownloadThread thread = annotationConfigApplicationContext.getBean(M3u8FileDownloadThread.class);
-        thread.setPath("/Users/zpl/Downloads/index (1).m3u8");
-        thread.run();
+//        thread.setPath("/Users/zpl/Downloads/index (1).m3u8");
+        thread.downloadCore("https://v9.microclassonline.com/20220220/xDt0gAPk/index.m3u8");
+//        thread.run();
 //        M3u8FileDownloadThread m3u8FileDownloadThread = new M3u8FileDownloadThread("/Users/zpl/Downloads/index (1).m3u8");
 //        m3u8FileDownloadThread.run();
     }
@@ -341,21 +345,16 @@ public class M3u8FileDownloadThread extends CommonThread {
             return;
         }
         //设置好初始路径
-        folderpath += File.separator + foldername;
+//        folderpath += File.separator + foldername;
 
-        File dir = new File(folderpath);
-        //防止文件夹里有其他文件，做好分类
-        if (dir.exists()) {
-            System.out.println("文件夹：" + folderpath + "已存在！");
-            return;
-        }
+
         //获取到地址里面的m3u8文件名称
         final String m3u8name = url.substring(url.lastIndexOf("/"), url.toLowerCase().indexOf(".m3u8", url.lastIndexOf("/"))) + ".m3u8";
 
         //先将m3u8文件保存到本地，以便不用合成也能播放对应的视频
-        saveM3u8File(folderpath, url, m3u8name);
+        saveM3u8File(commonProperties.m3u8SavePath, url, m3u8name);
         //解析M3U8地址为对象
-        M3U8 m3u8 = parseIndex(folderpath, m3u8name, url);
+        M3U8 m3u8 = parseIndex(commonProperties.m3u8SavePath, m3u8name, url);
         m3u8.setFilePath(directory);
         m3u8.setFileName(fileName);
         if (host != null && !"".equals(host)) {
@@ -373,12 +372,12 @@ public class M3u8FileDownloadThread extends CommonThread {
 //        }
         //根据M3U8对象下载视频段
         VideoInfo info = new VideoInfo();
-        info.setSavedLocalName(new File(folderpath, CommonIOUtils.filterFileName2(m3u8name)).getPath());
+        info.setSavedLocalName(new File(commonProperties.m3u8SavePath, CommonIOUtils.filterFileName2(m3u8name)).getPath());
         info.setTimeLength(String.valueOf(duration * 1000));
         ffmepgToolsPatch.mergeXDFTs(info);
 
         delAllFile(m3u8.getFpath());
-        System.out.println("下载完成，文件在: " + folderpath);
+        System.out.println("下载完成，文件在: " + commonProperties.m3u8SavePath);
     }
 
     public void domain() throws Exception {

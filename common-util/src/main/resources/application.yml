@@ -1,6 +1,10 @@
 spider:
   common:
-    url:
-      common-save-url: http://localhost:8080/common/dao/api/save
-      common-query-url: http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&size=%4$s
     ffmpeg: ffmpeg
+
+spring:
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest

@@ -61,7 +61,7 @@ public class SaveLogForImages {
             File saveDir = new File(data.getSavePath());
             log.debug("写入日志SaveLog");
             try {
-                File file = new File(saveDir.getParent() + "\\list.txt");
+                File file = new File(saveDir.getParent(), "list.txt");
                 if (!file.exists()) {
                     if (file.getParentFile().mkdirs()) {
                         log.warn(file.getParentFile().getPath() + "日志路径创建失败，可能有风险");
