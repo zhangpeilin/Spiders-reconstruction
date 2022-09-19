@@ -1,7 +1,6 @@
 package cn.zpl.spider.on.bilibili.manga.bs;
 
 import cn.zpl.common.bean.BilibiliManga;
-import cn.zpl.pojo.OrigionalDTO;
 import cn.zpl.spider.on.bilibili.manga.thread.ChapterThread;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
 import cn.zpl.util.CommonIOUtils;
@@ -26,6 +25,8 @@ public class MagaDownloadCore {
 
     @Resource
     BilibiliMangaProperties mangaProperties;
+    @Resource
+    CrudTools<BilibiliManga> crudTools;
     public void test() {
         getComicDetail("28932".replace("mc", "").replaceAll("[()]", ""), true);
 //        getComicDetailForFree("mc26787");
@@ -45,12 +46,11 @@ public class MagaDownloadCore {
             JsonElement detailJson = CommonIOUtils.paraseJsonFromStr(detailStr);
             if (CommonIOUtils.getFromJson2Integer(detailJson, "code") != 0) {
                 log.error("返回结果不符合预期，请检查" + detailStr);
-                OrigionalDTO data2Save = new OrigionalDTO();
-                data2Save.put("comic_id", comic_id);
-                data2Save.put("allow_wait_free", 2);
-                data2Save.put("mark", detailStr);
-//                DBManager.getInstance().saveOrUpdateByTableName("bilibili_manga", data2Save);
-                CrudTools.commonApiSave(data2Save);
+                BilibiliManga manga = new BilibiliManga();
+                manga.setComicId(comic_id);
+                manga.setAllowWaitFree(2);
+                manga.setMark(detailStr);
+                crudTools.commonApiSave(manga);
                 return detailStr;
             }
             JsonElement ep_list = CommonIOUtils.getFromJson2(detailJson, "data-ep_list");
@@ -93,7 +93,7 @@ public class MagaDownloadCore {
             manga.setChapterWaitBuy(String.valueOf(min[1]));
             manga.setWaitFreeAt(wait_free_at);
             manga.setAllowWaitFree("false".equalsIgnoreCase(allow_wait_free) ? 0 : 1);
-            CrudTools.commonApiSave(manga);
+            crudTools.commonApiSave(manga);
             return manga.getSavePath() == null ? "" : manga.getSavePath();
         } catch (Exception e) {
             log.error("漫画第一层解析失败：\n", e);
