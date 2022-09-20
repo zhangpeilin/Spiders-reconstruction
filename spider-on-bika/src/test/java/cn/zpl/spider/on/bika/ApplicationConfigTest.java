@@ -22,4 +22,10 @@ public class ApplicationConfigTest {
     public void loadConfig() {
         System.out.println(params.getEmail());
     }
+
+    @Test
+    public void domain(){
+        BikaUtils bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
+        bikaUtils.search("めりちゃんどり");
+    }
 }

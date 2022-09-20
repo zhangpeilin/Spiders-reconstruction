@@ -14,7 +14,7 @@ import java.util.List;
 public class MangaBeanTest {
 
     @Resource
-    CrudTools<BilibiliManga> tools;
+    CrudTools tools;
 
     @Test
     public void test() {

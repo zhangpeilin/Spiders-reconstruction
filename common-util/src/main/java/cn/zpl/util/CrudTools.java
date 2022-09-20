@@ -32,14 +32,14 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @EnableConfigurationProperties(UrlConfig.class)
-public class CrudTools<T> {
+public class CrudTools {
     @Resource
     UrlConfig config;
 
     @Resource
     private RestTemplate restTemplate;
 
-    public void init(){
+    public void init() {
         for (HttpMessageConverter<?> messageConverter : restTemplate.getMessageConverters()) {
             if (messageConverter instanceof GsonHttpMessageConverter) {
                 Gson gson = new GsonBuilder().registerTypeAdapter(new TypeToken<RestResponse>() {
@@ -49,18 +49,18 @@ public class CrudTools<T> {
         }
     }
 
-    public static CrudTools<Object> getInstance(UrlConfig config) {
-        CrudTools<Object> crudTools = new CrudTools<>();
-        crudTools.setConfig(config);
-        return crudTools;
-    }
+//    public static CrudTools<Object> getInstance(UrlConfig config) {
+//        CrudTools<Object> crudTools = new CrudTools<>();
+//        crudTools.setConfig(config);
+//        return crudTools;
+//    }
 
-    @Deprecated
-    public RestResponse commonSave(Object data) {
-        ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(config.getCommonSaveUrl(), data, RestResponse.class);
-        log.debug(String.valueOf(responseEntity));
-        return responseEntity.getBody();
-    }
+//    @Deprecated
+//    public RestResponse commonSave(Object data) {
+//        ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(config.getCommonSaveUrl(), data, RestResponse.class);
+//        log.debug(String.valueOf(responseEntity));
+//        return responseEntity.getBody();
+//    }
 
 
     @SuppressWarnings("unchecked")
@@ -77,7 +77,7 @@ public class CrudTools<T> {
         HashMap<String, Object> params = new HashMap<>();
         params.put("entity", entity);
         params.put("data", bean);
-        ResponseEntity<RestResponse> restResponseResponseEntity = restTemplate.postForEntity("http://localhost:8080/common/dao/api/save/", params, RestResponse.class);
+        ResponseEntity<RestResponse> restResponseResponseEntity = restTemplate.postForEntity(config.getCommonSaveUrl(), params, RestResponse.class);
         log.debug(String.valueOf(restResponseResponseEntity));
         return restResponseResponseEntity.getBody();
 
@@ -90,9 +90,9 @@ public class CrudTools<T> {
         return commonApiQuery(sql, null, tClass);
     }
 
-    public T commonApiQuery(String id, Class<T> tClass) {
-        return commonApiQuery("id=" + id, null, tClass).get(0);
-    }
+//    public T commonApiQuery(String id, Class<T> tClass) {
+//        return commonApiQuery("id=" + id, null, tClass).get(0);
+//    }
 
     public RestResponse commonDelete(String sql, List<LinkedHashMap<String, Object>> paramObjects) {
         Map<String, Object> requestMap = new HashMap<>();
@@ -108,9 +108,13 @@ public class CrudTools<T> {
         return commonApiQuery("", null, Bika.class);
     }
 
-    public List<T> queryAll(Class<T> tClass) {
-        return commonApiQuery("", null, tClass);
+    //    public List<T> queryAll(Class<T> tClass) {
+//        return commonApiQuery("", null, tClass);
+//    }
+    public <R> List<R> commonApiQuery(String condition, Class<R> tClass) {
+        return commonApiQuery(condition, null, tClass, new Page(1, 20));
     }
+
 
     public <R> List<R> commonApiQuery(String condition, String fetchProperties, Class<R> tClass) {
         return commonApiQuery(condition, fetchProperties, tClass, new Page(1, 20));

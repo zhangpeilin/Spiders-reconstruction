@@ -26,7 +26,7 @@ import java.util.Base64;
 public class TencentAITool {
 
     static
-    CrudTools<PictureAnalyze> tools;
+    CrudTools tools;
     static final Credential credential = new Credential(TencentParams.SecretId, TencentParams.SecretKey);
     @SneakyThrows
     public static void dobusiness(File file) {
@@ -54,7 +54,7 @@ public class TencentAITool {
         jsonObject.put("labelResult", detectLabelResponse);
 //        jsonObject.put("behaviorResult", detectMisbehaviorResponse);
         pictureAnalyze.setTencentJsonResult(jsonObject.toJSONString());
-        CrudTools.commonApiSave(pictureAnalyze);
+        tools.commonApiSave(pictureAnalyze);
     }
 
     @SneakyThrows
@@ -66,7 +66,7 @@ public class TencentAITool {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("AssessQualityResult", assessQualityResponse);
         pictureAnalyze.setQualityResult(jsonObject.toJSONString());
-        CrudTools.commonApiSave(pictureAnalyze);
+        tools.commonApiSave(pictureAnalyze);
 
     }
 
@@ -89,7 +89,7 @@ public class TencentAITool {
 
     public static void main(String[] args) {
 
-        pictureQuality(tools.commonApiQuery("1527733848444903425", PictureAnalyze.class));
+        pictureQuality(tools.commonApiQuery("1527733848444903425", PictureAnalyze.class).get(0));
 
     }
 }

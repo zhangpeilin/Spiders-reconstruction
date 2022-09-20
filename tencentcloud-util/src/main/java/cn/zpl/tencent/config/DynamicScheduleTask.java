@@ -19,7 +19,7 @@ import java.util.List;
 public class DynamicScheduleTask implements SchedulingConfigurer {
 
     @Resource
-    CrudTools<Cron> tools;
+    CrudTools tools;
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {

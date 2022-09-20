@@ -2,6 +2,7 @@ package cn.zpl.spider.on.bilibili;
 
 import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.NasPage;
+import cn.zpl.config.SpringContext;
 import cn.zpl.config.UrlConfig;
 import cn.zpl.spider.on.bilibili.common.BilibiliConfigParams;
 import cn.zpl.util.CrudTools;
@@ -26,7 +27,7 @@ public class TestConfig {
     @Resource
     BilibiliConfigParams configParams;
     @Resource
-    CrudTools<Bika> tools;
+    CrudTools tools;
 
     @Test
     public void contextLoad() {
@@ -34,19 +35,11 @@ public class TestConfig {
     }
 
     @Test
-    public void testCurlTools() {
-        List<Bika> bikaList = tools.queryAll(Bika.class);
-        System.out.println(bikaList);
-    }
-
-
-
-    @Test
     public void test() {
         UrlConfig config = new UrlConfig();
         config.setCommonQueryUrl("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&size=%4$s");
         config.setCommonSaveUrl("http://localhost:8080/common/dao/api/save");
-        CrudTools<Object> crudTools = CrudTools.getInstance(config);
+        CrudTools crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
         List<NasPage> nasPages = crudTools.commonApiQueryBySql("offset=" + 500, NasPage.class);
         if (nasPages.isEmpty()) {
             return;
@@ -61,7 +54,7 @@ class testClassPath{
         UrlConfig config = new UrlConfig();
         config.setCommonQueryUrl("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&size=%4$s");
         config.setCommonSaveUrl("http://localhost:8080/common/dao/api/save");
-        CrudTools<Object> crudTools = CrudTools.getInstance(config);
+        CrudTools crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
         List<NasPage> nasPages = crudTools.commonApiQueryBySql("offset=" + 500, NasPage.class);
         if (nasPages.isEmpty()) {
             return;

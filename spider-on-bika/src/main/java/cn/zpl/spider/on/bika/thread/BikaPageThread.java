@@ -1,5 +1,6 @@
 package cn.zpl.spider.on.bika.thread;
 
+import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaList;
 import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.bika.common.BikaParams;
@@ -29,6 +30,8 @@ public class BikaPageThread extends BikaCommonThread {
     private final String keyword;
     private final boolean isNeedDownload;
 
+    CrudTools tools;
+
 
     public BikaPageThread(int page, String keyword, boolean isNeedDownload) {
         this.page = page;
@@ -57,7 +60,7 @@ public class BikaPageThread extends BikaCommonThread {
                 }
                 log.debug(keyword + "第" + page + "页");
                 if (BikaParams.writeDB){
-                    CrudTools.commonApiSave(listVector);
+                    tools.commonApiSave(listVector);
                 }
                 tool.shutdown();
             }

@@ -26,7 +26,7 @@ public class MagaDownloadCore {
     @Resource
     BilibiliMangaProperties mangaProperties;
     @Resource
-    CrudTools<BilibiliManga> crudTools;
+    CrudTools crudTools;
     public void test() {
         getComicDetail("28932".replace("mc", "").replaceAll("[()]", ""), true);
 //        getComicDetailForFree("mc26787");

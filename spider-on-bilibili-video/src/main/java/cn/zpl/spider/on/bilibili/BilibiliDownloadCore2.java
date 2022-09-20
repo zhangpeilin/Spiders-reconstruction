@@ -52,9 +52,9 @@ public class BilibiliDownloadCore2 {
     private String avid;
 
     @Resource
-    CrudTools<VideoInfo> videoInfoCrudTools;
+    CrudTools videoInfoCrudTools;
     @Resource
-    CrudTools<ExceptionList> exceptionListCrudTools;
+    CrudTools exceptionListCrudTools;
 
     @Resource
     BilibiliConfigParams configParams;
@@ -155,7 +155,7 @@ public class BilibiliDownloadCore2 {
             log.debug(combinedId + "已下载");
             return true;
         } else {
-            VideoInfo videoById = videoInfoCrudTools.commonApiQuery(cid + "|" + avid, VideoInfo.class);
+            VideoInfo videoById = videoInfoCrudTools.commonApiQuery(cid + "|" + avid, VideoInfo.class).get(0);
             if (combinedId.equalsIgnoreCase(videoById.getVideoId() + "|" + videoById.getAid())) {
                 log.debug(combinedId + "已下载");
                 exists.add(combinedId);
@@ -172,7 +172,7 @@ public class BilibiliDownloadCore2 {
             log.debug(video_id + "已排除");
             return true;
         } else {
-            ExceptionList exceptionItem = exceptionListCrudTools.commonApiQuery(video_id, ExceptionList.class);
+            ExceptionList exceptionItem = exceptionListCrudTools.commonApiQuery(video_id, ExceptionList.class).get(0);
             if (exceptionItem == null) {
                 return false;
             }
@@ -332,7 +332,7 @@ public class BilibiliDownloadCore2 {
         videoData.setTimeLength(videoInfo.getTimeLength());
         videoData.setVideoId(avid);
         if (FFMEPGToolsPatch.isExists(videoData)) {
-            RestResponse restResponse = videoInfoCrudTools.commonSave(videoInfo);
+            RestResponse restResponse = videoInfoCrudTools.commonApiSave(videoInfo);
             if (!restResponse.isSuccess()) {
                 throw new RuntimeException("保存记录失败");
             }
@@ -367,7 +367,7 @@ public class BilibiliDownloadCore2 {
                 System.exit(1);
             }
         }
-        RestResponse restResponse = videoInfoCrudTools.commonSave(videoInfo);
+        RestResponse restResponse = videoInfoCrudTools.commonApiSave(videoInfo);
         if (!restResponse.isSuccess()) {
             throw new RuntimeException("保存下载记录失败");
         }

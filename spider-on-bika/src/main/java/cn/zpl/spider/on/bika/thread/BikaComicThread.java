@@ -2,6 +2,7 @@ package cn.zpl.spider.on.bika.thread;
 
 import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaDownloadFailed;
+import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.bika.common.BikaParams;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
 import cn.zpl.thread.CommonThread;
@@ -24,10 +25,13 @@ public class BikaComicThread extends BikaCommonThread {
 
     private final String comicId;
     private final boolean isNeedDownload;
+    CrudTools bikaCrudTools;
+
 
     public BikaComicThread(String comicId, boolean isNeedDownload) {
         this.comicId = comicId;
         this.isNeedDownload = isNeedDownload;
+        this.bikaCrudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
     }
 
     @Override
@@ -39,7 +43,7 @@ public class BikaComicThread extends BikaCommonThread {
         failed.setDownloadAt(String.valueOf(System.currentTimeMillis()));
         failed.setError(e.getMessage());
         if (BikaParams.writeDB)
-            CrudTools.commonApiSave(failed);
+            bikaCrudTools.commonApiSave(failed);
         if (e.getMessage().contains("错误代码：400")) {
             return false;
         }
@@ -87,7 +91,7 @@ public class BikaComicThread extends BikaCommonThread {
                         throw new RuntimeException("更名失败");
                     } else {
                         exist.setLocalPath(tmp.getPath());
-                        if (!CrudTools.commonApiSave(exist).isSuccess()) {
+                        if (!bikaCrudTools.commonApiSave(exist).isSuccess()) {
                             log.error("保存失败" + exist);
                         }
                     }
@@ -96,7 +100,7 @@ public class BikaComicThread extends BikaCommonThread {
                     log.debug("文件已更名，更新数据库");
                     exist.setLocalPath(tmp.getPath());
 //                    DBManager.ForceSave(exist);
-                    if (!CrudTools.commonApiSave(exist).isSuccess()) {
+                    if (!bikaCrudTools.commonApiSave(exist).isSuccess()) {
                         log.error("保存失败" + exist);
                     }
                     BikaUtils.exists.clear();

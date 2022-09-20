@@ -69,7 +69,8 @@ class NASDownload {
         config.setNothing("*");
         config.setCommonQueryUrl("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&page=%4$s");
         config.setCommonSaveUrl("http://localhost:8080/common/dao/api/save");
-        CrudTools<Object> crudTools = CrudTools.getInstance(config);
+        CrudTools crudTools = new CrudTools();
+        crudTools.setConfig(config);
         String headers = "Accept: */*\n" +
                 "Accept-Encoding: gzip, deflate\n" +
                 "Accept-Language: zh-CN,zh;q=0.9\n" +

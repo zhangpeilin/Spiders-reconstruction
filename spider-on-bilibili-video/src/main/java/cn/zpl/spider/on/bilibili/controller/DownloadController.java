@@ -53,7 +53,7 @@ public class DownloadController {
     @Resource
     BilibiliConfigParams configParams;
     @Resource
-    CrudTools<VideoInfo> tools;
+    CrudTools tools;
 
     @Resource
     FFMEPGToolsPatch ffmepgToolsPatch;
@@ -67,7 +67,6 @@ public class DownloadController {
     @GetMapping("/download/{bid}")
     public RestResponse downloadById(@PathVariable("bid") String bid) {
         try {
-            List<VideoInfo> videoInfos = tools.queryAll(VideoInfo.class);
             return mainBusiness(bid);
         } catch (Exception e) {
             log.error("下载错误：", e);

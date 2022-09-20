@@ -2,6 +2,7 @@ package cn.zpl.util;
 
 import cn.zpl.common.BaiduAIParams;
 import cn.zpl.common.bean.PictureAnalyze;
+import cn.zpl.config.SpringContext;
 import com.baidu.aip.imageclassify.AipImageClassify;
 import lombok.SneakyThrows;
 import org.json.JSONObject;
@@ -16,7 +17,7 @@ public class BaiduAITool {
     @SneakyThrows
     public static void dobusiness(File file){
         {
-            CrudTools<PictureAnalyze> tools = new CrudTools<>();
+            CrudTools tools = SpringContext.getBeanWithGenerics(CrudTools.class);
             // 初始化一个AipImageClassify
             AipImageClassify client = new AipImageClassify(BaiduAIParams.app_id, BaiduAIParams.api_key, BaiduAIParams.secret_key);
 
@@ -39,7 +40,7 @@ public class BaiduAITool {
             objectOutputStream.writeObject(res.toString());
             pictureAnalyze.setBaiduResult(byteArrayOutputStream.toByteArray());
             pictureAnalyze.setBaiduJsonResult(res.toString());
-            tools.commonSave(pictureAnalyze);
+            tools.commonApiSave(pictureAnalyze);
         }
     }
 }

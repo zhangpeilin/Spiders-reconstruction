@@ -23,7 +23,7 @@ public class ClearDuplicateDataTest {
 
 
     @Resource
-    CrudTools<BikaList> tools;
+    CrudTools tools;
 
     @Test
     public void business() {

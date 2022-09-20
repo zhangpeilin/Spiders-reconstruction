@@ -22,7 +22,7 @@ import java.util.Arrays;
 public class ScanComics {
 
     @Resource
-    CrudTools<Bika> tools;
+    CrudTools tools;
 
     @Resource
     BikaUtils bikaUtils;
@@ -64,10 +64,5 @@ public class ScanComics {
     @Test
     public void test() {
         getMaxPage("NTR");
-    }
-
-    @Test
-    public void testConfig(){
-        tools.queryAll(Bika.class);
     }
 }

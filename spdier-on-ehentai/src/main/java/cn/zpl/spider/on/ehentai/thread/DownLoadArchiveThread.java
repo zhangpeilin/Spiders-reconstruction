@@ -2,6 +2,7 @@ package cn.zpl.spider.on.ehentai.thread;
 
 import cn.zpl.common.bean.Ehentai;
 import cn.zpl.common.bean.RestResponse;
+import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.Data;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.spider.on.ehentai.config.Params;
@@ -43,6 +44,7 @@ public class DownLoadArchiveThread extends CommonThread {
 
     @Override
     public void domain() {
+        CrudTools tools = SpringContext.getBeanWithGenerics(CrudTools.class);
         Data data = new Data();
         Ehentai ehentai;
         data.setUrl(getUrl());
@@ -120,7 +122,7 @@ public class DownLoadArchiveThread extends CommonThread {
                         ehentai.setCost(String.valueOf(GP));
                         ehentai.setCreate_time(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
 //                        RestResponse restResponse = CrudTools.saveEhentai(ehentai);
-                        RestResponse restResponse = CrudTools.commonApiSave(ehentai);
+                        RestResponse restResponse = tools.commonApiSave(ehentai);
                         log.debug("保存是否成功：{}", restResponse.isSuccess());
 
                         if (GP > 20000) {

@@ -9,14 +9,17 @@ import cn.zpl.config.CommonParams;
 import cn.zpl.config.UrlConfig;
 import cn.zpl.pojo.Data;
 import cn.zpl.spider.on.bika.common.BikaParams;
+import cn.zpl.spider.on.bika.thread.BikaComicThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
+import cn.zpl.util.DownloadTools;
 import cn.zpl.util.GetSignature;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -27,6 +30,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.junit.Test;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Component;
@@ -34,8 +38,10 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -54,8 +60,6 @@ import java.util.regex.Pattern;
 public class BikaUtils {
 
     public static Map<String, Bika> exists = new ConcurrentHashMap<>();
-
-    static BikaUtils utils;
     private static String currentToken = "";
     public static String defaultSavePath = "e:\\bika";
     public static ThreadLocal<List<File>> result = new ThreadLocal<>();
@@ -63,9 +67,79 @@ public class BikaUtils {
     @Resource
     BikaParams bikaParams;
     @Resource
-    CrudTools<Bika> tools;
+    CrudTools tools;
 
     public static final Map<String, AtomicInteger> progress = new HashMap<>();
+
+    public void search(String key) {
+        try {
+            String url = "comics/search?page=1&q=" + URLEncoder.encode(key, "utf-8");
+            JsonObject partJson = getJsonByUrl(url);
+            JsonElement comics = CommonIOUtils.getFromJson2(partJson, "data-comics-docs");
+
+            DownloadTools tool = DownloadTools.getInstance(2);
+            tool.setName("漫画");
+            tool.setSleepTimes(10000);
+            for (JsonElement detail : comics.getAsJsonArray()) {
+                tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
+            }
+            tool.shutdown();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void H24() {
+
+        //H24 D7 D30
+        String url = "comics/leaderboard?tt=H24&ct=VC";
+        JsonObject partJson = getJsonByUrl(url);
+        JsonElement comics = CommonIOUtils.getFromJson2(partJson, "data-comics");
+
+        DownloadTools tool = DownloadTools.getInstance(10);
+        tool.setName("漫画");
+        tool.setSleepTimes(10000);
+        List<String> stringList = new ArrayList<>();
+        for (JsonElement detail : comics.getAsJsonArray()) {
+            tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
+            stringList.add(CommonIOUtils.getFromJson2Str(detail, "_id"));
+        }
+        tool.shutdown();
+        BikaUtils.exists.clear();
+        stringList.forEach(s -> {
+            File file = new File(getExists(s).getLocalPath());
+            if (file.exists()) {
+                try {
+                    FileUtils.copyDirectoryToDirectory(file, new File("k:\\bika24H7"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    public void favourite() {
+
+        int i = 1;
+        int maxPage = 99;
+        while (!(i > maxPage)) {
+            String url = "users/favourite?page=" + i;
+            JsonObject partJson = getJsonByUrl(url);
+            JsonElement comics = CommonIOUtils.getFromJson2(partJson, "data-comics-docs");
+
+            maxPage = CommonIOUtils.getFromJson2Integer(partJson, "data-comics-pages");
+
+            DownloadTools tool = DownloadTools.getInstance(2);
+            tool.setName("漫画");
+            tool.setSleepTimes(10000);
+            for (JsonElement detail : comics.getAsJsonArray()) {
+                tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
+            }
+            tool.shutdown();
+            i++;
+        }
+    }
     
     public Bika getExists(String comicid) {
         if (!BikaParams.writeDB){
@@ -121,24 +195,19 @@ public class BikaUtils {
             Token dto = new Token();
             dto.setId(String.valueOf(System.currentTimeMillis()));
             dto.setToken(token);
-            CrudTools.commonApiSave(dto);
+            tools.commonApiSave(dto);
             currentToken = token;
         } catch (Exception e) {
             Login();
         }
     }
 
-    private static String getCurrentToken() {
+    private String getCurrentToken() {
         if (currentToken != null && !"".equals(currentToken)) {
             return currentToken;
         }
-        UrlConfig config = new UrlConfig();
-        config.setNothing("*");
-        config.setCommonQueryUrl("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&page=%4$s");
-        config.setCommonSaveUrl("http://localhost:8080/common/dao/api/save");
-        CrudTools<Object> crudTools = CrudTools.getInstance(config);
         //id是字符串，需要转换成数字后排序
-        List<Token> list0 = crudTools.commonApiQueryBySql("sql:SELECT * from token ORDER BY CAST(id as UNSIGNED) desc LIMIT 0,1", Token.class);
+        List<Token> list0 = tools.commonApiQueryBySql("sql:SELECT * from token ORDER BY CAST(id as UNSIGNED) desc LIMIT 0,1", Token.class);
         if (list0.size() == 1) {
             currentToken = list0.get(0).getToken();
         }
@@ -179,7 +248,7 @@ public class BikaUtils {
         return json;
     }
 
-    private static void addHeader2(HttpRequestBase http, String path) {
+    private void addHeader2(HttpRequestBase http, String path) {
         String time = String.valueOf(System.currentTimeMillis());
         String uuid = UUID.randomUUID().toString().replace("-", "");
         String method;
@@ -304,17 +373,17 @@ public class BikaUtils {
                     log.error("保存失败" + bika);
                 }
             }
-            CrudTools.commonApiSave(list);
+            tools.commonApiSave(list);
         } catch (Exception e) {
 //            base64ErrorCols(((GenericJDBCException) e.getCause()).getSQLException().getMessage(), bika);
 //            base64ErrorCols(((GenericJDBCException) e.getCause()).getSQLException().getMessage(), list);
             if (isNeedDownload) {
 //                DBManager.ForceSave(bika);
-                if (!tools.commonSave(bika).isSuccess()) {
+                if (!tools.commonApiSave(bika).isSuccess()) {
                     log.error("保存失败-->{}", bika);
                 }
             }
-            CrudTools.commonApiSave(list);
+            tools.commonApiSave(list);
         }
     }
 
@@ -408,12 +477,12 @@ public class BikaUtils {
 
     public boolean needSkip(JsonObject info) {
         String categories = CommonIOUtils.getFromJson2(info, "data-comic-categories").toString();
-        if (categories.contains("耽美") && !categories.contains("偽娘")) {
+        if (categories.contains("耽美") && !(categories.contains("偽娘") || categories.contains("性轉換"))) {
             log.debug("跳过BL本");
             Bika bika = getBika(info, "");
             bika.setIsDeleted(1);
 //            DBManager.update(bika);
-            if (BikaParams.writeDB && !tools.commonSave(bika).isSuccess()) {
+            if (BikaParams.writeDB && !tools.commonApiSave(bika).isSuccess()) {
                 log.error("保存失败：" + bika);
             }
             return true;
@@ -421,7 +490,7 @@ public class BikaUtils {
         return false;
     }
 
-    private static void build(Data result) {
+    private void build(Data result) {
 
         String time = String.valueOf(System.currentTimeMillis());
         String uuid = UUID.randomUUID().toString().replace("-", "");

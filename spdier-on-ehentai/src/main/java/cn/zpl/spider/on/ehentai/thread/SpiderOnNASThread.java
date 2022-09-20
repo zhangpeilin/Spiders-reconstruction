@@ -2,6 +2,7 @@ package cn.zpl.spider.on.ehentai.thread;
 
 import cn.zpl.common.bean.NasPage;
 import cn.zpl.common.bean.NasPic;
+import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.Data;
 import cn.zpl.thread.CommonThread;
 import cn.zpl.util.CommonIOUtils;
@@ -26,6 +27,8 @@ public class SpiderOnNASThread extends CommonThread {
     private final int offset;
     private static boolean download = false;
 
+    static CrudTools tools = SpringContext.getBeanWithGenerics(CrudTools.class);
+
     public SpiderOnNASThread(int offset) {
         this.offset = offset;
     }
@@ -49,7 +52,7 @@ public class SpiderOnNASThread extends CommonThread {
         NasPage page = new NasPage();
         page.setOffset(String.valueOf(offset));
         page.setResult(json.getBytes());
-        CrudTools.commonApiSave(page);
+        tools.commonApiSave(page);
         if (!download) {
             return;
         }
@@ -62,7 +65,7 @@ public class SpiderOnNASThread extends CommonThread {
                     pic.setId(CommonIOUtils.getFromJson2Str(jsonElement, "id"));
                     pic.setUrl(CommonIOUtils.format("http://www.ariess.info:5000/mo/sharing/webapi/entry.cgi?item_id=%5B{}%5D&passphrase=%22pKQcitKUk%22&api=%22SYNO.Foto.Download%22&method=%22download%22&version=1&_sharing_id=%22pKQcitKUk%22", pic.getId()));
                     pic.setType(type);
-                    CrudTools.commonApiSave(pic);
+                    tools.commonApiSave(pic);
                     continue;
                 }
                 Data d1 = new Data();
@@ -111,7 +114,7 @@ public class SpiderOnNASThread extends CommonThread {
                 pic.setVersion("2");
                 pic.setSharingId(String.format("\"%1$s\"", "pKQcitKUk"));
                 pic.setUrl(d2.getUrl());
-                CrudTools.commonApiSave(pic);
+                tools.commonApiSave(pic);
                 if (!download) {
                     //不下载时，保存图片地址信息后结束
                     continue;

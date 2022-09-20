@@ -14,7 +14,7 @@ import java.util.List;
 public class UpdateComics {
 
     @Resource
-    CrudTools<Bika> tools;
+    CrudTools tools;
 
     @Resource
     BikaUtils bikaUtils;

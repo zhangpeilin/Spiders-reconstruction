@@ -44,7 +44,8 @@ public class SpiderOnNASThreadV2 extends CommonThread {
         config.setNothing("*");
         config.setCommonQueryUrl("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&size=%4$s");
         config.setCommonSaveUrl("http://localhost:8080/common/dao/api/save");
-        CrudTools<Object> crudTools = CrudTools.getInstance(config);
+        CrudTools crudTools = new CrudTools();
+        crudTools.setConfig(config);
         List<NasPage> nasPages = crudTools.commonApiQueryBySql("offset=" + offset, NasPage.class);
         String json = new String(nasPages.get(0).getResult());
         JsonElement list = CommonIOUtils.getFromJson2(json, "data-list");
@@ -56,7 +57,7 @@ public class SpiderOnNASThreadV2 extends CommonThread {
                     pic.setId(CommonIOUtils.getFromJson2Str(jsonElement, "id"));
                     pic.setUrl(CommonIOUtils.format("http://www.ariess.info:5000/mo/sharing/webapi/entry.cgi?item_id=%5B{}%5D&passphrase=%22pKQcitKUk%22&api=%22SYNO.Foto.Download%22&method=%22download%22&version=1&_sharing_id=%22pKQcitKUk%22", pic.getId()));
                     pic.setType(type);
-                    CrudTools.commonApiSave(pic);
+                    crudTools.commonApiSave(pic);
                     continue;
                 }
                 Data d1 = new Data();
@@ -106,7 +107,7 @@ public class SpiderOnNASThreadV2 extends CommonThread {
                 pic.setVersion("2");
                 pic.setSharingId(String.format("\"%1$s\"", "pKQcitKUk"));
                 pic.setUrl(d2.getUrl());
-                CrudTools.commonApiSave(pic);
+                crudTools.commonApiSave(pic);
                 if (!download) {
                     //不下载时，保存图片地址信息后结束
                     continue;
