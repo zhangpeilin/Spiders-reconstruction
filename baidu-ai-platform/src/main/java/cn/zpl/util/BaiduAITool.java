@@ -18,7 +18,7 @@ public class BaiduAITool {
         {
             CrudTools<PictureAnalyze> tools = new CrudTools<>();
             // 初始化一个AipImageClassify
-            AipImageClassify client = new AipImageClassify(BaiduAIParams.APP_ID, BaiduAIParams.API_KEY, BaiduAIParams.SECRET_KEY);
+            AipImageClassify client = new AipImageClassify(BaiduAIParams.app_id, BaiduAIParams.api_key, BaiduAIParams.secret_key);
 
             // 可选：设置网络连接参数
             client.setConnectionTimeoutInMillis(2000);

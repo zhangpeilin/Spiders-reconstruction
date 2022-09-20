@@ -25,7 +25,7 @@ public class AuthService {
      * }
      */
     public static String getAuth() {
-        return getAuth(BaiduAIParams.API_KEY, BaiduAIParams.SECRET_KEY);
+        return getAuth(BaiduAIParams.api_key, BaiduAIParams.secret_key);
     }
 
     /**
