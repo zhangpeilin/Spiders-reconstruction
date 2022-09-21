@@ -32,7 +32,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.junit.Test;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -71,6 +71,7 @@ public class BikaUtils {
 
     public static final Map<String, AtomicInteger> progress = new HashMap<>();
 
+    @Async("BikaAsync")
     public void search(String key) {
         try {
             String url = "comics/search?page=1&q=" + URLEncoder.encode(key, "utf-8");
@@ -107,16 +108,16 @@ public class BikaUtils {
         }
         tool.shutdown();
         BikaUtils.exists.clear();
-        stringList.forEach(s -> {
-            File file = new File(getExists(s).getLocalPath());
-            if (file.exists()) {
-                try {
-                    FileUtils.copyDirectoryToDirectory(file, new File("k:\\bika24H7"));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+//        stringList.forEach(s -> {
+//            File file = new File(getExists(s).getLocalPath());
+//            if (file.exists()) {
+//                try {
+//                    FileUtils.copyDirectoryToDirectory(file, new File("e:\\bika24H"));
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
     }
 
     public void favourite() {

@@ -121,7 +121,7 @@ public class BikaComicThread extends BikaCommonThread {
             JsonElement chapter_list = CommonIOUtils.getFromJson2(chapters, "data-eps-docs");
             if (chapter_list instanceof JsonArray) {
 
-                DownloadTools tool = DownloadTools.getInstance(2);
+                DownloadTools tool = DownloadTools.getInstance(5);
                 tool.setName(title);
                 tool.setSleepTimes(2000);
                 for (JsonElement detail : chapter_list.getAsJsonArray()) {

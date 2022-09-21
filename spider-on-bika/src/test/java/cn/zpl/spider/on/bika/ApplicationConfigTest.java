@@ -26,6 +26,7 @@ public class ApplicationConfigTest {
     @Test
     public void domain(){
         BikaUtils bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
-        bikaUtils.search("めりちゃんどり");
+        bikaUtils.search("异世界NTR");
+//        bikaUtils.H24();
     }
 }
