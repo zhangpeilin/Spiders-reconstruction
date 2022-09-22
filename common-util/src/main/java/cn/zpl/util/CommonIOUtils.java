@@ -12,7 +12,9 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
@@ -59,7 +61,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,10 +75,12 @@ import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.HttpURLConnection;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,6 +91,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -97,8 +101,8 @@ import java.util.regex.Pattern;
 public class CommonIOUtils {
 
 
-    private static ThreadLocal<DoRetry> retry = new ThreadLocal<>();
-    private static ThreadLocal<Integer> count = new ThreadLocal<>();
+    private static final ThreadLocal<DoRetry> retry = new ThreadLocal<>();
+    private static final ThreadLocal<Integer> count = new ThreadLocal<>();
     public static CloseableHttpClient closeableHttpClient;
     public static ResponseHandler<byte[]> byteHandler;
     public static ResponseHandler<String> strHandler;
@@ -169,9 +173,9 @@ public class CommonIOUtils {
         return fileName != null && !"".equals(fileName) ? res.append(fileName).toString() : res.toString();
     }
 
-    @NotNull
-    public static List<String> paraseM3U8(String txt) {
-        List<String> mediaAddr = new ArrayList<String>();
+    @Deprecated
+    public static List<String> formatM3U8(String txt) {
+        List<String> mediaAddr = new ArrayList<>();
         txt = txt.substring(txt.indexOf("#EXTINF"), txt.indexOf("#EXT-X-ENDLIST"));
         Pattern pattern = Pattern.compile("");
         Matcher matcher = pattern.matcher(txt);
@@ -203,9 +207,9 @@ public class CommonIOUtils {
     public static String toString(InputStream in) throws IOException {
         if (in == null)
             return "";
-        BufferedReader br = new BufferedReader(new InputStreamReader(in, "utf-8"));
+        BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         String tmp;
-        StringBuffer str = new StringBuffer();
+        StringBuilder str = new StringBuilder();
         while ((tmp = br.readLine()) != null) {
             str.append(tmp);
         }
@@ -250,7 +254,7 @@ public class CommonIOUtils {
             if (code == null || "".equals(code)) {
                 code = "gbk";
             }
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path)), code));
+            br = new BufferedReader(new InputStreamReader(Files.newInputStream(new File(path).toPath()), code));
             String tmp;
             while ((tmp = br.readLine()) != null) {
                 str.append(tmp).append("\n");
@@ -275,7 +279,7 @@ public class CommonIOUtils {
             if (code == null || "".equals(code)) {
                 code = "gbk";
             }
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path)), code));
+            br = new BufferedReader(new InputStreamReader(Files.newInputStream(new File(path).toPath()), code));
             String tmp;
             while ((tmp = br.readLine()) != null) {
                 if (tmp.contains(key)) {
@@ -377,11 +381,12 @@ public class CommonIOUtils {
         File file = new File("e:" + File.separator + fileName + "升级脚本.sql");
         try {
             if (file.exists()) {
-                file.delete();
+                FileUtils.delete(file);
             }
-            FileWriter fw = new FileWriter(file);
-            fw.write(str);
-            fw.flush();
+            try (FileWriter fw = new FileWriter(file)) {
+                fw.write(str);
+                fw.flush();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -550,12 +555,6 @@ public class CommonIOUtils {
 
     /**
      * 获取剪切板里面的文字数据
-     *
-     * @return
-     * @Title: getSysClipboardText
-     * @version v1.0.0
-     * @author guojin
-     * @date 2019年2月15日上午11:24:34
      */
     public static String getSysClipboardText() {
         String ret = "";
@@ -603,7 +602,7 @@ public class CommonIOUtils {
         //则移除key，只返回值
         //如果逗号在括号之前检测到，那么说明value中不包含复杂结构，直接返回冒号后面的value
         String tmp = txt.substring(txt.indexOf(key));
-        Pattern p_ = Pattern.compile("[\\(\\{\\[]");
+        Pattern p_ = Pattern.compile("[({\\[]");
         Matcher matcher = p_.matcher(tmp);
         if (matcher.find() && tmp.indexOf(",") < matcher.start()) {
             return tmp.substring(tmp.indexOf(":") + 1, tmp.indexOf(",")).trim().replaceAll("\"", "");
@@ -617,9 +616,9 @@ public class CommonIOUtils {
         if (count.get() == null) {
             count.set(0);
         }
-        Pattern p_ = Pattern.compile("[\\(\\{\\[]");
+        Pattern p_ = Pattern.compile("[({\\[]");
         Matcher matcher_ = p_.matcher(str.substring(index));
-        Pattern _p = Pattern.compile("[\\}\\]\\)]");
+        Pattern _p = Pattern.compile("[}\\])]");
         Matcher _matcher = _p.matcher(str.substring(index));
         int front = 0, after = 0;
         if (matcher_.find()) {
@@ -641,10 +640,11 @@ public class CommonIOUtils {
         return getIndex(str, index);
     }
 
+    @SneakyThrows
     public static boolean reNameDirectory(String source, String desc) {
         File des = new File(desc);
         if (!des.getParentFile().exists()) {
-            des.getParentFile().mkdirs();
+            FileUtils.forceMkdir(des.getParentFile());
         }
         boolean flag = new File(source).renameTo(new File(desc));
         if (!flag) {
@@ -665,8 +665,7 @@ public class CommonIOUtils {
             }
             System.out.println(string.substring(matcher.start(), matcher.end()));
         }
-        String[] array = list.toArray(new String[list.size()]);
-        return array;
+        return list.toArray(new String[list.size()]);
     }
 
     public static String[] splitStrUseRegularExpression(String string, String exp) {
@@ -677,8 +676,7 @@ public class CommonIOUtils {
             list.add(string.substring(matcher.start(), matcher.end()));
             System.out.println(string.substring(matcher.start(), matcher.end()));
         }
-        String[] array = list.toArray(new String[list.size()]);
-        return array;
+        return list.toArray(new String[list.size()]);
     }
 
     public static int getIntegerFromJson(JsonElement json, String key) {
@@ -696,26 +694,22 @@ public class CommonIOUtils {
         data.setStoped(stop);
         long begin = System.currentTimeMillis();
         Thread timer = new Thread(() -> {
-            try {
-//                log.debug("开始计时");
-                //如果是调试模式则不计时
-                Map<String, String> map = System.getenv();
-                if (map.get("isDebug") != null && map.get("isDebug").equalsIgnoreCase("1")) {
-                    return;
-                }
-                Thread.sleep(data.getWaitSeconds() * 1000);
-                data.getStoped().set(true);
-                log.info("已用时：" + data.getWaitSeconds() + "秒，超时终止请求");
-            } catch (InterruptedException e) {
-//                log.debug("终止计时");
+            //                log.debug("开始计时");
+            //如果是调试模式则不计时
+            Map<String, String> map = System.getenv();
+            if (map.get("isDebug") != null && map.get("isDebug").equalsIgnoreCase("1")) {
+                return;
             }
+            waitSeconds(data.getWaitSeconds());
+            data.getStoped().set(true);
+            log.info("已用时：" + data.getWaitSeconds() + "秒，超时终止请求");
         });
         timer.start();
         Thread execute = new Thread(() -> executeResponse(data));
         execute.start();
         while (!data.getStoped().get()) {
             try {
-                Thread.sleep(1);
+                TimeUnit.MILLISECONDS.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -827,8 +821,7 @@ public class CommonIOUtils {
     /**
      * 判断字符串中是否含有表情
      *
-     * @param source
-     * @return
+     * @param source 传入字符串
      */
     public static boolean containsEmoji(String source) {
         int len = source.length();
@@ -871,15 +864,13 @@ public class CommonIOUtils {
     /**
      * 判断某个字符是不是表情
      *
-     * @param codePoint
-     * @return
+     * @param codePoint 传入字符
      */
     private static boolean isEmojiCharacter(char codePoint) {
         return (codePoint == 0x0) || (codePoint == 0x9) || (codePoint == 0xA)
                 || (codePoint == 0xD)
                 || ((codePoint >= 0x20) && (codePoint <= 0xD7FF))
-                || ((codePoint >= 0xE000) && (codePoint <= 0xFFFD))
-                || ((codePoint >= 0x10000) && (codePoint <= 0x10FFFF));
+                || ((codePoint >= 0xE000) && (codePoint <= 0xFFFD));
     }
 
     /**
@@ -1037,7 +1028,7 @@ public class CommonIOUtils {
 
     public static void binPath(File file, List<String> binList, String exp) {
         if (file.isDirectory()) {
-            for (File listFile : file.listFiles()) {
+            for (File listFile : Objects.requireNonNull(file.listFiles())) {
                 binPath(listFile, binList, exp);
             }
         } else {
@@ -1077,7 +1068,7 @@ public class CommonIOUtils {
 
     public static void waitSeconds(int second) {
         try {
-            Thread.sleep(second * 1000);
+            TimeUnit.SECONDS.sleep(second);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -1086,7 +1077,7 @@ public class CommonIOUtils {
     public static void writeToFile(String string, String path) {
         File file = new File(path);
         try {
-            Writer writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
+            Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8);
             writer.write(string);
             writer.close();
         } catch (IOException e) {
@@ -1123,10 +1114,7 @@ public class CommonIOUtils {
 
     public static boolean checkAllDone(@NotNull Vector<DownloadDTO> list) {
         long exist_count = list.stream().filter(downloadDTO -> new File(downloadDTO.getSavePath()).exists()).count();
-        if (list.size() == exist_count) {
-            return true;
-        }
-        return false;
+        return list.size() == exist_count;
     }
 
     public static String getUUID() {
@@ -1174,8 +1162,8 @@ public class CommonIOUtils {
     /**
      * 服务端接收@RequestBody
      *
-     * @param data
-     * @return
+     * @param data 请求封装对象
+     * @return 请求结果
      */
     public static String postUrl(@NotNull Data data) {
         try {
@@ -1202,7 +1190,7 @@ public class CommonIOUtils {
 
     public static long transformB2MB(long size) {
         BigDecimal ori = new BigDecimal(size);
-        return ori.divide(new BigDecimal(1024), 2, BigDecimal.ROUND_HALF_UP).divide(new BigDecimal(1024), 0, BigDecimal.ROUND_HALF_UP).longValue();
+        return ori.divide(new BigDecimal(1024), 2, RoundingMode.HALF_UP).divide(new BigDecimal(1024), 0, RoundingMode.HALF_UP).longValue();
     }
 
     public static boolean isSameFile(File file1, File file2) {
@@ -1222,9 +1210,7 @@ public class CommonIOUtils {
 
     public static Map<String, String> transform2Map(String str) {
         HashMap<String, String> map = new HashMap<>();
-        Arrays.stream(str.split(",")).map(s -> s.replaceAll("[\"\\s]", "")).forEach(s -> {
-            map.put(s.substring(0, s.indexOf(":")), s.substring(s.indexOf(":") + 1));
-        });
+        Arrays.stream(str.split(",")).map(s -> s.replaceAll("[\"\\s]", "")).forEach(s -> map.put(s.substring(0, s.indexOf(":")), s.substring(s.indexOf(":") + 1)));
         return map;
     }
 
@@ -1247,7 +1233,7 @@ public class CommonIOUtils {
     public static String urlEncodeChinese(String url) {
         try {
             Matcher matcher = Pattern.compile("[\\u4e00-\\u9fa5]").matcher(url);
-            String tmp = "";
+            String tmp;
             while (matcher.find()) {
                 tmp = matcher.group();
                 url = url.replaceAll(tmp, URLEncoder.encode(tmp, "UTF-8"));
@@ -1258,7 +1244,6 @@ public class CommonIOUtils {
         return url.replace(" ", "%20");
     }
 
-    @NotNull
     public static byte[] Object2Bytes(Object obj) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
@@ -1279,8 +1264,8 @@ public class CommonIOUtils {
     /**
      * 服务端接收@RequestParam("query")，并且发送方发送的参数是map("query","value")形式
      *
-     * @param data
-     * @return
+     * @param data 请求封装对象
+     * @return 请求结果
      */
     public static String postRestful(@NotNull Data data) {
         try {
@@ -1358,7 +1343,7 @@ public class CommonIOUtils {
 
     public static String format(String str, Object... args) {
         for (Object arg : args) {
-            str = str.replaceFirst("\\{\\}", String.valueOf(arg));
+            str = str.replaceFirst("\\{}", String.valueOf(arg));
         }
         return str;
     }
