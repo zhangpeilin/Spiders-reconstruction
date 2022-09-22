@@ -10,6 +10,10 @@ spider:
 spring:
   application:
     name: common-dao-center
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 300MB
 
 eureka:
   client:
@@ -19,3 +23,18 @@ eureka:
 #    ip-address: true
 server:
   port: 8087
+
+
+#prometheus监控平台配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+        exclude: configprops
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
