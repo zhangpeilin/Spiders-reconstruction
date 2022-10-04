@@ -8,6 +8,7 @@ GATEWAY=common-gateway
 CONFIG=common-config-center
 # jenkins克隆git工程目录
 JENKINS_HOME=/var/jenkins_home/workspace/Spiders-reconstruction
+SSH=/var/jenkins_home/.ssh
 
 # 等待三秒
 echo sleep 3s
@@ -26,6 +27,7 @@ echo "进入target子目录开始构建镜像"
 cd $JENKINS_HOME/target
 echo "将Dockerfile文件复制到打包处"
 cp $JENKINS_HOME/Dockerfile ./
+cp $SSH -r .
 
 # 修改文件权限
 echo "修改jar包权限"
