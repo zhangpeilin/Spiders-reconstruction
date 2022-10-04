@@ -10,6 +10,7 @@ ENTRYPOINT ["java","-jar","/common-app-eureka.jar"]
 
 FROM azul/zulu-openjdk:8u332-8.62.0.19 as common-config-center
 COPY *config*.jar /common-config-center.jar
+COPY /root/.ssh /root/.ssh
 EXPOSE 3344
 ENTRYPOINT ["java","-jar","/common-config-center.jar"]
 
