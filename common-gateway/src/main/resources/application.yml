@@ -14,4 +14,4 @@ eureka:
 #    ip-address: true
   client:
     service-url:
-      defaultZone: http://localhost:7001/eureka/
+      defaultZone: http://172.17.0.4:7001/eureka/
