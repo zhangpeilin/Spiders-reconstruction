@@ -4,4 +4,4 @@ spring:
       label: master
       name: daocenter,common
       profile: online
-      uri: http://172.17.0.4:7001/COMMON-GATEWAY/common-config-center
+      uri: http://172.17.0.9:8089/common-config-center
