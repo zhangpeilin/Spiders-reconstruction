@@ -10,8 +10,8 @@ spring:
   application:
     name: common-gateway
 eureka:
-#  instance:
-#    ip-address: true
+  instance:
+    prefer-ip-address: true
   client:
     service-url:
       defaultZone: http://172.17.0.4:7001/eureka/
