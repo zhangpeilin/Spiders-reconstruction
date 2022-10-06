@@ -4,4 +4,4 @@ spring:
       label: master
       name: common,tencent
       profile: online
-      uri: http://localhost:3344
+      uri: http://172.17.0.6:8089/common-config-center
