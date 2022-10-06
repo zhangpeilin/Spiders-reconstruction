@@ -48,6 +48,6 @@ docker rmi $GATEWAY $EUREKA $DAO $CONFIG
 echo "打包镜像"
 # 打包镜像
 docker build -t $GATEWAY --target $GATEWAY .
-#echo "运行镜像"
-# 运行镜像
-#docker run -d -p 8089:8089 --name $GATEWAY $GATEWAY
+docker build -t $EUREKA --target $EUREKA .
+docker build -t $DAO --target $DAO .
+docker build -t $CONFIG --target $CONFIG .
