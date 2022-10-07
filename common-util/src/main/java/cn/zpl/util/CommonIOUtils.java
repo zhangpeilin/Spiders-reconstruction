@@ -1182,6 +1182,7 @@ public class CommonIOUtils {
             post.setEntity(postingString);
             HttpResponse response = httpClient.execute(post);
             data.setResult(EntityUtils.toString(response.getEntity()));
+            data.setStatusCode(response.getStatusLine().getStatusCode());
             return data.getResult();
         } catch (Exception e) {
             return postUrl(data);

@@ -57,7 +57,7 @@ public class URLConnectionTool {
         SSLContext sc;
         try {
             Security.addProvider(new OpenJSSE());
-            sc = SSLContext.getInstance("TLSv1.3");
+            sc = SSLContext.getInstance("TLSv1.2");
             sc.init(null, new TrustManager[]{new TrustAnyTrustManager()}, new java.security.SecureRandom());
             URL cover_url = new URL(container.getUrl());
             urlcon = container.isProxy() ? (HttpsURLConnection) cover_url.openConnection(proxy) :
