@@ -346,6 +346,7 @@ public class FFMEPGToolsPatch {
                 video.setLength(String.valueOf((new File(command.get(command.size() - 1))).length()));
                 //移动文件到目标文件夹内
 //				Arrays.stream(video.getFileList().split("\\|")).forEach(s -> deleteTS(s));
+                return true;
             }
         } else {
             System.out.println("合并失败");
