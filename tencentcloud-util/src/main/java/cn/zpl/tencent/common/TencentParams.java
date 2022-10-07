@@ -22,4 +22,10 @@ public class TencentParams {
     public String toUser;
 
     public boolean watchWebsite;
+
+    public String weiyunCookie;
+
+    String dst_ppdir_key;
+
+    String dst_pdir_key;
 }
