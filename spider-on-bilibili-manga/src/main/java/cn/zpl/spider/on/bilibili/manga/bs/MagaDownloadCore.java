@@ -28,7 +28,7 @@ public class MagaDownloadCore {
     @Resource
     CrudTools crudTools;
     public void test() {
-        getComicDetail("28932".replace("mc", "").replaceAll("[()]", ""), true);
+        getComicDetail("mc28199".replace("mc", "").replaceAll("[()]", ""), true);
 //        getComicDetailForFree("mc26787");
     }
 
