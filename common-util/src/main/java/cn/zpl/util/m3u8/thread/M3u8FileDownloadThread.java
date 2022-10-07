@@ -67,7 +67,9 @@ public class M3u8FileDownloadThread extends CommonThread {
      */
     private String foldername = UUID.randomUUID().toString().replaceAll("-", "");
 
-    public M3u8FileDownloadThread(){}
+    public M3u8FileDownloadThread() {
+    }
+
     public M3u8FileDownloadThread(String path) {
         this.path = path;
         ffmepgToolsPatch = (FFMEPGToolsPatch) SpringContext.getBeanWithGenerics(FFMEPGToolsPatch.class);
@@ -78,7 +80,21 @@ public class M3u8FileDownloadThread extends CommonThread {
         AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext(UtilSpringConfig.class);
         M3u8FileDownloadThread thread = annotationConfigApplicationContext.getBean(M3u8FileDownloadThread.class);
 //        thread.setPath("/Users/zpl/Downloads/index (1).m3u8");
-        thread.downloadCore("https://v9.microclassonline.com/20220220/xDt0gAPk/index.m3u8");
+        String urls = "https://mnkwxsheem9.jztyxxjc.com/20210724/1nKEEuEX/index.m3u8\n" +
+                "https://mnkwxsheem9.jztyxxjc.com/20210728/xUIbZyWw/index.m3u8\n" +
+                "https://mnkwxsheem9.jztyxxjc.com/20210802/L57v9pFX/index.m3u8\n" +
+                "https://mnkwxsheem9.jztyxxjc.com/20210806/0fZ5G5WL/index.m3u8\n" +
+                "https://mnkwxsheem9.jztyxxjc.com/20210518/8xhXh8MG/index.m3u8\n" +
+                "https://vmxiwpqqzu1.jztyxxjc.com/20190518/PyKna93A/index.m3u8\n" +
+                "https://vmxiwpqqzu1.jztyxxjc.com/20190507/Vsf7CQp0/index.m3u8\n" +
+                "https://vmxiwpqqzu1.jztyxxjc.com/20190304/Os3YEJXN/index.m3u8\n" +
+                "https://vmxiwpqqzu1.jztyxxjc.com/20190305/EfE7Oa0l/index.m3u8\n" +
+                "https://fsrkrylchds8.jztyxxjc.com/12-31397.m3u8\n" +
+                "https://vmxiwpqqzu1.jztyxxjc.com/20190307/ua43OB1T/index.m3u8\n";
+        String[] split = urls.split("\n");
+        for (String s : split) {
+            thread.downloadCore(s);
+        }
 //        thread.run();
 //        M3u8FileDownloadThread m3u8FileDownloadThread = new M3u8FileDownloadThread("/Users/zpl/Downloads/index (1).m3u8");
 //        m3u8FileDownloadThread.run();
@@ -97,14 +113,15 @@ public class M3u8FileDownloadThread extends CommonThread {
      * @author: guojin
      * @date: 2019年2月19日 下午12:54:19
      */
-    private static void saveM3u8File(String folderpath, String url, String m3u8name) throws MalformedURLException, IOException {
+    private static String saveM3u8File(String folderpath, String url, String m3u8name) throws MalformedURLException, IOException {
 
         DownloadDTO downloadDTO = new DownloadDTO();
         downloadDTO.setUrl(url);
         downloadDTO.setProxy(true);
         downloadDTO.setSavePath(new File(folderpath, CommonIOUtils.filterFileName2(m3u8name)).getPath());
-        new OneFileOneThread(downloadDTO).run();
+        new OneFileOneThread(downloadDTO, false).run();
         System.out.println("下载m3u8文件完成");
+        return downloadDTO.getSavePath();
 //        m3u8name = CommonIOUtils.filterFileName2(m3u8name);
 //        InputStream ireader = new URL(url).openStream();
 //
@@ -352,32 +369,35 @@ public class M3u8FileDownloadThread extends CommonThread {
         final String m3u8name = url.substring(url.lastIndexOf("/"), url.toLowerCase().indexOf(".m3u8", url.lastIndexOf("/"))) + ".m3u8";
 
         //先将m3u8文件保存到本地，以便不用合成也能播放对应的视频
-        saveM3u8File(commonProperties.m3u8SavePath, url, m3u8name);
-        //解析M3U8地址为对象
-        M3U8 m3u8 = parseIndex(commonProperties.m3u8SavePath, m3u8name, url);
-        m3u8.setFilePath(directory);
-        m3u8.setFileName(fileName);
-        if (host != null && !"".equals(host)) {
-            m3u8.setBasePath(host);
-        }
-        //根据M3U8对象获取时长
-        float duration = getDuration(m3u8);
-        System.out.println("时长: " + ((int) duration / 60) + "分" + (int) duration % 60 + "秒");
+        String filePath = saveM3u8File(commonProperties.m3u8SavePath, url, m3u8name);
+        downloadByM3U8(filePath);
+        /**
+         //解析M3U8地址为对象
+         M3U8 m3u8 = parseIndex(commonProperties.m3u8SavePath, m3u8name, url);
+         m3u8.setFilePath(directory);
+         m3u8.setFileName(fileName);
+         if (host != null && !"".equals(host)) {
+         m3u8.setBasePath(host);
+         }
+         //根据M3U8对象获取时长
+         float duration = getDuration(m3u8);
+         System.out.println("时长: " + ((int) duration / 60) + "分" + (int) duration % 60 + "秒");
 
 
-//        for (M3U8Ts m3U8Ts : m3u8.getTsList()) {
-//            String newName = m3U8Ts.getFile().substring(m3U8Ts.getFile().lastIndexOf("tipsid") + 6);
-//            newName = (Integer.parseInt(newName.substring(0, newName.lastIndexOf("."))) + 1) + ".ts";
-//            m3U8Ts.setFile(newName);
-//        }
-        //根据M3U8对象下载视频段
-        VideoInfo info = new VideoInfo();
-        info.setSavedLocalName(new File(commonProperties.m3u8SavePath, CommonIOUtils.filterFileName2(m3u8name)).getPath());
-        info.setTimeLength(String.valueOf(duration * 1000));
-        ffmepgToolsPatch.mergeXDFTs(info);
+         //        for (M3U8Ts m3U8Ts : m3u8.getTsList()) {
+         //            String newName = m3U8Ts.getFile().substring(m3U8Ts.getFile().lastIndexOf("tipsid") + 6);
+         //            newName = (Integer.parseInt(newName.substring(0, newName.lastIndexOf("."))) + 1) + ".ts";
+         //            m3U8Ts.setFile(newName);
+         //        }
+         //根据M3U8对象下载视频段
+         VideoInfo info = new VideoInfo();
+         info.setSavedLocalName(new File(commonProperties.m3u8SavePath, CommonIOUtils.filterFileName2(m3u8name)).getPath());
+         info.setTimeLength(String.valueOf(duration * 1000));
+         ffmepgToolsPatch.mergeXDFTs(info);
 
-        delAllFile(m3u8.getFpath());
-        System.out.println("下载完成，文件在: " + commonProperties.m3u8SavePath);
+         delAllFile(m3u8.getFpath());
+         System.out.println("下载完成，文件在: " + commonProperties.m3u8SavePath);
+         **/
     }
 
     public void domain() throws Exception {
@@ -407,7 +427,7 @@ public class M3u8FileDownloadThread extends CommonThread {
         info.setTimeLength(String.valueOf(duration * 1000));
         boolean mergeFlag = ffmepgToolsPatch.mergeXDFTs(info);
         if (mergeFlag) {
-            delFolder(m3u8.getFpath());
+//            delFolder(m3u8.getFpath());
         }
 
         System.out.println("下载完成，文件在: " + info.getSavePath());

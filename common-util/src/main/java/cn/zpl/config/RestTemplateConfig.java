@@ -1,5 +1,6 @@
 package cn.zpl.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
  * @date 2022/9/19
  */
 @Configuration
+@ConditionalOnMissingBean(RestTemplate.class)
 public class RestTemplateConfig {
 
     @Bean

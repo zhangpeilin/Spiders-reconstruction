@@ -28,10 +28,18 @@ public class OneFileOneThread implements Runnable {
     private final Object lock;
     private MyJFrame frame;
 
+    private boolean checkExist = true;
+
     public OneFileOneThread(@NotNull DownloadDTO data) {
         this.data = data;
         this.url = data.getUrl();
         this.lock = data.getSynchronizeLock();
+    }
+    public OneFileOneThread(@NotNull DownloadDTO data, boolean checkExist) {
+        this.data = data;
+        this.url = data.getUrl();
+        this.lock = data.getSynchronizeLock();
+        this.checkExist = checkExist;
     }
 
     public void run() {
@@ -48,7 +56,7 @@ public class OneFileOneThread implements Runnable {
             log.error("磁盘空间不足120MB，停止下载，程序退出" + data.getSavePath());
             System.exit(0);
         }
-        if (new File(data.getSavePath()).exists() && SaveLogForImages.isCompelete(data)) {
+        if (checkExist && new File(data.getSavePath()).exists() && SaveLogForImages.isCompelete(data)) {
             log.debug(data.getSavePath() + "已下载，跳过");
             return;
         }
