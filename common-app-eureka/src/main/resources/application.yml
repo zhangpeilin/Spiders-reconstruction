@@ -9,7 +9,7 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
-#       defaultZone: http://172.17.0.4:7001/eureka/
+#       defaultZone: http://172.18.0.4:7001/eureka/
 spring:
   application:
     name: eureka-server

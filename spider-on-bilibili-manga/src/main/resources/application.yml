@@ -6,6 +6,6 @@ spider:
 eureka:
   client:
     service-url:
-      defaultZone: http://172.17.0.4:7001/eureka/
+      defaultZone: http://172.18.0.4:7001/eureka/
   instance:
     ip-address: true
