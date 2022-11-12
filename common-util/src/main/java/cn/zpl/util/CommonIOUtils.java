@@ -700,9 +700,11 @@ public class CommonIOUtils {
             if (map.get("isDebug") != null && map.get("isDebug").equalsIgnoreCase("1")) {
                 return;
             }
-            waitSeconds(data.getWaitSeconds());
+            boolean isTimeout = waitSeconds(data.getWaitSeconds());
             data.getStoped().set(true);
-            log.info("已用时：" + data.getWaitSeconds() + "秒，超时终止请求");
+            if (isTimeout) {
+                log.info("已用时：" + data.getWaitSeconds() + "秒，超时终止请求");
+            }
         });
         timer.start();
         Thread execute = new Thread(() -> executeResponse(data));
@@ -1066,11 +1068,13 @@ public class CommonIOUtils {
         return hour + "小时" + minute + "分" + second + "秒" + rest + "毫秒";
     }
 
-    public static void waitSeconds(int second) {
+    public static boolean waitSeconds(int second) {
         try {
             TimeUnit.SECONDS.sleep(second);
+            return true;
         } catch (InterruptedException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
+            return false;
         }
     }
 
