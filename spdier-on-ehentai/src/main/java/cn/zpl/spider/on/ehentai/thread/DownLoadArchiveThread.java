@@ -5,11 +5,12 @@ import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.Data;
 import cn.zpl.pojo.DownloadDTO;
-import cn.zpl.spider.on.ehentai.config.Params;
+import cn.zpl.spider.on.ehentai.config.EhentaiConfig;
 import cn.zpl.thread.CommonThread;
 import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
+import cn.zpl.util.CruxIdGenerator;
 import cn.zpl.util.UnZipUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -38,17 +39,20 @@ import java.util.regex.Pattern;
 @Slf4j
 public class DownLoadArchiveThread extends CommonThread {
 
+    EhentaiConfig ehentaiConfig;
     public DownLoadArchiveThread(String url) {
         this.setUrl(url);
+        ehentaiConfig = SpringContext.getBeanWithGenerics(EhentaiConfig.class);
     }
 
     @Override
     public void domain() {
         CrudTools tools = SpringContext.getBeanWithGenerics(CrudTools.class);
+        EhentaiConfig ehentaiConfig = SpringContext.getBeanWithGenerics(EhentaiConfig.class);
         Data data = new Data();
         Ehentai ehentai;
         data.setUrl(getUrl());
-        data.setHeader(Params.exhentai_cookies);
+        data.setHeader(ehentaiConfig.getEhentaiCookies());
         data.setProxy(true);
         data.setAlwaysRetry();
         CommonIOUtils.withTimer(data);
@@ -95,7 +99,7 @@ public class DownLoadArchiveThread extends CommonThread {
             if (a.text().toLowerCase().contains("archive")) {
                 String js = a.attr("onclick");
                 Data archive = new Data();
-                archive.setHeader(Params.exhentai_cookies);
+                archive.setHeader(ehentaiConfig.getEhentaiCookies());
                 archive.setUrl(js.substring(js.indexOf("http"), js.lastIndexOf("'")));
                 archive.setProxy(true);
                 archive.setAlwaysRetry();
@@ -119,6 +123,7 @@ public class DownLoadArchiveThread extends CommonThread {
                         }
                         ehentai.setTitle(title);
                         ehentai.setUrl(url);
+                        ehentai.setId(String.valueOf(CruxIdGenerator.generate()));
                         ehentai.setCost(String.valueOf(GP));
                         ehentai.setCreate_time(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
 //                        RestResponse restResponse = CrudTools.saveEhentai(ehentai);
@@ -136,7 +141,7 @@ public class DownLoadArchiveThread extends CommonThread {
                 if (form.attr("action").startsWith("http")) {
                     Data d1 = new Data();
                     d1.setUrl(form.attr("action"));
-                    d1.setHeader(Params.exhentai_cookies + "\nContent-Type: application/x-www-form-urlencoded; charset=UTF-8");
+                    d1.setHeader(ehentaiConfig.getEhentaiCookies() + "\nContent-Type: application/x-www-form-urlencoded; charset=UTF-8");
                     d1.setProxy(true);
                     d1.setParams("dltype=org&dlcheck=Download+Original+Archive");
                     Map<String, String> vp = new HashMap<>();
@@ -160,22 +165,19 @@ public class DownLoadArchiveThread extends CommonThread {
                     dto.setUrl(downUrl.absUrl("href"));
                     dto.setFileName(CommonIOUtils.filterFileName2(fileName.text()));
                     List<String> path = new ArrayList<>();
-                    path.add(Params.save_path);
+                    path.add(ehentaiConfig.getSavePath());
                     path.add("archive");
                     path.add(DateFormatUtils.format(new Date(), "yyyyMMdd"));
                     dto.setSavePath(CommonIOUtils.makeFilePath(path, dto.getFileName()));
                     dto.setAlwaysRetry();
                     OneFileOneThread thread2 = new OneFileOneThread(dto);
-                    thread2.setFrame(Params.mainFrame);
                     thread2.run();
                     try {
-                        if (!Params.unzip) {
+                        if (!ehentaiConfig.isUnzip()) {
                             return;
                         }
                         String dest = UnZipUtils.unZip(new File(dto.getSavePath()), "G:\\exhentai\\archive\\20201226\\丝袜\\" + dto.getFileName().replace(".zip", ""), "");
                         log.debug("解压成功，目录为：" + dest);
-                        if (Params.mainFrame != null)
-                            Desktop.getDesktop().open(new File(dest));
                     } catch (IOException e) {
                         log.error("解压失败");
                         e.printStackTrace();

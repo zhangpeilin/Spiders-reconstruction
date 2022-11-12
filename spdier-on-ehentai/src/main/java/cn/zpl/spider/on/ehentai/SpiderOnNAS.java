@@ -6,7 +6,6 @@ import cn.zpl.common.bean.Page;
 import cn.zpl.config.UrlConfig;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.MultiPartInfoHolder;
-import cn.zpl.spider.on.ehentai.config.Params;
 import cn.zpl.spider.on.ehentai.thread.SpiderOnNASThread;
 import cn.zpl.spider.on.ehentai.thread.SpiderOnNASThreadV2;
 import cn.zpl.thread.OneFileOneThread;

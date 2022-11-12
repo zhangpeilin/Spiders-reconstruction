@@ -2,10 +2,15 @@ package cn.zpl.spider.on.ehentai;
 
 import cn.zpl.spider.on.ehentai.thread.DownLoadArchiveThread;
 import cn.zpl.util.DownloadTools;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
-public class Download {
+@SpringBootTest
+public class TestDownloadOne {
 
-    public static void main(String[] args) {
+    @Test
+    public void doBusiness(){
+
         String url = "";
         url = url.replaceAll("VM.+ ", "");
         String[] urls = url.split("\n");
@@ -16,4 +21,3 @@ public class Download {
         tools.shutdown();
     }
 }
-
