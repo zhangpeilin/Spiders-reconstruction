@@ -9,4 +9,5 @@ public class EhentaiConfig {
     String ehentaiCookies;
     String savePath;
     boolean unzip;
+    boolean saveDb;
 }

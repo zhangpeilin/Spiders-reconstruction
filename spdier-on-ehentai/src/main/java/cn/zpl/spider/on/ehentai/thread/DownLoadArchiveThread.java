@@ -36,10 +36,14 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * @author zpl
+ */
 @Slf4j
 public class DownLoadArchiveThread extends CommonThread {
 
     EhentaiConfig ehentaiConfig;
+    Pattern pattern = Pattern.compile("[\\d,]+");
     public DownLoadArchiveThread(String url) {
         this.setUrl(url);
         ehentaiConfig = SpringContext.getBeanWithGenerics(EhentaiConfig.class);
@@ -67,7 +71,7 @@ public class DownLoadArchiveThread extends CommonThread {
                 key = tagList.get(i).text().replace(":", "");
             } else {
                 Elements children = document.select("div#taglist td").get(i).children();
-                StringBuffer values = new StringBuffer("[");
+                StringBuilder values = new StringBuilder("[");
                 for (Element child : children) {
                     values.append(child.text()).append(",");
                 }
@@ -76,19 +80,19 @@ public class DownLoadArchiveThread extends CommonThread {
             }
         }
         ehentai = JSON.toJavaObject(new JSONObject(infomation), Ehentai.class);
-        Pattern pattern = Pattern.compile("[\\d,]+");
+
         assert favcount != null;
-        Matcher favcountMatcher = pattern.matcher(favcount.text());
-        if (favcountMatcher.find()) {
+        Matcher faviconMatcher = pattern.matcher(favcount.text());
+        if (faviconMatcher.find()) {
             try {
-                ehentai.setFavcount(NumberFormat.getNumberInstance(Locale.US).parse(favcountMatcher.group()).toString());
+                ehentai.setFavcount(NumberFormat.getNumberInstance(Locale.US).parse(faviconMatcher.group()).toString());
             } catch (ParseException e) {
                 e.printStackTrace();
             }
         }
-        Elements view_gallery = document.getElementsMatchingText("View Gallery");
-        if (view_gallery.size() != 0) {
-            url = view_gallery.attr("href");
+        Elements viewGallery = document.getElementsMatchingText("View Gallery");
+        if (viewGallery.size() != 0) {
+            url = viewGallery.attr("href");
             run();
             return;
         }
@@ -105,7 +109,7 @@ public class DownLoadArchiveThread extends CommonThread {
                 archive.setAlwaysRetry();
                 CommonIOUtils.withTimer(archive);
                 Document tmp = Jsoup.parse(archive.getResult());
-                String title = tmp.selectFirst("div#db > h1").text();
+                String title = Objects.requireNonNull(tmp.selectFirst("div#db > h1")).text();
                 Element form = tmp.selectFirst("form");
                 assert form != null;
                 Elements freeMark = Objects.requireNonNull(form.previousElementSibling()).getElementsMatchingText("Free");
@@ -114,29 +118,28 @@ public class DownLoadArchiveThread extends CommonThread {
                     log.error(tmp.select("   div#db h1").text());
                     Matcher matcher = pattern.matcher(form.previousElementSibling().text());
                     if (matcher.find()) {
-                        String GPStr = matcher.group(0);
-                        int GP = 0;
+                        String gpStr = matcher.group(0);
+                        int gp = 0;
                         try {
-                            GP = NumberFormat.getNumberInstance(Locale.US).parse(GPStr).intValue();
+                            gp = NumberFormat.getNumberInstance(Locale.US).parse(gpStr).intValue();
                         } catch (ParseException e) {
                             e.printStackTrace();
                         }
                         ehentai.setTitle(title);
                         ehentai.setUrl(url);
                         ehentai.setId(String.valueOf(CruxIdGenerator.generate()));
-                        ehentai.setCost(String.valueOf(GP));
+                        ehentai.setCost(String.valueOf(gp));
                         ehentai.setCreate_time(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
-//                        RestResponse restResponse = CrudTools.saveEhentai(ehentai);
-                        RestResponse restResponse = tools.commonApiSave(ehentai);
-                        log.debug("保存是否成功：{}", restResponse.isSuccess());
-
-                        if (GP > 20000) {
+                        if (ehentaiConfig.isSaveDb()) {
+                            RestResponse restResponse = tools.commonApiSave(ehentai);
+                            log.debug("保存是否成功：{}", restResponse.isSuccess());
+                        }
+                        if (gp > 20000) {
                             log.error("当前漫画未下载：{}", url);
                             return;
                         }
-                        log.info("下载消耗点数：" + GP);
+                        log.info("下载消耗点数：" + gp);
                     }
-//                    return;
                 }
                 if (form.attr("action").startsWith("http")) {
                     Data d1 = new Data();
@@ -154,7 +157,7 @@ public class DownLoadArchiveThread extends CommonThread {
                     Data data1 = new Data();
                     data1.setAlwaysRetry();
                     data1.setProxy(true);
-                    data1.setUrl(tmpUrl.selectFirst("a").attr("href"));
+                    data1.setUrl(Objects.requireNonNull(tmpUrl.selectFirst("a")).attr("href"));
                     CommonIOUtils.withTimer(data1);
                     Document doc = Jsoup.parse(data1.getResult());
                     doc.setBaseUri(data1.getBaseUrl());
