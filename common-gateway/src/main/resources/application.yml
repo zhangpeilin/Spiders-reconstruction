@@ -12,6 +12,8 @@ spring:
 eureka:
   instance:
     prefer-ip-address: true
+    ip-address: 192.168.32.128
+    non-secure-port: 8089
   client:
     service-url:
       defaultZone: http://172.18.0.4:7001/eureka/
