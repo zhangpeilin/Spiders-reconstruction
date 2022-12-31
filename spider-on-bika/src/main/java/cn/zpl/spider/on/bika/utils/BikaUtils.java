@@ -6,7 +6,7 @@ import cn.zpl.common.bean.BikaDownloadFailed;
 import cn.zpl.common.bean.BikaList;
 import cn.zpl.common.bean.Token;
 import cn.zpl.config.CommonParams;
-import cn.zpl.config.UrlConfig;
+import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.Data;
 import cn.zpl.spider.on.bika.common.BikaParams;
 import cn.zpl.spider.on.bika.thread.BikaComicThread;
@@ -14,6 +14,9 @@ import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
 import cn.zpl.util.GetSignature;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +33,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.Async;
@@ -50,6 +54,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,7 +65,8 @@ import java.util.regex.Pattern;
 @Component
 public class BikaUtils {
 
-    public static Map<String, Bika> exists = new ConcurrentHashMap<>();
+//    public static Map<String, Bika> exists = new ConcurrentHashMap<>();
+    public static LoadingCache<String, Bika> exists;
     private static String currentToken = "";
     public static String defaultSavePath = "e:\\bika";
     public static ThreadLocal<List<File>> result = new ThreadLocal<>();
@@ -71,8 +78,8 @@ public class BikaUtils {
 
     public static final Map<String, AtomicInteger> progress = new HashMap<>();
 
-    @Async("BikaAsync")
-    public void search(String key) {
+//    @Async("BikaAsync")
+    public void search(String key, boolean download) {
         try {
             String url = "comics/search?page=1&q=" + URLEncoder.encode(key, "utf-8");
             JsonObject partJson = getJsonByUrl(url);
@@ -82,13 +89,16 @@ public class BikaUtils {
             tool.setName("漫画");
             tool.setSleepTimes(10000);
             for (JsonElement detail : comics.getAsJsonArray()) {
-                tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
+                if (download) {
+                    tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
+                }else {
+                    System.out.printf("%1$s:%2$s%n",CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"));
+                }
             }
             tool.shutdown();
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-
     }
 
     public void H24() {
@@ -107,7 +117,6 @@ public class BikaUtils {
             stringList.add(CommonIOUtils.getFromJson2Str(detail, "_id"));
         }
         tool.shutdown();
-        BikaUtils.exists.clear();
 //        stringList.forEach(s -> {
 //            File file = new File(getExists(s).getLocalPath());
 //            if (file.exists()) {
@@ -120,9 +129,36 @@ public class BikaUtils {
 //        });
     }
 
+
+    public void downloadById(String id) {
+
+        //H24 D7 D30
+        DownloadTools tool = DownloadTools.getInstance(10);
+        tool.setName("漫画");
+        tool.setSleepTimes(10000);
+            tool.ThreadExecutorAdd(new BikaComicThread(id, true));
+        tool.shutdown();
+    }
+
+    public void showH24() {
+
+        //H24 D7 D30
+        String url = "comics/leaderboard?tt=H24&ct=VC";
+        JsonObject partJson = getJsonByUrl(url);
+        JsonElement comics = CommonIOUtils.getFromJson2(partJson, "data-comics");
+
+        DownloadTools tool = DownloadTools.getInstance(10);
+        tool.setName("漫画");
+        tool.setSleepTimes(10000);
+        List<String> stringList = new ArrayList<>();
+        for (JsonElement detail : comics.getAsJsonArray()) {
+           System.out.printf("%1$s:%2$s%n",CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"));
+        }
+    }
+
     public void favourite() {
 
-        int i = 1;
+        int i = 9;
         int maxPage = 99;
         while (!(i > maxPage)) {
             String url = "users/favourite?page=" + i;
@@ -131,27 +167,53 @@ public class BikaUtils {
 
             maxPage = CommonIOUtils.getFromJson2Integer(partJson, "data-comics-pages");
 
-            DownloadTools tool = DownloadTools.getInstance(2);
+            DownloadTools tool = DownloadTools.getInstance(5);
             tool.setName("漫画");
             tool.setSleepTimes(10000);
             for (JsonElement detail : comics.getAsJsonArray()) {
                 tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
             }
             tool.shutdown();
-            i++;
+            i--;
+//            i++;
         }
     }
+
+    public LoadingCache<String, Bika> loadCache(){
+        return exists;
+    }
+
+    public void invalidCache(String comicId) {
+        exists.invalidate(comicId);
+    }
     
-    public Bika getExists(String comicid) {
+    public Bika getExists(String comicId) {
         if (!BikaParams.writeDB){
             return null;
         }
         synchronized (BikaUtils.class) {
-            if (exists.size() == 0) {
-                List<Bika> BikaList = tools.queryAllBika();
-                BikaList.forEach(bika -> exists.put(bika.getId(), bika));
+            if (exists != null) {
+                Bika exist = exists.getIfPresent(comicId);
+                if (exist == null) {
+                    try {
+                        return exists.get(comicId);
+                    } catch (Exception e) {
+                        log.error("加载失败", e);
+                        return null;
+                    }
+                }
             }
-            return exists.get(comicid);
+            exists = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(200, TimeUnit.SECONDS).build(new CacheLoader<String, Bika>() {
+                @Override
+                public Bika load(@NotNull String key) {
+                    List<Bika> bikas = tools.commonApiQueryBySql(String.format("select * from bika where id = '%1$s'", key), Bika.class);
+                    if (bikas.size() != 0) {
+                        return bikas.get(0);
+                    }
+                    return null;
+                }
+            });
+            return getExists(comicId);
         }
     }
 
@@ -159,13 +221,7 @@ public class BikaUtils {
         if (!BikaParams.writeDB){
             return true;
         }
-        synchronized (BikaUtils.class) {
-            if (exists.size() == 0) {
-                List<Bika> BikaList = tools.commonApiQuery("", "*", Bika.class);
-                BikaList.forEach(bika -> exists.put(bika.getId(), bika));
-            }
-        }
-        Bika already = exists.get(comicid);
+        Bika already = getExists(comicid);
         if (already != null) {
             if (already.getIsDeleted() != null && already.getIsDeleted() == 1) {
                 return false;
@@ -531,13 +587,18 @@ public class BikaUtils {
         return "(" + bika.getId() + ")" + bika.getTitle();
     }
 
-    public static String getLocalPath(String comicid, String title) {
-        Bika exist = BikaUtils.exists.get(comicid);
+    public static String getFolder(String id, String title) {
+        return "(" + id + ")" + title;
+    }
+
+    public static String getLocalPath(String comicId, String title) {
+        BikaUtils bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
+        Bika exist = bikaUtils.getExists(comicId);
         String chapterPath;
         if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
             return exist.getLocalPath();
         } else {
-            chapterPath = BikaUtils.defaultSavePath + "\\(" + comicid + ")" + title;
+            chapterPath = BikaUtils.defaultSavePath + "\\(" + comicId + ")" + title;
             return chapterPath;
         }
     }

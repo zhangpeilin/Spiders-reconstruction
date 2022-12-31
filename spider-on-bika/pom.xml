@@ -15,7 +15,7 @@
             <groupId>cn.zpl</groupId>
             <artifactId>common-bean</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
+<!--            <scope>compile</scope>-->
         </dependency>
         <dependency>
             <groupId>cn.zpl</groupId>
@@ -40,6 +40,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>31.1-android</version>
         </dependency>
     </dependencies>
 

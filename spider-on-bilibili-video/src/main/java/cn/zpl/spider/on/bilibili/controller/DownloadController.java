@@ -291,7 +291,7 @@ public class DownloadController {
         if (!current_quality.equals(String.valueOf(quality.get(0)))) {
             log.error("画质重定位");
             if (data.doRetry()) {
-                downLoadByAPI(data, String.valueOf(quality.get(0)), cid, mainJson, partJson);
+                return downLoadByAPI(data, String.valueOf(quality.get(0)), cid, mainJson, partJson);
             } else {
                 return RestResponse.fail("画质重定向次数过多，请确认是否需要设置cookie信息");
             }
@@ -406,12 +406,12 @@ public class DownloadController {
         DownloadTools tools = DownloadTools.getInstance(30);
         tools.setName(video.getTitle());
         if (!new File(dto.getSavePath()).exists() || !SaveLog.isCompeleteMultiple(dto)) {
-            tools.MultipleThread(dto);
+            tools.MultipleThreadWithLog(dto);
         } else {
             log.debug(dto.getSavePath() + "已下载，跳过");
         }
         if (!new File(audio.getSavePath()).exists() || !SaveLog.isCompeleteMultiple(audio)) {
-            tools.MultipleThread(audio);
+            tools.MultipleThreadWithLog(audio);
         } else {
             log.debug(audio.getSavePath() + "已下载，跳过");
         }

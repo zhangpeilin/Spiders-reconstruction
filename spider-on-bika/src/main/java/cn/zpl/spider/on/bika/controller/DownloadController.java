@@ -16,7 +16,7 @@ public class DownloadController {
 
     @GetMapping("/download/{key}")
     public RestResponse downloadByKey(@PathVariable("key") String key) {
-        bikaUtils.search(key);
+        bikaUtils.search(key, true);
         return RestResponse.ok().msg("下载提交成功");
     }
 }

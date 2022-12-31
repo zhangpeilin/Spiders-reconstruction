@@ -18,6 +18,7 @@ import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.awt.Toolkit;
@@ -32,6 +33,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Properties;
@@ -80,17 +82,7 @@ public class M3u8FileDownloadThread extends CommonThread {
         AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext(UtilSpringConfig.class);
         M3u8FileDownloadThread thread = annotationConfigApplicationContext.getBean(M3u8FileDownloadThread.class);
 //        thread.setPath("/Users/zpl/Downloads/index (1).m3u8");
-        String urls = "https://mnkwxsheem9.jztyxxjc.com/20210724/1nKEEuEX/index.m3u8\n" +
-                "https://mnkwxsheem9.jztyxxjc.com/20210728/xUIbZyWw/index.m3u8\n" +
-                "https://mnkwxsheem9.jztyxxjc.com/20210802/L57v9pFX/index.m3u8\n" +
-                "https://mnkwxsheem9.jztyxxjc.com/20210806/0fZ5G5WL/index.m3u8\n" +
-                "https://mnkwxsheem9.jztyxxjc.com/20210518/8xhXh8MG/index.m3u8\n" +
-                "https://vmxiwpqqzu1.jztyxxjc.com/20190518/PyKna93A/index.m3u8\n" +
-                "https://vmxiwpqqzu1.jztyxxjc.com/20190507/Vsf7CQp0/index.m3u8\n" +
-                "https://vmxiwpqqzu1.jztyxxjc.com/20190304/Os3YEJXN/index.m3u8\n" +
-                "https://vmxiwpqqzu1.jztyxxjc.com/20190305/EfE7Oa0l/index.m3u8\n" +
-                "https://fsrkrylchds8.jztyxxjc.com/12-31397.m3u8\n" +
-                "https://vmxiwpqqzu1.jztyxxjc.com/20190307/ua43OB1T/index.m3u8\n";
+        String urls = "https://cdn77-vid.xvideos-cdn.com/fooarqc281Zy5E_qUsL4cQ==,1670767789/videos/hls/ea/4c/e5/ea4ce54d82a8d33ee335244b21283adf-1/hls-720p.m3u8";
         String[] split = urls.split("\n");
         for (String s : split) {
             thread.downloadCore(s);
@@ -367,6 +359,7 @@ public class M3u8FileDownloadThread extends CommonThread {
 
         //获取到地址里面的m3u8文件名称
         final String m3u8name = url.substring(url.lastIndexOf("/"), url.toLowerCase().indexOf(".m3u8", url.lastIndexOf("/"))) + ".m3u8";
+        setUrl(url);
 
         //先将m3u8文件保存到本地，以便不用合成也能播放对应的视频
         String filePath = saveM3u8File(commonProperties.m3u8SavePath, url, m3u8name);
@@ -400,6 +393,24 @@ public class M3u8FileDownloadThread extends CommonThread {
          **/
     }
 
+    private static String getHost(String url) {
+        if (!(StringUtils.startsWithIgnoreCase(url, "http://") || StringUtils
+                .startsWithIgnoreCase(url, "https://"))) {
+            url = "http://" + url;
+        }
+        String returnVal = "";
+        try {
+            URI uri = new URI(url);
+            returnVal = uri.getHost();
+        } catch (Exception e) {
+        }
+        if ((StringUtils.endsWithIgnoreCase(returnVal, ".html") || StringUtils
+                .endsWithIgnoreCase(returnVal, ".htm"))) {
+            returnVal = "";
+        }
+        return returnVal;
+    }
+
     public void domain() throws Exception {
         downloadByM3U8(path);
     }
@@ -409,7 +420,7 @@ public class M3u8FileDownloadThread extends CommonThread {
         File m3u8File = new File(path);
         final String m3u8name = m3u8File.getName();
         //解析M3U8地址为对象
-        M3U8 m3u8 = parseIndex(m3u8File.getParent(), m3u8name, "http://test.com");
+        M3U8 m3u8 = parseIndex(m3u8File.getParent(), m3u8name, StringUtils.isEmpty(getUrl()) ? "http://test.com" : getUrl());
 
         //根据M3U8对象获取时长
         float duration = getDuration(m3u8);
@@ -521,7 +532,9 @@ public class M3u8FileDownloadThread extends CommonThread {
         try {
             fileWriter = new FileWriter(m3u8File);
             fileWriter.write(top);
-            fileWriter.write(String.format("#EXT-X-KEY:METHOD=AES-128,URI=%1$s\n", m3u8.getKeyUrl()));
+            if (!StringUtils.isEmpty(m3u8.getKeyUrl())) {
+                fileWriter.write(String.format("#EXT-X-KEY:METHOD=AES-128,URI=%1$s\n", m3u8.getKeyUrl()));
+            }
             for (M3U8Ts m3U8Ts : part) {
                 fileWriter.write("#EXTINF:" + m3U8Ts.getSeconds() + ",\n");
                 fileWriter.write((new File(m3u8.getFpath(), m3U8Ts.getFile()).getPath()).replaceAll("\\\\", "/") +

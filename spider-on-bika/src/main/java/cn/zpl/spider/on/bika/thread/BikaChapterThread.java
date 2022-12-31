@@ -29,17 +29,17 @@ public class BikaChapterThread implements Runnable {
     private final String chapterPath;
     BikaUtils utils;
 
-    BikaChapterThread(String chapterNum, String title, String comicid) {
+    BikaChapterThread(String chapterNum, String title, String comicId) {
         this.chapterNum = chapterNum;
         this.title = title;
-        this.comicid = comicid;
+        this.comicid = comicId;
         utils = SpringContext.getBeanWithGenerics(BikaUtils.class);
         //路径不在固定，由数据库记录的路径确定上层目录
-        Bika exist = utils.getExists(comicid);
+        Bika exist = utils.getExists(comicId);
         if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
             this.chapterPath = exist.getLocalPath() + "\\" + chapterNum;
         } else {
-            this.chapterPath = BikaUtils.defaultSavePath + "\\(" + comicid + ")" + title + "\\" + chapterNum;
+            this.chapterPath = BikaUtils.defaultSavePath + "\\(" + comicId + ")" + title + "\\" + chapterNum;
         }
     }
 

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class BikaParams {
 
     public static boolean writeDB = true;
-    public static boolean isForceDownload = false;
+    public static boolean isForceDownload = true;
 
     private String email;
     private String password;

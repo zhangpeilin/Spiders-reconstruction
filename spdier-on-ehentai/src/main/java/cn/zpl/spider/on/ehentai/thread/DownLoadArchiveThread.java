@@ -134,7 +134,7 @@ public class DownLoadArchiveThread extends CommonThread {
                             RestResponse restResponse = tools.commonApiSave(ehentai);
                             log.debug("保存是否成功：{}", restResponse.isSuccess());
                         }
-                        if (gp > 20000) {
+                        if (gp > 100000) {
                             log.error("当前漫画未下载：{}", url);
                             return;
                         }

@@ -9,16 +9,23 @@ import cn.zpl.thread.CommonThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
+import cn.zpl.util.ZipUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
+import net.lingala.zip4j.model.ZipParameters;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
+import java.util.List;
 
 @Slf4j
 public class BikaComicThread extends BikaCommonThread {
@@ -59,7 +66,7 @@ public class BikaComicThread extends BikaCommonThread {
             failed.setId(comicId);
             if (BikaParams.writeDB)
 //            DBManager.delete(failed);
-            CrudTools.commonApiDelete("", BikaDownloadFailed.class);
+                CrudTools.commonApiDelete("", BikaDownloadFailed.class);
             log.debug(comicId + "漫画已下载且上次更新日期在7天内，跳过");
             return;
         }
@@ -70,7 +77,7 @@ public class BikaComicThread extends BikaCommonThread {
         }
 
         if (!isNeedDownload) {
-            if (BikaParams.writeDB){
+            if (BikaParams.writeDB) {
                 bikaUtils.dosave(comicId, info, isNeedDownload, "");
             }
             return;
@@ -80,30 +87,45 @@ public class BikaComicThread extends BikaCommonThread {
         Bika exist = bikaUtils.getExists(comicId);
         //判断是否存在id编号相同但文件夹名不同的目录
         if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
+            //数据库记录的文件夹路径
             File ex = new File(exist.getLocalPath());
-            File tmp = new File(ex.getParent(), BikaUtils.getFolder(exist));
-            if (!ex.getPath().equalsIgnoreCase(tmp.getPath())) {
-                if (ex.exists()) {
-                    if (!ex.renameTo(tmp)) {
-                        log.error("更名失败");
-                        log.error(ex + "--->" + tmp);
+            File existZip = new File(ex.getPath() + ".zip");
+            //新路径
+            File newDir = new File(ex.getParent(), BikaUtils.getFolder(comicId, title));
+            File newZip = new File(newDir.getPath() +  ".zip");
+            //如果新旧压缩包路径不同，则开始修改
+            if (!existZip.getPath().equalsIgnoreCase(newZip.getPath())) {
+                if (existZip.exists()) {
+                    //旧压缩包目录修改为新压缩包目录
+                    if (!existZip.renameTo(newZip)) {
+                        log.error("更名失败，原路径：{}，新路径：{}", existZip, newZip);
                         getDoRetry().setRetryMaxCount(20);
                         throw new RuntimeException("更名失败");
                     } else {
-                        exist.setLocalPath(tmp.getPath());
+                        //修改压缩包内目录为新目录
+                        ZipUtils.renameFolderInZip(newZip.getPath(), ex.getName(), newDir.getName());
+                        exist.setLocalPath(newDir.getPath());
+                        //将压缩包中所有list.txt文件解压到目录中
+                        try (ZipFile zipFile = new ZipFile(newZip)) {
+                            zipFile.setCharset(Charset.forName("gbk"));
+                            List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+                            for (FileHeader fileHeader : fileHeaders) {
+                                if (fileHeader.getFileName().endsWith("list.txt")) {
+                                    zipFile.extractFile(fileHeader, newDir.getParentFile().getPath());
+                                }
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                         if (!bikaCrudTools.commonApiSave(exist).isSuccess()) {
                             log.error("保存失败" + exist);
                         }
                     }
                 }
-                if (Files.exists(Paths.get(tmp.getPath()), LinkOption.NOFOLLOW_LINKS)) {
+                if (Files.exists(Paths.get(newDir.getPath()), LinkOption.NOFOLLOW_LINKS)) {
                     log.debug("文件已更名，更新数据库");
-                    exist.setLocalPath(tmp.getPath());
-//                    DBManager.ForceSave(exist);
-                    if (!bikaCrudTools.commonApiSave(exist).isSuccess()) {
-                        log.error("保存失败" + exist);
-                    }
-                    BikaUtils.exists.clear();
+                    //清空缓存中指定的key值，下次使用时从数据库中重新加载
+                    bikaUtils.invalidCache(comicId);
                 } else {
                     throw new RuntimeException("未找到本地文件夹，不再重试，请核实");
                 }
@@ -131,7 +153,22 @@ public class BikaComicThread extends BikaCommonThread {
                 tool.shutdown();
             }
         }
-        if (BikaParams.writeDB)
+        if (BikaParams.writeDB) {
             bikaUtils.dosave(comicId, info, isNeedDownload, BikaUtils.getLocalPath(comicId, title));
+        }
+        //将新下载的内容写入压缩包中
+        Bika bika = bikaUtils.getExists(comicId);
+        try (ZipFile zipFile = new ZipFile(bika.getLocalPath() + ".zip")) {
+            ZipParameters zipParameters = new ZipParameters();
+            File file = new File(bika.getLocalPath());
+            File[] files = file.listFiles((dir, name) -> dir.isFile());
+            assert files != null;
+            for (File tmp : files) {
+                zipFile.addFile(tmp);
+            }
+            zipFile.addFolder(new File(bika.getLocalPath()), zipParameters);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

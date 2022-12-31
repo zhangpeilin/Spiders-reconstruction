@@ -26,7 +26,16 @@ public class ApplicationConfigTest {
     @Test
     public void domain(){
         BikaUtils bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
-        bikaUtils.search("异世界NTR");
-//        bikaUtils.H24();
+        bikaUtils.search("女子写真部", true);
+//        bikaUtils.downloadById("627ca33a75ab703dacb84cc1");
+//        bikaUtils.showH24();
+//        bikaUtils.favourite();
+    }
+
+    @Test
+    public void testUrl() {
+        CrudTools crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
+        List<Bika> bikas = crudTools.commonApiQueryBySql("select * from bika where id = '5821859d5f6b9a4f93dbf719'", Bika.class);
+        System.out.println(bikas);
     }
 }
