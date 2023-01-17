@@ -17,15 +17,22 @@ import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
 import net.lingala.zip4j.model.ZipParameters;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 public class BikaComicThread extends BikaCommonThread {
@@ -92,9 +99,9 @@ public class BikaComicThread extends BikaCommonThread {
             File existZip = new File(ex.getPath() + ".zip");
             //新路径
             File newDir = new File(ex.getParent(), BikaUtils.getFolder(comicId, title));
-            File newZip = new File(newDir.getPath() +  ".zip");
+            File newZip = new File(newDir.getPath() + ".zip");
             //如果新旧压缩包路径不同，则开始修改
-            if (!existZip.getPath().equalsIgnoreCase(newZip.getPath())) {
+            if (existZip.exists() && !existZip.getPath().equalsIgnoreCase(newZip.getPath())) {
                 if (existZip.exists()) {
                     //旧压缩包目录修改为新压缩包目录
                     if (!existZip.renameTo(newZip)) {
@@ -117,6 +124,7 @@ public class BikaComicThread extends BikaCommonThread {
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
+                        exist.setTitle(title);
                         if (!bikaCrudTools.commonApiSave(exist).isSuccess()) {
                             log.error("保存失败" + exist);
                         }
@@ -158,15 +166,44 @@ public class BikaComicThread extends BikaCommonThread {
         }
         //将新下载的内容写入压缩包中
         Bika bika = bikaUtils.getExists(comicId);
+        long start;
         try (ZipFile zipFile = new ZipFile(bika.getLocalPath() + ".zip")) {
+            zipFile.setCharset(Charset.forName("gbk"));
             ZipParameters zipParameters = new ZipParameters();
             File file = new File(bika.getLocalPath());
-            File[] files = file.listFiles((dir, name) -> dir.isFile());
-            assert files != null;
-            for (File tmp : files) {
-                zipFile.addFile(tmp);
+            File[] dirs = file.listFiles((dir, name) -> dir.isDirectory() && !name.endsWith("txt"));
+            //遍历目录，如果有新增的目录，则解压所有文件，然后重新压缩
+            assert dirs != null;
+            Optional<File> any = Arrays.stream(dirs).filter(dir -> {
+                File imageFile = FileUtils.listFiles(dir, null, true).stream().filter(tmp -> tmp.isFile() && !tmp.getName().endsWith(".txt")).findFirst().orElse(null);
+                return imageFile != null;
+            }).findAny();
+            start = System.currentTimeMillis();
+            if (any.isPresent()) {
+                //将压缩包释放
+                zipFile.extractAll(new File(bika.getLocalPath()).getParent());
             }
-            zipFile.addFolder(new File(bika.getLocalPath()), zipParameters);
+//            FileUtils.listFiles(file, null, true);
+//            Collection<File> files = FileUtils.listFiles(file, null, true);
+//            遍历添加文件速度太慢
+//            for (File tmp : files) {
+//                zipFile.addFile(tmp);
+//            }
+            //不删除原压缩包耗时：19400
+            //删除原压缩包耗时：14480
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            FileUtils.delete(new File(bika.getLocalPath() + ".zip"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try (ZipFile zipFile = new ZipFile(bika.getLocalPath() + ".zip")) {
+            zipFile.setCharset(Charset.forName("gbk"));
+            zipFile.addFolder(new File(bika.getLocalPath()));
+            long end = System.currentTimeMillis();
+            System.out.println("耗时：" + (end - start));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
