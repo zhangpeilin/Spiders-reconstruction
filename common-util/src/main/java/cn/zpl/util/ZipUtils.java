@@ -6,6 +6,7 @@ import net.lingala.zip4j.model.FileHeader;
 import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.model.enums.AesKeyStrength;
 import net.lingala.zip4j.model.enums.EncryptionMethod;
+import net.lingala.zip4j.tasks.AddFolderToZipTask;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -15,6 +16,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.changes.ChangeSet;
 import org.apache.commons.compress.changes.ChangeSetPerformer;
+import org.apache.commons.io.FileUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.BufferedInputStream;
@@ -30,6 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -214,17 +217,20 @@ public class ZipUtils {
 
 class test1{
     public static void main(String[] args) {
-        Path path = Paths.get("E:\\test\\17.tar");
-        try (TarArchiveInputStream inputStream = new TarArchiveInputStream(Files.newInputStream(path))) {
+        Path oriTar = Paths.get("E:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）.tar");
+        try (TarArchiveInputStream inputStream = new TarArchiveInputStream(Files.newInputStream(oriTar))) {
             TarArchiveOutputStream outputStream = new TarArchiveOutputStream(Files.newOutputStream(Paths.get("E:\\test\\22.tar")));
             ChangeSet changeSet = new ChangeSet();
-            File fileToAdd = new File("E:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）\\16\\1.jpg");
-            ArchiveEntry archiveEntry = outputStream.createArchiveEntry(fileToAdd, fileToAdd.getName());
-
-            changeSet.add(archiveEntry, Files.newInputStream(fileToAdd.toPath()));
+            Collection<File> files = FileUtils.listFiles(new File("E:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）"), null, true);
+            for (File fileToAdd : files) {
+                ZipParameters zipParameters = new ZipParameters();
+                zipParameters.setDefaultFolderPath("E:\\test\\");
+                String relativeFileName = net.lingala.zip4j.util.FileUtils.getRelativeFileName(fileToAdd, zipParameters);
+                ArchiveEntry archiveEntry = outputStream.createArchiveEntry(fileToAdd, relativeFileName);
+                changeSet.add(archiveEntry, Files.newInputStream(fileToAdd.toPath()));
+            }
             ChangeSetPerformer changeSetPerformer = new ChangeSetPerformer(changeSet);
             changeSetPerformer.perform(inputStream, outputStream);
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
