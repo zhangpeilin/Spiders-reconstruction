@@ -49,19 +49,6 @@ public class CrudTools {
         }
     }
 
-//    public static CrudTools<Object> getInstance(UrlConfig config) {
-//        CrudTools<Object> crudTools = new CrudTools<>();
-//        crudTools.setConfig(config);
-//        return crudTools;
-//    }
-
-//    @Deprecated
-//    public RestResponse commonSave(Object data) {
-//        ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(config.getCommonSaveUrl(), data, RestResponse.class);
-//        log.debug(String.valueOf(responseEntity));
-//        return responseEntity.getBody();
-//    }
-
 
     @SuppressWarnings("unchecked")
     public RestResponse commonApiSave(Object bean) {
@@ -90,10 +77,6 @@ public class CrudTools {
         return commonApiQuery(sql, null, tClass);
     }
 
-//    public T commonApiQuery(String id, Class<T> tClass) {
-//        return commonApiQuery("id=" + id, null, tClass).get(0);
-//    }
-
     public RestResponse commonDelete(String sql, List<LinkedHashMap<String, Object>> paramObjects) {
         Map<String, Object> requestMap = new HashMap<>();
         List<String> params = paramObjects.stream().map(soMap -> soMap.values().stream().map(String::valueOf).collect(Collectors.joining(","))).collect(Collectors.toList());
@@ -104,13 +87,6 @@ public class CrudTools {
         return forEntity.getBody();
     }
 
-    public List<Bika> queryAllBika() {
-        return commonApiQuery("", null, Bika.class);
-    }
-
-    //    public List<T> queryAll(Class<T> tClass) {
-//        return commonApiQuery("", null, tClass);
-//    }
     public <R> List<R> commonApiQuery(String condition, Class<R> tClass) {
         return commonApiQuery(condition, null, tClass, new Page(1, 20));
     }

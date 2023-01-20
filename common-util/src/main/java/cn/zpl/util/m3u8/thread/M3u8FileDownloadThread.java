@@ -74,7 +74,7 @@ public class M3u8FileDownloadThread extends CommonThread {
 
     public M3u8FileDownloadThread(String path) {
         this.path = path;
-        ffmepgToolsPatch = (FFMEPGToolsPatch) SpringContext.getBeanWithGenerics(FFMEPGToolsPatch.class);
+        ffmepgToolsPatch = SpringContext.getBeanWithGenerics(FFMEPGToolsPatch.class);
     }
 
     public static void main(String[] args) throws IOException {
@@ -82,7 +82,8 @@ public class M3u8FileDownloadThread extends CommonThread {
         AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext(UtilSpringConfig.class);
         M3u8FileDownloadThread thread = annotationConfigApplicationContext.getBean(M3u8FileDownloadThread.class);
 //        thread.setPath("/Users/zpl/Downloads/index (1).m3u8");
-        String urls = "https://cdn77-vid.xvideos-cdn.com/fooarqc281Zy5E_qUsL4cQ==,1670767789/videos/hls/ea/4c/e5/ea4ce54d82a8d33ee335244b21283adf-1/hls-720p.m3u8";
+        String urls =
+                "https://usersfiles.whatfugui.com:59888/f/data6/2E6EFEB76A6934A9/09009E8704DF7828/play.m3u8?_KS=347ea2b613b6682a18161be61d88093b&_KE=1674008964";
         String[] split = urls.split("\n");
         for (String s : split) {
             thread.downloadCore(s);
@@ -510,7 +511,7 @@ public class M3u8FileDownloadThread extends CommonThread {
 
     private void downloadThread(@NotNull M3U8Ts ts, M3U8 m3u8, File dir) {
         DownloadDTO dto = new DownloadDTO();
-        dto.setProxy(true);
+//        dto.setProxy(true);
         dto.setAlwaysRetry();
         dto.setUrl(ts.getSubUrl().startsWith("http") ? ts.getSubUrl() : m3u8.getBasePath() + ts.getSubUrl());
         dto.setSavePath(new File(dir, ts.getFile()).getPath());

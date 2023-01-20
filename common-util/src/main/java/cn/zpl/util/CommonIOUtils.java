@@ -84,11 +84,13 @@ import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
@@ -96,6 +98,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class CommonIOUtils {
@@ -1362,5 +1365,16 @@ public class CommonIOUtils {
                 "            let page = \"1\"\n" +
                 "            let manga_url = \"https://www.manhuacat.com/manga/32105.html\";\n" +
                 "            let cur_url = \"https://www.manhuacat.com/manga/32105/521761.html\"", "img_data")));
+    }
+
+    public static List<String> getDirChapter(File file) {
+        File[] files = file.listFiles();
+        assert files != null;
+        Set<String> chapterSet = Arrays.stream(files).filter(File::isDirectory).map(File::getName).collect(Collectors.toSet());
+        return new ArrayList<String>(){
+            {
+                addAll(chapterSet);
+            }
+        };
     }
 }

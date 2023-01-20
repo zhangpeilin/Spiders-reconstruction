@@ -21,10 +21,10 @@ public class Download {
     public static void main(String[] args) throws IOException, InterruptedException {
         m3u8Core core = new m3u8Core();
         String[] extensions = new String[]{"m3u8"};
-        File base = new File("D:\\m3u8");
-        Collection<File> list = FileUtils.listFiles(base, extensions.length == 0 ? null : extensions, true);
+        File base = new File("m:\\m3u8");
+        Collection<File> list = FileUtils.listFiles(base, extensions, true);
 //        core.setHost("https://play.bo588588.com");
-        core.setDirectory("D:\\m3u8\\");
+        core.setDirectory("m:\\m3u8\\");
 //        core.setFileName("ph601ec79ccbbbd" + ".ts");
 //        core.downloadCore("https://jdvv009.microclassonline.com/20220726/Ql6PS69p/index.m3u8");
         DownloadTools tools = DownloadTools.getInstance(1);
