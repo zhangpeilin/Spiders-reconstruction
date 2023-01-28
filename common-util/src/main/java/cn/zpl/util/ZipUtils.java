@@ -1,6 +1,8 @@
 package cn.zpl.util;
 
+import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.FileHeader;
@@ -19,6 +21,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.changes.ChangeSet;
 import org.apache.commons.compress.changes.ChangeSetPerformer;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
@@ -35,6 +38,7 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,15 +48,19 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+@Slf4j
 public class ZipUtils {
 
 
@@ -133,9 +141,9 @@ public class ZipUtils {
 //        }
     }
 
-    public static void renameFolderInZip(String zipPath, String oldFolder, String newFolder) {
+    public static void renameFolderInZip(String zipPath, String oldFolder, String newFolder, Charset charset) {
         try (ZipFile zipFile = new ZipFile(zipPath)) {
-            zipFile.setCharset(Charset.forName("utf-8"));
+            zipFile.setCharset(charset);
             System.out.println(zipFile.getFileHeaders());
             FileHeader fileHeader = zipFile.getFileHeader(oldFolder + "/");
             zipFile.renameFile(fileHeader, newFolder);
@@ -301,6 +309,24 @@ public class ZipUtils {
         return getZipChapter(Paths.get(file.getPath()));
     }
 
+    public static int getFileCount(File file) {
+        int fileCount = 0;
+        {
+            try (ZipFile zipFile = new ZipFile(file.toString())) {
+                zipFile.setCharset(Charset.forName("gbk"));
+                List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+                for (FileHeader fileHeader : fileHeaders) {
+                    if (!fileHeader.isDirectory() && !fileHeader.getFileName().endsWith(".txt")) {
+                        fileCount++;
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return fileCount;
+    }
+
     public static List<String> getZipChapter(String file) {
         return getZipChapter(Paths.get(file));
     }
@@ -367,9 +393,11 @@ public class ZipUtils {
 
     /**
      * 追加文件到zip
+     *
+     * @param replace 需要替换的内容，用于目录结构更新，key是要替换的旧值，value是新值
      */
     @SneakyThrows
-    public static boolean append2Zip(String folder2Add, String zipPath) {
+    public static boolean append2Zip(String folder2Add, String zipPath, Map<String, String> replace) {
         //耗时：1261
         long start = System.currentTimeMillis();
         Path zipFilePath = Paths.get(zipPath);
@@ -393,7 +421,7 @@ public class ZipUtils {
                     }
                 });
             }
-            ChangeSetPerformer changeSetPerformer = new ChangeSetPerformer(changeSet);
+            ChangeSetPerformer changeSetPerformer = replace == null ? new ChangeSetPerformer(changeSet) : new ChangeSetPerformer(changeSet, replace);
             changeSetPerformer.perform(zipFile, outputStream);
             long end = System.currentTimeMillis();
             System.out.println("耗时：" + (end - start));
@@ -403,8 +431,82 @@ public class ZipUtils {
         FileUtils.delete(zipFilePath.toFile());
         return tmpZip.toFile().renameTo(zipFilePath.toFile());
     }
+
+    public static Path compressFolder2Zip(String folder2Add, String zipPath) {
+        long start = System.currentTimeMillis();
+        Path oriTar = Paths.get(folder2Add);
+        Path zip = Paths.get(zipPath);
+        FileHolder fileHolder = new FileHolder(folder2Add);
+        try (ZipArchiveOutputStream zipArchiveOutputStream = new ZipArchiveOutputStream(Files.newOutputStream(zip))) {
+            Collection<File> files = FileUtils.listFilesAndDirs(oriTar.toFile(), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+            zipArchiveOutputStream.setLevel(ZipEntry.STORED);
+            for (File file : files) {
+                String fileName = fileHolder.getRelativeFileName(file);
+                if (file.isDirectory()) {
+                    fileName = fileName.replace('\\', '/');
+                }
+                ZipArchiveEntry zipArchiveEntry = new ZipArchiveEntry(file, fileName);
+                zipArchiveEntry.setSize(file.length());
+                zipArchiveOutputStream.putArchiveEntry(zipArchiveEntry);
+                if (!file.isDirectory()) {
+                    byte[] buffer = new byte[1024];
+                    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
+                        int read;
+                        while ((read = bufferedInputStream.read(buffer)) != -1) {
+                            zipArchiveOutputStream.write(buffer, 0, read);
+                        }
+                    }
+                }
+                zipArchiveOutputStream.closeArchiveEntry();
+            }
+            long end = System.currentTimeMillis();
+            log.debug("耗时：{}", (end - start));
+            return zip;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
 
+@Data
+class FileHolder {
+    ZipParameters zipParameters = new ZipParameters();
+    public FileHolder(String folder2Add) {
+        zipParameters.setDefaultFolderPath(Paths.get(folder2Add).getParent().toString());
+    }
+
+    @SneakyThrows
+    public String getRelativeFileName(File file) {
+        return net.lingala.zip4j.util.FileUtils.getRelativeFileName(file, zipParameters);
+    }
+}
+class test9{
+    public static void main(String[] args) {
+        String fileName = "8562....(5853ba23946b938521bf89b3)Hinata NTRism";
+//        Pattern compile = Pattern.compile("(?:(\\d+\\.{4})?)\\(\\w+\\)");
+        Pattern compile = Pattern.compile("(\\d+\\.{4})?\\((?=5853ba23946b938521bf89b3)5853ba23946b938521bf89b3\\)");
+        Matcher matcher = compile.matcher(fileName);
+        if (matcher.find()) {
+            System.out.println(fileName.substring(matcher.start(), matcher.end()));
+        } else {
+            System.out.println(false);
+        }
+    }
+}
+class test10{
+    public static void main(String[] args) {
+        String fileName = "industry abc";
+//        Pattern compile = Pattern.compile("(?:(\\d+\\.{4})?)\\(\\w+\\)");
+        Pattern compile = Pattern.compile("industr(?=y)");
+        Matcher matcher = compile.matcher(fileName);
+        if (matcher.find()) {
+            System.out.println(fileName.substring(matcher.start(), matcher.end()));
+        } else {
+            System.out.println(false);
+        }
+    }
+}
 
 /**
  * 压缩成zip
@@ -447,11 +549,47 @@ class test8 {
 }
 
 class test7 {
+
+    public static final ThreadLocal<ArrayList<File>> dirsCache = ThreadLocal.withInitial(ArrayList::new);
+    public static final Pattern pattern = Pattern.compile("\\(\\w+\\)");
     public static void main(String[] args) {
-        List<String> zipChapter = ZipUtils.getZipChapter("C:\\\\test\\\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）.zip");
-        System.out.println(zipChapter);
-//        ZipUtils.append2Zip("C:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）", "C:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）.zip");
-//        ZipUtils.renameFolderInZip("C:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）.zip", "(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）", "(627ca33a75ab703dacb84cc1)");
+
+//        ZipUtils.compressFolder2Zip("G:\\bika\\(5e5b0cb41f7673759b6d585d)[Tumblr] sq003", "G:\\bika\\(5e5b0cb41f7673759b6d585d)[Tumblr] sq003.zip");
+        File base = new File("E:\\性转");
+//        File[] files = base.listFiles();
+        listDirs(base);
+        Collection<File> dirs = dirsCache.get();
+        for (File file : dirs) {
+            if (file.isDirectory()) {
+                ZipUtils.compressFolder2Zip(file.toString(), file + ".zip");
+                try {
+                    FileUtils.deleteDirectory(file);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                System.out.println(file);
+            }
+        }
+//        List<String> zipChapter = ZipUtils.getZipChapter("C:\\\\test\\\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）.zip");
+//        System.out.println(zipChapter);
+//        HashMap<String, String> hashMap = new HashMap<String, String>() {{
+//            put("(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）", "新目录222");
+//        }};
+//        ZipUtils.append2Zip("C:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）", "C:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）.zip", hashMap);
+//        ZipUtils.renameFolderInZip("J:\\bika\\(5cac8106e859a07091d8baf5)达尔文游戏.zip", "(5cac8106e859a07091d8baf5)", "(5cac8106e859a07091d8baf5)达尔文游戏", Charset.forName("gbk"));
+    }
+
+    public static void listDirs(File file) {
+//        File[] files = file.listFiles(pathname -> pathname.isDirectory() && Pattern.compile(regex).matcher(pathname.getName()).find());
+        File[] dirs = file.listFiles(File::isDirectory);
+        assert dirs != null;
+        Arrays.stream(dirs).forEach(file1 -> {
+            if (pattern.matcher(file1.getName()).find()) {
+                dirsCache.get().add(file1);
+            } else {
+                listDirs(file1);
+            }
+        });
     }
 }
 

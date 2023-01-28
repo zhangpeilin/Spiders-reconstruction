@@ -83,7 +83,7 @@ public class M3u8FileDownloadThread extends CommonThread {
         M3u8FileDownloadThread thread = annotationConfigApplicationContext.getBean(M3u8FileDownloadThread.class);
 //        thread.setPath("/Users/zpl/Downloads/index (1).m3u8");
         String urls =
-                "https://usersfiles.whatfugui.com:59888/f/data6/2E6EFEB76A6934A9/09009E8704DF7828/play.m3u8?_KS=347ea2b613b6682a18161be61d88093b&_KE=1674008964";
+                "https://s1.zoubuting.com/20230123/eYTjeweQ/1000kb/hls/index.m3u8?skipl=1";
         String[] split = urls.split("\n");
         for (String s : split) {
             thread.downloadCore(s);

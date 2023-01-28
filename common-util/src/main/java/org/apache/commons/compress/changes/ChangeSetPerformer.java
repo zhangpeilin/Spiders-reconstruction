@@ -23,11 +23,13 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.IOUtils;
@@ -44,6 +46,8 @@ import org.apache.commons.compress.utils.IOUtils;
 public class ChangeSetPerformer {
     private final Set<Change> changes;
 
+    private final Map<String, String> folder2Replace;
+
     /**
      * Constructs a ChangeSetPerformer with the changes from this ChangeSet
      *
@@ -51,6 +55,12 @@ public class ChangeSetPerformer {
      */
     public ChangeSetPerformer(final ChangeSet changeSet) {
         changes = changeSet.getChanges();
+        this.folder2Replace = null;
+    }
+
+    public ChangeSetPerformer(final ChangeSet changeSet, Map<String, String> folder2Replace) {
+        changes = changeSet.getChanges();
+        this.folder2Replace = folder2Replace;
     }
 
     /**
@@ -111,13 +121,14 @@ public class ChangeSetPerformer {
             final Change change = it.next();
 
             if (change.type() == Change.TYPE_ADD && change.isReplaceMode()) {
+                ArchiveEntry added;
                 if (change.getInput() == null && change.getEntry().isDirectory()) {
-                    copyDir(out, change.getEntry());
+                    added = copyDir(out, change.getEntry());
                 } else {
-                    copyStream(change.getInput(), out, change.getEntry());
+                    added = copyStream(change.getInput(), out, change.getEntry());
                 }
                 it.remove();
-                results.addedFromChangeSet(change.getEntry().getName());
+                results.addedFromChangeSet(added.getName());
             }
         }
 
@@ -149,9 +160,9 @@ public class ChangeSetPerformer {
 
             if (copy
                     && !isDeletedLater(workingSet, entry)
-                    && !results.hasBeenAdded(entry.getName())) {
-                copyStream(entryIterator.getInputStream(), out, entry);
-                results.addedFromStream(entry.getName());
+                    && !results.hasBeenAdded(getNewEntryName(entry))) {
+                ArchiveEntry added = copyStream(entryIterator.getInputStream(), out, entry);
+                results.addedFromStream(added.getName());
             }
         }
 
@@ -162,9 +173,9 @@ public class ChangeSetPerformer {
             if (change.type() == Change.TYPE_ADD &&
                     !change.isReplaceMode() &&
                     !results.hasBeenAdded(change.getEntry().getName())) {
-                copyStream(change.getInput(), out, change.getEntry());
+                ArchiveEntry added = copyStream(change.getInput(), out, change.getEntry());
                 it.remove();
-                results.addedFromChangeSet(change.getEntry().getName());
+                results.addedFromChangeSet(added.getName());
             }
         }
         out.finish();
@@ -206,11 +217,30 @@ public class ChangeSetPerformer {
      * @param entry the entry to write
      * @throws IOException if data cannot be read or written
      */
-    private void copyStream(final InputStream in, final ArchiveOutputStream out,
-                            final ArchiveEntry entry) throws IOException {
-        out.putArchiveEntry(entry);
+    private ArchiveEntry copyStream(final InputStream in, final ArchiveOutputStream out,
+                                    final ArchiveEntry entry) throws IOException {
+        ArchiveEntry copy = null;
+        if (folder2Replace != null && !folder2Replace.isEmpty()) {
+            String newEntryName = getNewEntryName(entry);
+            if (entry instanceof ZipArchiveEntry) {
+                copy = new ZipArchiveEntry(newEntryName);
+            }
+            if (entry instanceof TarArchiveEntry) {
+                copy = new TarArchiveEntry(newEntryName);
+            }
+        }
+        out.putArchiveEntry(copy != null ? copy : entry);
         IOUtils.copy(in, out);
         out.closeArchiveEntry();
+        return copy != null ? copy : entry;
+    }
+
+    private String getNewEntryName(ArchiveEntry entry) {
+        final String[] name = {entry.getName()};
+        if (folder2Replace != null && !folder2Replace.isEmpty()) {
+            folder2Replace.forEach((s, s2) -> name[0] = name[0].replace(s, s2));
+        }
+        return name[0];
     }
 
     /**
@@ -220,10 +250,22 @@ public class ChangeSetPerformer {
      * @param entry the entry to write
      * @throws IOException if data cannot be read or written
      */
-    private void copyDir(final ArchiveOutputStream out,
-                         final ArchiveEntry entry) throws IOException {
-        out.putArchiveEntry(entry);
+    private ArchiveEntry copyDir(final ArchiveOutputStream out,
+                                 final ArchiveEntry entry) throws IOException {
+        ArchiveEntry copy = null;
+
+        if (folder2Replace != null && !folder2Replace.isEmpty()) {
+            String newEntryName = getNewEntryName(entry);
+            if (entry instanceof ZipArchiveEntry) {
+                copy = new ZipArchiveEntry(newEntryName);
+            }
+            if (entry instanceof TarArchiveEntry) {
+                copy = new TarArchiveEntry(newEntryName);
+            }
+        }
+        out.putArchiveEntry(copy != null ? copy : entry);
         out.closeArchiveEntry();
+        return copy != null ? copy : entry;
     }
 
     /**

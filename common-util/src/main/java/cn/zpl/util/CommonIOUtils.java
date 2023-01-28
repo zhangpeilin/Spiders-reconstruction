@@ -993,19 +993,19 @@ public class CommonIOUtils {
 
     public static String getFileId(File file) {
         String fileName = file.getName();
-        String id = null;
-        Matcher matcher = Pattern.compile("^\\(\\w+\\)").matcher(fileName);
+        Matcher matcher = Pattern.compile("(?=(\\d+\\.{4})?)\\(\\w+\\)").matcher(fileName);
         if (matcher.find()) {
-            id = Pattern.compile("[()]").matcher(fileName.substring(matcher.start(), matcher.end())).replaceAll("");
+            return getFileId2(fileName.substring(matcher.start(), matcher.end()));
+//            id = Pattern.compile("(\\d+\\.{4})?|[()]").matcher(fileName.substring(matcher.start(), matcher.end())).replaceAll("");
         }
-        return id;
+        return null;
     }
 
     public static String getFileId2(String fileName) {
         String id = null;
-        Matcher matcher = Pattern.compile("\\(\\w+\\)").matcher(fileName);
+        Matcher matcher = Pattern.compile("\\((\\w+)\\)").matcher(fileName);
         if (matcher.find()) {
-            id = Pattern.compile("[(av)]").matcher(fileName.substring(matcher.start(), matcher.end())).replaceAll("");
+            id = matcher.group(1);
         }
         return id;
     }
