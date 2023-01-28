@@ -32,11 +32,15 @@ public class BikaPageThread extends BikaCommonThread {
 
     CrudTools tools;
 
+    BikaParams bikaParams;
+
 
     public BikaPageThread(int page, String keyword, boolean isNeedDownload) {
         this.page = page;
         this.keyword = keyword;
         this.isNeedDownload = isNeedDownload;
+        this.tools = SpringContext.getBeanWithGenerics(CrudTools.class);
+        this.bikaParams = SpringContext.getBeanWithGenerics(BikaParams.class);
     }
 
     @SneakyThrows
@@ -59,7 +63,7 @@ public class BikaPageThread extends BikaCommonThread {
                     }
                 }
                 log.debug(keyword + "第" + page + "页");
-                if (BikaParams.writeDB){
+                if (bikaParams.isWriteDB()){
                     tools.commonApiSave(listVector);
                 }
                 tool.shutdown();

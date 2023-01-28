@@ -37,7 +37,7 @@ public class BikaChapterThread implements Runnable {
         //路径不在固定，由数据库记录的路径确定上层目录
         Bika exist = utils.getExists(comicId);
         if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
-            this.chapterPath = exist.getLocalPath() + "\\" + chapterNum;
+            this.chapterPath = exist.getLocalPath().replace(".zip", "") + "\\" + chapterNum;
         } else {
             this.chapterPath = BikaUtils.defaultSavePath + "\\(" + comicId + ")" + title + "\\" + chapterNum;
         }

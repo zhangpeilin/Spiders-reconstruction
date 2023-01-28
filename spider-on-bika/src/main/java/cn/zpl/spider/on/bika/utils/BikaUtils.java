@@ -14,11 +14,15 @@ import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
 import cn.zpl.util.GetSignature;
+import cn.zpl.util.ZipUtils;
+import com.alibaba.fastjson.JSON;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -34,7 +38,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Test;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -46,27 +49,34 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @EnableConfigurationProperties(BikaParams.class)
 @Component
 public class BikaUtils {
 
-//    public static Map<String, Bika> exists = new ConcurrentHashMap<>();
+    //    public static Map<String, Bika> exists = new ConcurrentHashMap<>();
     public static LoadingCache<String, Bika> exists;
+
+    public static LoadingCache<String, BikaList> bika_list_exists;
     private static String currentToken = "";
     public static String defaultSavePath = "e:\\bika";
     public static ThreadLocal<List<File>> result = new ThreadLocal<>();
@@ -78,7 +88,7 @@ public class BikaUtils {
 
     public static final Map<String, AtomicInteger> progress = new HashMap<>();
 
-//    @Async("BikaAsync")
+    //    @Async("BikaAsync")
     public void search(String key, boolean download) {
         try {
             String url = "comics/search?page=1&q=" + URLEncoder.encode(key, "utf-8");
@@ -91,8 +101,8 @@ public class BikaUtils {
             for (JsonElement detail : comics.getAsJsonArray()) {
                 if (download) {
                     tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
-                }else {
-                    System.out.printf("%1$s:%2$s%n",CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"));
+                } else {
+                    System.out.printf("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"));
                 }
             }
             tool.shutdown();
@@ -136,7 +146,7 @@ public class BikaUtils {
         DownloadTools tool = DownloadTools.getInstance(10);
         tool.setName("漫画");
         tool.setSleepTimes(10000);
-            tool.ThreadExecutorAdd(new BikaComicThread(id, true));
+        tool.ThreadExecutorAdd(new BikaComicThread(id, true));
         tool.shutdown();
     }
 
@@ -152,7 +162,7 @@ public class BikaUtils {
         tool.setSleepTimes(10000);
         List<String> stringList = new ArrayList<>();
         for (JsonElement detail : comics.getAsJsonArray()) {
-           System.out.printf("%1$s:%2$s%n",CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"));
+            System.out.printf("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"));
         }
     }
 
@@ -179,46 +189,96 @@ public class BikaUtils {
         }
     }
 
-    public LoadingCache<String, Bika> loadCache(){
+    public LoadingCache<String, Bika> loadCache() {
         return exists;
     }
 
     public void invalidCache(String comicId) {
         exists.invalidate(comicId);
     }
-    
-    public Bika getExists(String comicId) {
-        if (!BikaParams.writeDB){
+
+    public synchronized Bika getExists(String comicId) {
+        if (!bikaParams.isWriteDB()) {
             return null;
         }
-        synchronized (BikaUtils.class) {
-            if (exists != null) {
-                Bika exist = exists.getIfPresent(comicId);
-                if (exist == null) {
-                    try {
-                        return exists.get(comicId);
-                    } catch (Exception e) {
-                        log.error("加载失败", e);
-                        return null;
-                    }
-                }
+        if (exists != null) {
+            try {
+                List<String> list = new ArrayList<>();
+                list.add("1111");
+                exists.getAll(list);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
             }
-            exists = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(200, TimeUnit.SECONDS).build(new CacheLoader<String, Bika>() {
-                @Override
-                public Bika load(@NotNull String key) {
-                    List<Bika> bikas = tools.commonApiQueryBySql(String.format("select * from bika where id = '%1$s'", key), Bika.class);
-                    if (bikas.size() != 0) {
-                        return bikas.get(0);
-                    }
+            Bika exist = exists.getIfPresent(comicId);
+            if (exist == null) {
+                try {
+                    return exists.get(comicId);
+                } catch (Exception e) {
+//                        log.error("加载失败", e);
                     return null;
                 }
-            });
-            return getExists(comicId);
+            } else {
+                return exist;
+            }
         }
+        exists = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(2000, TimeUnit.SECONDS).build(new CacheLoader<String, Bika>() {
+            @Override
+            public Bika load(@NotNull String key) {
+                List<Bika> bikas = tools.commonApiQueryBySql(String.format("select * from bika where id = '%1$s'", key), Bika.class);
+                if (bikas.size() != 0) {
+                    return bikas.get(0);
+                }
+                return null;
+            }
+
+            @Override
+            public Map<String, Bika> loadAll(Iterable<? extends String> keys) throws Exception {
+                List<Bika> bikas = tools.commonApiQueryBySql("select * from bika", Bika.class);
+                return bikas.stream().collect(Collectors.toMap(Bika::getId, bika -> bika));
+            }
+        });
+        return getExists(comicId);
+    }
+
+
+    public synchronized BikaList getFromBikaList(String comicId) {
+        if (!bikaParams.isWriteDB()) {
+            return null;
+        }
+        if (bika_list_exists != null) {
+            try {
+                if (bika_list_exists.size() == 0) {
+                    List<String> list = new ArrayList<>();
+                    list.add("5fd8d1aecc2a3c407ff3da5e");
+                    bika_list_exists.getAll(list);
+                }
+                //加载全部缓存
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+            return bika_list_exists.getIfPresent(comicId);
+        }
+        bika_list_exists = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(2000, TimeUnit.HOURS).build(new CacheLoader<String, BikaList>() {
+            @Override
+            public BikaList load(@NotNull String key) {
+                List<BikaList> bikas = tools.commonApiQueryBySql(String.format("select * from bika_list where id = '%1$s'", key), BikaList.class);
+                if (bikas.size() != 0) {
+                    return bikas.get(0);
+                }
+                return null;
+            }
+
+            @Override
+            public Map<String, BikaList> loadAll(Iterable<? extends String> keys) throws Exception {
+                List<BikaList> bikas = tools.commonApiQueryBySql("select * from bika_list", BikaList.class);
+                return bikas.stream().collect(Collectors.toMap(BikaList::getId, bika -> bika));
+            }
+        });
+        return getFromBikaList(comicId);
     }
 
     public boolean isNeedUpdate(String comicid) {
-        if (!BikaParams.writeDB){
+        if (!bikaParams.isWriteDB()) {
             return true;
         }
         Bika already = getExists(comicid);
@@ -242,7 +302,7 @@ public class BikaUtils {
             log.debug("登录失效，开始登录……");
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("email", bikaParams.getEmail());
-            jsonObject.addProperty("password",bikaParams.getPassword());
+            jsonObject.addProperty("password", bikaParams.getPassword());
             JsonObject json = postUrl("auth/sign-in", jsonObject.toString());
             if (json == null) {
                 CommonIOUtils.waitSeconds(5);
@@ -468,9 +528,9 @@ public class BikaUtils {
             bika.setIsTranslated(1);
             bika.setIsDeleted(0);
             bika.setLocalPath(localPath);
-            if (new File(bika.getLocalPath()).exists()) {
-                bika.setRealPagesCount(Objects.requireNonNull(new File(bika.getLocalPath()).listFiles(File::isDirectory)).length);
-            }
+//            if (new File(bika.getLocalPath()).exists()) {
+//                bika.setRealPagesCount(Objects.requireNonNull(new File(bika.getLocalPath()).listFiles(File::isDirectory)).length);
+//            }
             bika.setIsDeleted(0);
             return bika;
         } catch (Exception e) {
@@ -503,9 +563,9 @@ public class BikaUtils {
             bika.setDownloadedAt(String.valueOf(System.currentTimeMillis()));
             bika.setIsDeleted(0);
             bika.setLocalPath(localPath);
-            if (new File(bika.getLocalPath()).exists()) {
-                bika.setRealPagesCount(Objects.requireNonNull(new File(bika.getLocalPath()).listFiles(File::isDirectory)).length);
-            }
+//            if (new File(bika.getLocalPath()).exists()) {
+//                bika.setRealPagesCount(Objects.requireNonNull(new File(bika.getLocalPath()).listFiles(File::isDirectory)).length);
+//            }
             bika.setIsDeleted(0);
             return bika;
         } catch (Exception e) {
@@ -539,7 +599,7 @@ public class BikaUtils {
             Bika bika = getBika(info, "");
             bika.setIsDeleted(1);
 //            DBManager.update(bika);
-            if (BikaParams.writeDB && !tools.commonApiSave(bika).isSuccess()) {
+            if (bikaParams.isWriteDB() && !tools.commonApiSave(bika).isSuccess()) {
                 log.error("保存失败：" + bika);
             }
             return true;
@@ -635,11 +695,117 @@ public class BikaUtils {
         return result.get();
     }
 
+    public Path GetAvailablePath(long size, File file) {
+        List<String> savePath = bikaParams.getSavePath();
+        if (file != null && file.exists()) {
+            Optional<ImmutableMap<String, Object>> priority = savePath.stream().map(path -> ImmutableMap.<String, Object>of("size", new File(path).getParentFile().getFreeSpace(), "path", path)).filter(hashMap -> ((long) Objects.requireNonNull(hashMap.get("size"))) > size && String.valueOf(Objects.requireNonNull(hashMap.get("path"))).toLowerCase().startsWith(file.getPath().toLowerCase().substring(0, 1))).findAny();
+            if (priority.isPresent()) {
+                ImmutableMap<String, Object> fitMap = priority.get();
+                return Paths.get(String.valueOf(fitMap.get("path")));
+            }
+        }
+        Optional<ImmutableMap<String, Object>> first = savePath.stream().map(path -> ImmutableMap.<String, Object>of("size", new File(path).getParentFile().getFreeSpace(), "path", path)).filter(hashMap -> ((long) Objects.requireNonNull(hashMap.get("size"))) > size).findFirst();
+        if (first.isPresent()) {
+            ImmutableMap<String, Object> fitMap = first.get();
+            return Paths.get(String.valueOf(fitMap.get("path")));
+        }
+        return Paths.get("d:\\temp");
+    }
+
+    /**
+     * m
+     * 将文件移到存档点
+     *
+     * @param file
+     * @param des
+     */
+    @SneakyThrows
+    public Path moveFile(File file, Path des) {
+        if (!file.toPath().equals(Paths.get(des.toString(), file.getName()))) {
+            FileUtils.moveFileToDirectory(file, des.toFile(), true);
+        }
+        return Paths.get(des.toString(), file.getName());
+    }
+
+
     public void test() {
         List<File> list = getFolders("G:\\Bika完结", "\\(\\w+\\)");
         System.out.println(list.size());
         for (File file : list) {
             System.out.println(file);
         }
+    }
+
+    @SneakyThrows
+    @Async("BikaAsync")
+    public void bus(String type, File file, BikaUtils bikaUtils, Function<File, List<String>> callback, BiFunction<File, Path, Path> after) {
+        if (callback == null) {
+            throw new RuntimeException("没有传入正确的处理函数");
+        }
+        CrudTools crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
+        String fileId = CommonIOUtils.getFileId(file);
+        if (fileId == null) {
+            return;
+        }
+        Bika exist = bikaUtils.getExists(fileId);
+        if (exist != null) {
+            File localFile = new File(exist.getLocalPath());
+            if (!localFile.exists()) {
+                //如果数据库记录的位置没有文件，则以该文件为准更新
+                exist.setEpsCount(callback.apply(file).size());
+                Path des = after.apply(file, bikaUtils.GetAvailablePath(file.length(), file));
+                exist.setLocalPath(des.toString());
+                crudTools.AsyncApiSave(exist);
+            } else {
+                //如果数据库中记录位置有，判断记录位置是否与该文件一致，如果一致则直接返回，否则进入比较逻辑
+                if (exist.getLocalPath().equalsIgnoreCase(file.getPath())) {
+                    return;
+                }
+                Integer existsEpsCount = exist.getEpsCount();
+                List<String> chaptersList = callback.apply(file);
+                System.out.println(fileId);
+                //如果文件中章节数大于数据库中记录，则文件为最新记录，删除数据库中记录位置处的文件
+                if (chaptersList.size() > existsEpsCount) {
+                    FileUtils.delete(new File(exist.getLocalPath()));
+                    Path des = after.apply(file, bikaUtils.GetAvailablePath(file.length(), file));
+                    exist.setLocalPath(des.toString());
+                    crudTools.AsyncApiSave(exist);
+                } else {
+                    int fileCount = ZipUtils.getFileCount(file);
+                    int existFileCount = ZipUtils.getFileCount(new File(exist.getLocalPath()));
+                    if (fileCount <= existFileCount) {
+                        FileUtils.delete(file);
+                    } else if (chaptersList.size() == existsEpsCount) {
+                        //如果章节数相同且扫描文件中大于数据库记录文件中的图片数，则以文件为最新记录
+                        FileUtils.delete(new File(exist.getLocalPath()));
+                        Path des = after.apply(file, bikaUtils.GetAvailablePath(file.length(), file));
+                        exist.setLocalPath(des.toString());
+                        crudTools.AsyncApiSave(exist);
+                    }
+                }
+            }
+        } else {
+            //如果数据库中没有，则查询bika_list表，如果有的话将记录复制到bika表中，并更新保存记录
+            BikaList bikaList = bikaUtils.getFromBikaList(fileId);
+            if (bikaList == null) {
+                log.warn("该记录无法在bika_list中找到");
+                return;
+            }
+            Bika bika = JSON.parseObject(JSON.toJSONString(bikaList), Bika.class);
+            bika.setEpsCount(callback.apply(file).size());
+            Path des = after.apply(file, bikaUtils.GetAvailablePath(file.length(), file));
+            bika.setLocalPath(des.toString());
+            crudTools.commonApiSave(bika);
+        }
+//            if (exist != null) {
+//                Integer existsEpsCount = exist.getEpsCount();
+//                List<String> chaptersList = callback.apply(file);
+//                //如果文件中章节数大于数据库中记录，则文件为最新记录，解压并且打成tar放入存档；
+//                if (chaptersList.size() > existsEpsCount) {
+//                    after.apply(file, bikaUtils.GetAvaliablePath(file.getUsableSpace()));
+//                }
+//            } else {
+//                //如果数据库不存在记录，则文件为最新记录
+//            }
     }
 }
