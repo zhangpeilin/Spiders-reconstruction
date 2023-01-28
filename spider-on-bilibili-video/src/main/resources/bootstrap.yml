@@ -1,7 +1,7 @@
 spring:
   cloud:
     config:
-      label: master
+      label: dev
       name: common,bilibili
       profile: online
-      uri: http://localhost:3344
+      uri: http://localhost:2233
