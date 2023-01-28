@@ -3,7 +3,7 @@ package cn.zpl.common.bean;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.PropertyNamingStrategy;
 import com.alibaba.fastjson.parser.ParserConfig;
-import org.springframework.lang.NonNull;
+import lombok.NonNull;
 
 import java.util.HashMap;
 import java.util.List;
