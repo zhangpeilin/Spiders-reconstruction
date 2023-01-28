@@ -22,6 +22,8 @@
         <module>common-app-eureka</module>
         <module>common-gateway</module>
         <module>spider-on-bilibili-manga</module>
+        <module>spider-unit</module>
+        <module>spider-dao</module>
     </modules>
 
     <properties>
