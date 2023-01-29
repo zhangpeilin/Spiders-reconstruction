@@ -150,6 +150,16 @@ public class BikaUtils {
         tool.shutdown();
     }
 
+    public void downloadByIds(List<String> ids) {
+
+        //H24 D7 D30
+        DownloadTools tool = DownloadTools.getInstance(10);
+        tool.setName("漫画");
+        tool.setSleepTimes(10000);
+        ids.forEach(id -> tool.ThreadExecutorAdd(new BikaComicThread(id, true)));
+        tool.shutdown();
+    }
+
     public void showH24() {
 
         //H24 D7 D30

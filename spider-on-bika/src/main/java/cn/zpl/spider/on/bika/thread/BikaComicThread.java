@@ -158,6 +158,10 @@ public class BikaComicThread extends BikaCommonThread {
         Bika bika = bikaUtils.getExists(comicId);
         File existZip = new File(bika.getLocalPath());
         File downloadDir = new File(existZip.getPath().replace(".zip", ""));
+        if (!downloadDir.exists()) {
+            log.warn("下载目录{}不存在，直接返回", downloadDir);
+            return;
+        }
         Collection<File> files = FileUtils.listFiles(downloadDir, null, true);
         //遍历目录，如果有新增的目录，则解压所有文件，然后重新压缩
         File any = files.stream().filter(file -> file.isFile() && !file.getName().endsWith(".txt")).findFirst().orElse(null);

@@ -149,13 +149,19 @@ public class ApplicationConfigTest {
     public void getHighScoreNotExists() {
         BikaUtils bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
         CrudTools crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
-        List<BikaList> bikaLists = crudTools.commonApiQueryBySql("select * from bika_list where likes_count > 10000", BikaList.class);
-        bikaLists.stream().filter(bikaList -> !StringUtils.isEmpty(bikaList.getLocalPath())).parallel().forEach(bikaList -> {
+        List<BikaList> bikaLists = crudTools.commonApiQueryBySql("select * from bika_list where likes_count > 10000 and  `categories` NOT LIKE '%CG%'", BikaList.class);
+//        bikaLists.stream().filter(bikaList -> !StringUtils.isEmpty(bikaList.getLocalPath())).parallel().forEach(bikaList -> {
+//            Bika exists = bikaUtils.getExists(bikaList.getId());
+//            File file = new File(exists.getLocalPath());
+//            if (!file.exists()) {
+//                SaveLog.saveLog("M:\\高评分未下载\\" + file.getName());
+//            }
+//        });
+        List<String> notExists = bikaLists.stream().filter(bikaList -> !StringUtils.isEmpty(bikaList.getLocalPath())).parallel().filter(bikaList -> {
             Bika exists = bikaUtils.getExists(bikaList.getId());
             File file = new File(exists.getLocalPath());
-            if (!file.exists()) {
-                SaveLog.saveLog("M:\\高评分未下载\\" + file.getName());
-            }
-        });
+            return !file.exists();
+        }).map(BikaList::getId).collect(Collectors.toList());
+        bikaUtils.downloadByIds(notExists);
     }
 }
