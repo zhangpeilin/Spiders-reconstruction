@@ -14,19 +14,16 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarFile;
-import org.apache.commons.compress.archivers.zip.Zip64Mode;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.changes.ChangeSet;
 import org.apache.commons.compress.changes.ChangeSetPerformer;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
-import sun.misc.ASCIICaseInsensitiveComparator;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -38,24 +35,18 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -397,7 +388,7 @@ public class ZipUtils {
      * @param replace 需要替换的内容，用于目录结构更新，key是要替换的旧值，value是新值
      */
     @SneakyThrows
-    public static boolean append2Zip(String folder2Add, String zipPath, Map<String, String> replace) {
+    public synchronized static void append2Zip(String folder2Add, String zipPath, Map<String, String> replace) {
         //耗时：1261
         long start = System.currentTimeMillis();
         Path zipFilePath = Paths.get(zipPath);
@@ -429,10 +420,10 @@ public class ZipUtils {
             throw new RuntimeException(e);
         }
         FileUtils.delete(zipFilePath.toFile());
-        return tmpZip.toFile().renameTo(zipFilePath.toFile());
+        tmpZip.toFile().renameTo(zipFilePath.toFile());
     }
 
-    public static Path compressFolder2Zip(String folder2Add, String zipPath) {
+    public synchronized static void compressFolder2Zip(String folder2Add, String zipPath) {
         long start = System.currentTimeMillis();
         Path oriTar = Paths.get(folder2Add);
         Path zip = Paths.get(zipPath);
@@ -461,7 +452,6 @@ public class ZipUtils {
             }
             long end = System.currentTimeMillis();
             log.debug("耗时：{}", (end - start));
-            return zip;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -620,7 +610,32 @@ class test5 {
     }
 }
 
+/**
+ * 将rar转成zip
+ */
+class test11 {
+    public static void main(String[] args) {
 
+        Path zipPath = Paths.get("J:\\bika_zip\\(5aa20f3778f1cc4fc59c0f75)あやかし館へようこそ！ 1-10話.zip");
+        Path tarPath = Paths.get("c:\\test", "5aa20f3778f1cc4fc59c0f75.tar");
+        try (ZipArchiveInputStream inputStream = new ZipArchiveInputStream(Files.newInputStream(zipPath), "gbk"); TarArchiveOutputStream tarArchiveOutputStream = new TarArchiveOutputStream(Files.newOutputStream(tarPath))) {
+            ZipArchiveEntry zipArchiveEntry;
+            while ((zipArchiveEntry = inputStream.getNextZipEntry()) != null) {
+                TarArchiveEntry entry = new TarArchiveEntry(zipArchiveEntry.getName());
+                entry.setSize(zipArchiveEntry.getSize());
+                tarArchiveOutputStream.putArchiveEntry(entry);
+                int read = -1;
+                byte[] buffer = new byte[1024];
+                while ((read = inputStream.read(buffer)) != -1) {
+                    tarArchiveOutputStream.write(buffer, 0, read);
+                }
+                tarArchiveOutputStream.closeArchiveEntry();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
 class test6 {
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
