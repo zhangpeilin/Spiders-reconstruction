@@ -51,10 +51,9 @@
             <artifactId>guava</artifactId>
             <version>31.1-android</version>
         </dependency>
-        <!--        <dependency>-->
-<!--            <groupId>cn.zpl</groupId>-->
-<!--            <artifactId>common-bean</artifactId>-->
-<!--            <version>1.0-SNAPSHOT</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
     </dependencies>
 </project>

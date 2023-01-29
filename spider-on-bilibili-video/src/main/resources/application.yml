@@ -1,5 +1,9 @@
-spider:
-  common:
-    url:
-      common-query-url:
-      common-save-url:
+server:
+  port: 8082
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:2233/eureka/
+    register-with-eureka: false
+  instance:
+    ip-address: true

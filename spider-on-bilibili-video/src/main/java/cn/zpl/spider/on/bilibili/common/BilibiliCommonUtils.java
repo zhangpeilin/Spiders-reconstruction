@@ -22,17 +22,15 @@ import java.util.zip.ZipInputStream;
 @Component
 public class BilibiliCommonUtils {
 
-    ThreadLocal<BilibiliConfigParams> configParamsThreadLocal = new ThreadLocal<>();
+    static ThreadLocal<BilibiliConfigParams> configParamsThreadLocal = new ThreadLocal<>();
 
-    public BilibiliConfigParams getConfigParams() {
+    public static BilibiliConfigParams getConfigParams() {
+        if (configParamsThreadLocal.get() == null) {
+            configParamsThreadLocal.set(SpringContext.getBeanWithGenerics(BilibiliConfigParams.class));
+        }
         return configParamsThreadLocal.get();
     }
 
-    @PostConstruct
-    public void init() {
-        BilibiliConfigParams configParams = SpringContext.getBeanWithGenerics(BilibiliConfigParams.class);
-        configParamsThreadLocal.set(configParams);
-    }
     public static String getUserInfo(String uid) throws JsonIOException, JsonSyntaxException {
 
         String url = "https://api.bilibili.com/x/space/acc/info?mid=" + uid + "&jsonp=jsonp";

@@ -23,11 +23,6 @@ public class BilibiliConfigParams {
     @Resource
     public BilibiliProperties properties;
 
-//    @Bean
-//    public BilibiliProperties setProperties(BilibiliProperties properties) {
-//        this.properties = properties;
-//        return this.properties;
-//    }
     @Data
     @ConfigurationProperties(prefix = "spider.bilibili")
     public static class BilibiliProperties{

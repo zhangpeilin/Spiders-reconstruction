@@ -10,6 +10,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
@@ -31,20 +34,21 @@ public class DownloadFavController {
     @Resource
     BilibiliCommonUtils utils;
 
-    static BilibiliConfigParams configParams;
-    private static String uid = "404412";
-    private static String url = "https://api.bilibili.com/medialist/gateway/base/created?pn=1&ps=100&up_mid=" +
+    private static final String uid = "404412";
+    private static final String url = "https://api.bilibili.com/medialist/gateway/base/created?pn=1&ps=100&up_mid=" +
             uid + "&is_space=0&jsonp=jsonp";
 
-    @PostConstruct
-    public void init() {
-        configParams = utils.getConfigParams();
+    @GetMapping("/downloadFav/{uid}")
+    public String downloadFav(@PathVariable("uid") String uid) {
+        doTheOne();
+        return "success";
     }
 
     public void doTheOne() {
         String owner_name;
-        UrlContainer container = new UrlContainer(url);
-        container.setHeaders(configParams.properties.cookies);
+//
+        UrlContainer container = new UrlContainer(String.format("https://api.bilibili.com/x/v3/fav/folder/created/list-all?up_mid=%1$s&jsonp=jsonp", "404412"));
+        container.setHeaders(BilibiliCommonUtils.getConfigParams().properties.cookies);
         HttpsURLConnection conn = URLConnectionTool.getHttpsURLConnection(container);
         try {
             owner_name = BilibiliCommonUtils.getUserInfo(uid);
@@ -59,7 +63,7 @@ public class DownloadFavController {
                 Map<String, List<String>> result = new HashMap<>();
                 String media_id = jsonElement.getAsJsonObject().get("id").getAsString();
                 String title = jsonElement.getAsJsonObject().get("title").getAsString();
-                if (!title.equals("MMD")) {
+                if (!title.equals("原神2")) {
                     continue;
                 }
                 int media_count = jsonElement.getAsJsonObject().get("media_count").getAsInt();
@@ -69,7 +73,7 @@ public class DownloadFavController {
                 }
                 if (result.size() == 1) {
                     Map.Entry<String, List<String>> entry = result.entrySet().iterator().next();
-                    bdc.getNewPath().set(configParams.properties.favourite_save_path + File.separator + owner_name + "\\" + entry.getKey() + "\\");
+                    bdc.getNewPath().set(BilibiliCommonUtils.getConfigParams().properties.favourite_save_path + File.separator + owner_name + "\\" + entry.getKey() + "\\");
                     bdc.downloadList(entry.getValue());
                 }
                 result.clear();
@@ -84,7 +88,7 @@ public class DownloadFavController {
                 media_id + "&pn=" +
                 pn + "&ps=20&keyword=&order=mtime&type=0&tid=0&jsonp=jsonp";
         UrlContainer container = new UrlContainer(url);
-        container.setHeaders(configParams.properties.cookies);
+        container.setHeaders(BilibiliCommonUtils.getConfigParams().properties.cookies);
         HttpsURLConnection conn = URLConnectionTool.getHttpsURLConnection(container);
         try {
             conn.setRequestProperty("Referer", "https://space.bilibili.com/" +
