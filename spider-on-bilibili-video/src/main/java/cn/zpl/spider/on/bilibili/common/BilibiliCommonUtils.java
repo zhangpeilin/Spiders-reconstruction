@@ -1,5 +1,6 @@
 package cn.zpl.spider.on.bilibili.common;
 
+import cn.zpl.config.SpringContext;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.URLConnectionTool;
 import cn.zpl.util.UrlContainer;
@@ -7,7 +8,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -16,9 +19,20 @@ import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-
+@Component
 public class BilibiliCommonUtils {
 
+    ThreadLocal<BilibiliConfigParams> configParamsThreadLocal = new ThreadLocal<>();
+
+    public BilibiliConfigParams getConfigParams() {
+        return configParamsThreadLocal.get();
+    }
+
+    @PostConstruct
+    public void init() {
+        BilibiliConfigParams configParams = SpringContext.getBeanWithGenerics(BilibiliConfigParams.class);
+        configParamsThreadLocal.set(configParams);
+    }
     public static String getUserInfo(String uid) throws JsonIOException, JsonSyntaxException {
 
         String url = "https://api.bilibili.com/x/space/acc/info?mid=" + uid + "&jsonp=jsonp";

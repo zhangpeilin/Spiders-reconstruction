@@ -62,7 +62,7 @@ public class BilibiliDownloadCore2 {
     @Resource
     FFMEPGToolsPatch ffmepgToolsPatch;
 
-    ThreadLocal<String> getNewPath() {
+    public ThreadLocal<String> getNewPath() {
         return newPath;
     }
 
@@ -85,7 +85,7 @@ public class BilibiliDownloadCore2 {
         mainBusiness(video_id, "");
     }
 
-    void downloadList(@NotNull List<String> list) {
+    public void downloadList(@NotNull List<String> list) {
         for (String string : list) {
             if (already.get() == null) {
                 already.set(0);
