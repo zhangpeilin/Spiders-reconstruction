@@ -12,43 +12,39 @@ public class TestDownloadOne {
     public void doBusiness(){
 
         String url =
-
-                        "VM37:3 https://exhentai.org/g/1817355/dc4811ef10/\n" +
-                        "VM37:3 https://exhentai.org/g/1319705/4878594d11/\n" +
-                        "VM37:3 https://exhentai.org/g/1161387/d30f9fe66f/\n" +
-                        "VM37:3 https://exhentai.org/g/1088577/fd67032616/\n" +
-                        "VM37:3 https://exhentai.org/g/980671/dbded7a27c/\n" +
-                        "VM37:3 https://exhentai.org/g/804144/41088159f9/\n" +
-                        "VM37:3 https://exhentai.org/g/733825/cd403f3d14/\n" +
-                        "VM37:3 https://exhentai.org/g/615820/a53271fc2c/\n" +
-                        "VM37:3 https://exhentai.org/g/611366/1d8a1987a3/\n" +
-                        "VM37:3 https://exhentai.org/g/603304/cac9f74555/\n" +
-                        "VM37:3 https://exhentai.org/g/602562/f470c1c019/\n" +
-                        "VM37:3 https://exhentai.org/g/493931/e041425855/\n" +
-                        "VM37:3 https://exhentai.org/g/39398/7a0c12631a/\n" +
-                        "VM37:3 https://exhentai.org/g/286162/a5d2e5527d/\n" +
-                        "VM37:3 https://exhentai.org/g/622202/17494c705c/\n" +
-                        "VM37:3 https://exhentai.org/g/634524/512c5a8f44/\n" +
-                        "VM37:3 https://exhentai.org/g/634608/8bae0f7a9d/\n" +
-                        "VM37:3 https://exhentai.org/g/2448659/90a67a5ebf/\n" +
-                        "VM37:3 https://exhentai.org/g/2448657/c7109a4388/\n" +
-                        "VM37:3 https://exhentai.org/g/2448656/6b323334dc/\n" +
-                        "VM37:3 https://exhentai.org/g/2448634/4d2852785b/\n" +
-                        "VM37:3 https://exhentai.org/g/2448592/8372f24eeb/\n" +
-                        "VM37:3 https://exhentai.org/g/2448580/8f29a61a8d/\n" +
-                        "VM37:3 https://exhentai.org/g/2448506/4fbbbc2ece/\n" +
-                        "VM37:3 https://exhentai.org/g/2448324/892aab6636/\n" +
-                        "VM37:3 https://exhentai.org/g/2447921/5930ba22ed/\n" +
-                        "VM37:3 https://exhentai.org/g/2447843/b1c8e809fe/\n" +
-                        "VM37:3 https://exhentai.org/g/2447717/b6daee58b4/\n" +
-                        "VM37:3 https://exhentai.org/g/2447667/977e59850f/\n" +
-                        "VM37:3 https://exhentai.org/g/2446899/c68cc81084/\n" +
-                        "VM37:3 https://exhentai.org/g/2273228/4a4cc3ed61/\n" +
-                        "VM37:3 https://exhentai.org/g/2432935/6ba3dbcd9b/\n" +
-                        "VM37:3 https://exhentai.org/g/2295443/b517e5d2b7/\n" +
-                        "VM37:3 https://exhentai.org/g/2445168/df2076e277/\n" +
-                        "VM37:3 https://exhentai.org/g/2436037/30fee7f2aa/\n" +
-                        "VM37:3 https://exhentai.org/g/536954/2f61021446/";
+                                "https://e-hentai.org/g/2442540/07bc0f7c29/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2420062/15239b872c/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2416993/37555edf36/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2416928/85c243e461/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2394654/0a6dadddb5/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2392469/4387730b48/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2392463/2faa59a3c6/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2392458/e1698da318/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2386406/fc11d41f85/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2386404/014985c4d5/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2320887/679a7b1c30/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2290850/44d5d5a21a/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2246615/667eec6836/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2217054/37c2d97f44/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2217045/ddc4e20e8e/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2217037/9016e9809c/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2186076/6060d88d70/\n" +
+                                        "VM339:3 https://e-hentai.org/g/2174166/95d0e7ef2f/\n" +
+                                        "VM339:3 https://e-hentai.org/g/1967038/b32a038fbc/\n" +
+                                        "VM339:3 https://e-hentai.org/g/1953149/33c9726044/\n" +
+                                        "VM339:3 https://e-hentai.org/g/1888733/4f27a991c2/\n" +
+                                        "VM339:3 https://e-hentai.org/g/1835588/d8bab89250/\n" +
+                                        "VM339:3 https://e-hentai.org/g/1829680/02ae363c3f/\n" +
+                                        "VM339:3 https://e-hentai.org/g/1829647/0e11bf3d1c/\n" +
+                                        "VM339:3 https://e-hentai.org/g/1807859/1d076f0a39/\n"
+                + "https://e-hentai.org/g/1752268/b324c8429a/\n" +
+                                        "VM416:3 https://e-hentai.org/g/1420530/c2dd271330/\n" +
+                                        "VM416:3 https://e-hentai.org/g/1410822/eec15d4294/\n" +
+                                        "VM416:3 https://e-hentai.org/g/1397483/e6c8d8487e/\n" +
+                                        "VM416:3 https://e-hentai.org/g/1397462/5239fb8538/\n" +
+                                        "VM416:3 https://e-hentai.org/g/1397164/b3ddd333a1/\n" +
+                                        "VM416:3 https://e-hentai.org/g/1308067/913a2a74fb/\n" +
+                                        "VM416:3 https://e-hentai.org/g/1297889/d3850c70af/";
         url = url.replaceAll("VM.+ ", "");
         String[] urls = url.split("\n");
         DownloadTools tools = DownloadTools.getInstance(3);
