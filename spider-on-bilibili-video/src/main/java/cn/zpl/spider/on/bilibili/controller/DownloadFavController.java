@@ -34,20 +34,20 @@ public class DownloadFavController {
     @Resource
     BilibiliCommonUtils utils;
 
-    private static final String uid = "404412";
-    private static final String url = "https://api.bilibili.com/medialist/gateway/base/created?pn=1&ps=100&up_mid=" +
-            uid + "&is_space=0&jsonp=jsonp";
+//    private static final String uid = "404412";
+//    private static final String url = "https://api.bilibili.com/medialist/gateway/base/created?pn=1&ps=100&up_mid=" +
+//            uid + "&is_space=0&jsonp=jsonp";
 
     @GetMapping("/downloadFav/{uid}")
     public String downloadFav(@PathVariable("uid") String uid) {
-        doTheOne();
+        doTheOne(uid);
         return "success";
     }
 
-    public void doTheOne() {
+    public void doTheOne(String uid) {
         String owner_name;
 //
-        UrlContainer container = new UrlContainer(String.format("https://api.bilibili.com/x/v3/fav/folder/created/list-all?up_mid=%1$s&jsonp=jsonp", "404412"));
+        UrlContainer container = new UrlContainer(String.format("https://api.bilibili.com/x/v3/fav/folder/created/list-all?up_mid=%1$s&jsonp=jsonp", uid));
         container.setHeaders(BilibiliCommonUtils.getConfigParams().properties.cookies);
         HttpsURLConnection conn = URLConnectionTool.getHttpsURLConnection(container);
         try {
@@ -63,13 +63,13 @@ public class DownloadFavController {
                 Map<String, List<String>> result = new HashMap<>();
                 String media_id = jsonElement.getAsJsonObject().get("id").getAsString();
                 String title = jsonElement.getAsJsonObject().get("title").getAsString();
-                if (!title.equals("原神2")) {
-                    continue;
-                }
+//                if (!title.equals("原神2")) {
+//                    continue;
+//                }
                 int media_count = jsonElement.getAsJsonObject().get("media_count").getAsInt();
                 int page = media_count / 20 + 1;
                 for (int i = 1; i <= page; i++) {
-                    spaceDetail(result, media_id, i);
+                    spaceDetail(result, media_id, i, uid);
                 }
                 if (result.size() == 1) {
                     Map.Entry<String, List<String>> entry = result.entrySet().iterator().next();
@@ -83,7 +83,7 @@ public class DownloadFavController {
         }
     }
 
-    private static void spaceDetail(Map<String, List<String>> result, String media_id, int pn) {
+    private static void spaceDetail(Map<String, List<String>> result, String media_id, int pn, String uid) {
         String url = "https://api.bilibili.com/medialist/gateway/base/spaceDetail?media_id=" +
                 media_id + "&pn=" +
                 pn + "&ps=20&keyword=&order=mtime&type=0&tid=0&jsonp=jsonp";

@@ -429,10 +429,10 @@ public class BilibiliDownloadCore2 {
 
         JsonElement videoElement = CommonIOUtils.getFromJson2(json, "data-dash-video");
         JsonElement audioElement = CommonIOUtils.getFromJson2(json, "data-dash-audio");
-        if (!videoElement.isJsonArray() || !audioElement.isJsonArray()) {
-            log.error(avid + "解析出错");
-            System.exit(1);
-        }
+//        if (!videoElement.isJsonArray() || !audioElement.isJsonArray()) {
+//            log.error(avid + "解析出错");
+//            System.exit(1);
+//        }
         JsonElement videoM4s = videoElement.getAsJsonArray().get(0);
         JsonElement audioM4s = audioElement.getAsJsonArray().get(0);
         if (!CommonIOUtils.getFromJson2Str(videoM4s, "id").equalsIgnoreCase(current_quality)) {
