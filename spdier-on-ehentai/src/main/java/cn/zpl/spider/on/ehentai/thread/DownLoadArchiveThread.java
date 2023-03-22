@@ -113,6 +113,11 @@ public class DownLoadArchiveThread extends CommonThread {
                 Element form = tmp.selectFirst("form");
                 assert form != null;
                 Elements freeMark = Objects.requireNonNull(form.previousElementSibling()).getElementsMatchingText("Free");
+                ehentai.setTitle(title);
+                ehentai.setUrl(url);
+                ehentai.setId(String.valueOf(CruxIdGenerator.generate()));
+                ehentai.setFinish(0);
+                ehentai.setCreate_time(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
                 if (freeMark.isEmpty()) {
                     log.error("下载消耗点数，链接地址记录：" + url);
                     log.error(tmp.select("   div#db h1").text());
@@ -125,21 +130,21 @@ public class DownLoadArchiveThread extends CommonThread {
                         } catch (ParseException e) {
                             e.printStackTrace();
                         }
-                        ehentai.setTitle(title);
-                        ehentai.setUrl(url);
-                        ehentai.setId(String.valueOf(CruxIdGenerator.generate()));
                         ehentai.setCost(String.valueOf(gp));
-                        ehentai.setCreate_time(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
-                        if (ehentaiConfig.isSaveDb()) {
-                            RestResponse restResponse = tools.commonApiSave(ehentai);
-                            log.debug("保存是否成功：{}", restResponse.isSuccess());
-                        }
                         if (gp > 100000) {
+                            if (ehentaiConfig.isSaveDb()) {
+                                RestResponse restResponse = tools.commonApiSave(ehentai);
+                                log.debug("保存是否成功：{}", restResponse.isSuccess());
+                            }
                             log.error("当前漫画未下载：{}", url);
                             return;
                         }
                         log.info("下载消耗点数：" + gp);
                     }
+                }
+                if (ehentaiConfig.isSaveDb()) {
+                    RestResponse restResponse = tools.commonApiSave(ehentai);
+                    log.debug("保存是否成功：{}", restResponse.isSuccess());
                 }
                 if (form.attr("action").startsWith("http")) {
                     Data d1 = new Data();
@@ -172,9 +177,13 @@ public class DownLoadArchiveThread extends CommonThread {
                     path.add("archive");
                     path.add(DateFormatUtils.format(new Date(), "yyyyMMdd"));
                     dto.setSavePath(CommonIOUtils.makeFilePath(path, dto.getFileName()));
-                    dto.setAlwaysRetry();
+//                    dto.setAlwaysRetry();
                     OneFileOneThread thread2 = new OneFileOneThread(dto);
                     thread2.run();
+                    if (thread2.getData().isComplete()) {
+                        ehentai.setFinish(1);
+                        tools.commonApiSave(ehentai);
+                    }
                     try {
                         if (!ehentaiConfig.isUnzip()) {
                             return;
