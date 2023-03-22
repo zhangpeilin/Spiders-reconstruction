@@ -44,6 +44,8 @@ public class DownloadDTO implements Serializable {
     private SynchronizeLock synchronizeLock;
     private long fileLength = 0;
 
+    private boolean isComplete;
+
     private MultiPartInfoHolder infoHolder;
 
     public DownloadDTO() {
@@ -252,6 +254,14 @@ public class DownloadDTO implements Serializable {
 
     public void setInfoHolder(MultiPartInfoHolder infoHolder) {
         this.infoHolder = infoHolder;
+    }
+
+    public boolean isComplete() {
+        return isComplete;
+    }
+
+    public void setComplete(boolean complete) {
+        isComplete = complete;
     }
 }
 

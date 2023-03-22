@@ -269,7 +269,7 @@ public class FFMEPGToolsPatch {
                     total = encoder.getInfo(tmp).getDuration();
                     while (!tmp.renameTo(desFile)) {
                         log.error("临时改名出错，请核对");
-                        CommonIOUtils.waitSeconds(5);
+                        CommonIOUtils.waitSeconds(2);
                     }
                 }
 

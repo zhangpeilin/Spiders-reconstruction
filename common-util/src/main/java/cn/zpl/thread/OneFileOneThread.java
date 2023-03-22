@@ -42,6 +42,10 @@ public class OneFileOneThread implements Runnable {
         this.checkExist = checkExist;
     }
 
+    public DownloadDTO getData() {
+        return this.data;
+    }
+
     public void run() {
 
         length = 0;
@@ -57,6 +61,7 @@ public class OneFileOneThread implements Runnable {
             System.exit(0);
         }
         if (checkExist && new File(data.getSavePath()).exists() && SaveLogForImages.isCompelete(data)) {
+            data.setComplete(true);
             log.debug(data.getSavePath() + "已下载，跳过");
             return;
         }
@@ -145,6 +150,7 @@ public class OneFileOneThread implements Runnable {
                 if (data.isNeedLog()) {
                     synchronized (lock) {
                         SaveLogForImages.saveLog(data);
+                        data.setComplete(true);
                     }
                 }
             }
