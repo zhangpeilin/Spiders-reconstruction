@@ -1,6 +1,6 @@
 package cn.zpl.dao.service.impl;
 
-import cn.zpl.dao.bean.ExceptionList;
+import cn.zpl.common.bean.ExceptionList;
 import cn.zpl.dao.mapper.ExceptionListMapper;
 import cn.zpl.dao.service.IExceptionListService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

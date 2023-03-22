@@ -1,6 +1,6 @@
 package cn.zpl.dao.mapper;
 
-import cn.zpl.dao.bean.VideoInfo;
+import cn.zpl.common.bean.VideoInfo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

@@ -1,7 +1,7 @@
 package cn.zpl.dao.controller;
 
 import cn.zpl.common.bean.RestResponse;
-import cn.zpl.dao.bean.VideoInfo;
+import cn.zpl.common.bean.VideoInfo;
 import cn.zpl.dao.service.IVideoInfoService;
 import cn.zpl.dao.utils.CommonUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
