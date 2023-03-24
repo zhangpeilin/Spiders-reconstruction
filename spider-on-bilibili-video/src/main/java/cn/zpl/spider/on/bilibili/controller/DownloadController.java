@@ -103,11 +103,6 @@ public class DownloadController {
     }
 
 
-    //    public static void main(String[] args) {
-//        SpringApplication.run(BilibiliApplication.class, args);
-//        BilibiliDownloadCoreWithoutDB bilibiliDownloadCore2 = new BilibiliDownloadCoreWithoutDB();
-//        bilibiliDownloadCore2.downloadTheVideo();
-//    }
     public void downloadTheVideo() {
         FFMEPGToolsPatch.checkExist = false;
         String video_id = "BV1SY41177Ti";
