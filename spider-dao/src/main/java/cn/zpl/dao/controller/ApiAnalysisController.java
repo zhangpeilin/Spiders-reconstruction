@@ -185,8 +185,9 @@ public class ApiAnalysisController {
                 }
             } catch (SQLException e) {
                 throw new RuntimeException(e);
+            } finally {
+                sqlSession.close();
             }
-            sqlSession.close();
             return RestResponse.ok().list(list);
         }
         if ("[*]".equals(condition)) {
@@ -204,7 +205,7 @@ public class ApiAnalysisController {
             }
             log.debug(conditionMatcher.group());
             String value = conditionMatcher.group();
-            objectQueryWrapper.and(wrapper -> wrapper.eq(key, value));
+            objectQueryWrapper.and(wrapper -> wrapper.eq(key.trim(), value.trim()));
         }
         List<String> columns = new ArrayList<>();
         while (columnMatcher.find()) {
