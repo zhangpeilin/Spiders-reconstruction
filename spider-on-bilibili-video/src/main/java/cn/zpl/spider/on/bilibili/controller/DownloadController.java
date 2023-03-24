@@ -203,7 +203,7 @@ public class DownloadController {
             result.getAsJsonObject().addProperty("bvid", video_id);
             Document document = CommonIOUtils.getDocumentFromUrl("https://www.bilibili.com/video/" + video_id);
             ;
-            Element titleEle = document.selectFirst("div#viewbox_report span.tit");
+            Element titleEle = document.selectFirst("div#viewbox_report h1.video-title.tit");
             Element upInfo = document.selectFirst("div.u-info a.username");
             if (titleEle != null) {
                 result.getAsJsonObject().addProperty("title", titleEle.text());
