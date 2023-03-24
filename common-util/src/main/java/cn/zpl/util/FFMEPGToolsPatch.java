@@ -177,8 +177,10 @@ public class FFMEPGToolsPatch {
         command.add(commonProperties.ffmpeg);
         command.add("-i");
         command.add("\"" + videoData.getVideo().getSavePath() + "\"");
-        command.add("-i");
-        command.add("\"" + videoData.getAudio().getSavePath() + "\"");
+        if (videoData.getAudio() != null) {
+            command.add("-i");
+            command.add("\"" + videoData.getAudio().getSavePath() + "\"");
+        }
         command.add("-codec");
         command.add("copy");
         command.add("-y");
@@ -269,7 +271,7 @@ public class FFMEPGToolsPatch {
                     total = encoder.getInfo(tmp).getDuration();
                     while (!tmp.renameTo(desFile)) {
                         log.error("临时改名出错，请核对");
-                        CommonIOUtils.waitSeconds(2);
+                        CommonIOUtils.waitSeconds(1);
                     }
                 }
 
