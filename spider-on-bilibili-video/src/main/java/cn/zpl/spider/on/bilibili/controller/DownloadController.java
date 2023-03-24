@@ -48,8 +48,6 @@ import java.util.regex.Pattern;
 public class DownloadController {
 
     private String owner_name = "";
-    private String avid;
-
     @Resource
     BilibiliConfigParams configParams;
     @Resource
@@ -222,7 +220,6 @@ public class DownloadController {
                     downLoadByAPI(partData, "", CommonIOUtils.getFromJson2Str(part, "cid"), result, part);
                 }
             }
-            avid = CommonIOUtils.getFromJson2Str(result, "aid");
         } catch (Exception e) {
             if (!data.doRetry()) {
                 log.error("重试次数已用完，返回");
