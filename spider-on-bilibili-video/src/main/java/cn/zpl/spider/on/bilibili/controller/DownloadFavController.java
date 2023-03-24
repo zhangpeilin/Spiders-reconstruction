@@ -1,5 +1,6 @@
 package cn.zpl.spider.on.bilibili.controller;
 
+import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.bilibili.BilibiliDownloadCore2;
 import cn.zpl.spider.on.bilibili.common.BilibiliCommonUtils;
 import cn.zpl.spider.on.bilibili.common.BilibiliConfigParams;
@@ -58,7 +59,7 @@ public class DownloadFavController {
             JsonObject json = (JsonObject) JsonParser.parseReader(new InputStreamReader(is));
             String path = "data-list";
             JsonArray favourFolders = CommonIOUtils.getFromJson2(json, path).getAsJsonArray();
-            BilibiliDownloadCore2 bdc = new BilibiliDownloadCore2();
+            BilibiliDownloadCore2 bdc = SpringContext.getBeanWithGenerics(BilibiliDownloadCore2.class);
             for (JsonElement jsonElement : favourFolders) {
                 Map<String, List<String>> result = new HashMap<>();
                 String media_id = jsonElement.getAsJsonObject().get("id").getAsString();

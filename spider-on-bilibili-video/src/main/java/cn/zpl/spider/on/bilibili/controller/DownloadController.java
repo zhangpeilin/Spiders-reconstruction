@@ -75,6 +75,17 @@ public class DownloadController {
         return RestResponse.ok();
     }
 
+    @GetMapping("/download/uid/{uid}")
+    public RestResponse downloadByUid(@PathVariable("uid") String uid) {
+        try {
+            getVideoList(uid);
+        } catch (Exception e) {
+            log.error("下载错误：", e);
+            RestResponse.fail(e.getMessage());
+        }
+        return RestResponse.ok();
+    }
+
     //下载指定用户
     public void test() {
         getVideoList("4653374");
@@ -126,8 +137,8 @@ public class DownloadController {
     private int getPlayListByWeb(String uid, String page) throws IOException {
         owner_name = BilibiliCommonUtils.getUserInfo(uid);
         Data data = new Data();
-        data.setUrl("https://api.bilibili.com/x/space/arc/search?mid=" + uid + "&ps=100&tid=0&pn=" + page + "&keyword=&order=pubdate&jsonp=jsonp");
-        data.setHeader(configParams.properties.cookies);
+        data.setUrl("https://api.bilibili.com/x/space/wbi/arc/search?mid=" + uid + "&ps=30&tid=0&pn=" + page + "&keyword=&order=pubdate&platform=web");
+        data.setHeader(BilibiliConfigParams.BilibiliProperties.commonHeaders + configParams.properties.cookies);
         CommonIOUtils.withTimer(data);
         JsonElement json = CommonIOUtils.paraseJsonFromStr(data.getResult());
         int videoSize = CommonIOUtils.getFromJson2(json, "data-list-vlist").isJsonArray() ? CommonIOUtils.getFromJson2(json, "data-list-vlist").getAsJsonArray().size() : 0;

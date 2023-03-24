@@ -17,15 +17,20 @@ import cn.zpl.util.DownloadTools;
 import cn.zpl.util.FFMEPGToolsPatch;
 import cn.zpl.util.SaveLog;
 import cn.zpl.util.URLConnectionTool;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -38,15 +43,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 @Slf4j
+@Component
 public class BilibiliDownloadCore2 {
 
     private String owner_name = "";
     private List<String> exception = new ArrayList<>();
-    private List<String> exists = new ArrayList<>();
-    private boolean filter = true;
+    private boolean filter = false;
     private ThreadLocal<Integer> already = new ThreadLocal<>();
     private String avid;
 
@@ -58,10 +64,13 @@ public class BilibiliDownloadCore2 {
     @Resource
     FFMEPGToolsPatch ffmepgToolsPatch;
 
+    @Resource
+    BilibiliCommonUtils bilibiliCommonUtils;
+
     public BilibiliDownloadCore2(){
-        crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
-        configParams = BilibiliCommonUtils.getConfigParams();
-        ffmepgToolsPatch = SpringContext.getBeanWithGenerics(FFMEPGToolsPatch.class);
+//        crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
+//        configParams = BilibiliCommonUtils.getConfigParams();
+//        ffmepgToolsPatch = SpringContext.getBeanWithGenerics(FFMEPGToolsPatch.class);
     }
 
     public ThreadLocal<String> getNewPath() {
@@ -97,7 +106,7 @@ public class BilibiliDownloadCore2 {
                 return;
             }
             try {
-                Thread.sleep(1000);
+                Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -149,42 +158,41 @@ public class BilibiliDownloadCore2 {
     }
 
     private boolean isDownloaded(final String cid, final String avid) {
-        String combinedId = cid + "|" + avid;
         if (isException(avid)) {
             return true;
         }
-        if (exists.contains(combinedId)) {
-            log.debug(combinedId + "已下载");
-            return true;
-        } else {
-            List<VideoInfo> videoInfos = crudTools.commonApiQuery(String.format("video_id = '%1$s'", cid + "|" + avid), VideoInfo.class);
-            if (videoInfos.size() == 0) {
-                return false;
-            }
-            VideoInfo videoById = videoInfos.get(0);
-            if (combinedId.equalsIgnoreCase(videoById.getVideoId() + "|" + videoById.getAid())) {
-                log.debug(combinedId + "已下载");
-                exists.add(combinedId);
-                return true;
-            }
+        VideoInfo exist = bilibiliCommonUtils.getExists(cid);
+        if (exist == null) {
             return false;
         }
+        return new File(exist.getLocalPath()).exists();
     }
 
-    private boolean isException(final String video_id) {
+    private VideoInfo getVideoInfoByCid(String cid) {
+        List<VideoInfo> videoInfos = crudTools.commonApiQuery(String.format("video_id = %1$s", cid), VideoInfo.class);
+        if (!videoInfos.isEmpty()) {
+            return videoInfos.get(0);
+        }
+        return null;
+    }
+
+    private boolean isException(final String cid) {
+        if (cid != null) {
+            return false;
+        }
 
 
-        if (exception.contains(video_id)) {
-            log.debug(video_id + "已排除");
+        if (exception.contains(cid)) {
+            log.debug(cid + "已排除");
             return true;
         } else {
-            List<ExceptionList> exceptionLists = crudTools.commonApiQuery(String.format("video_id = '%1$s'", video_id), ExceptionList.class);
+            List<ExceptionList> exceptionLists = crudTools.commonApiQuery(String.format("cid = '%1$s'", cid), ExceptionList.class);
             if (exceptionLists.size() == 0) {
                 return false;
             }
-            if (video_id.equalsIgnoreCase(exceptionLists.get(0).getVideoId())) {
-                log.debug(video_id + "已排除");
-                exception.add(video_id);
+            if (cid.equalsIgnoreCase(exceptionLists.get(0).getVideoId())) {
+                log.debug(cid + "已排除");
+                exception.add(cid);
                 return true;
             }
             return false;
@@ -230,6 +238,17 @@ public class BilibiliDownloadCore2 {
             }
             JsonElement result = JsonParser.parseString(Objects.requireNonNull(data.getString()));
             int code = CommonIOUtils.getFromJson2Integer(result, "code");
+
+            JsonElement temp = CommonIOUtils.getFromJson2(result, "data");
+            boolean isDownloaded = false;
+            if (temp.isJsonArray()) {
+                for (JsonElement part : temp.getAsJsonArray()) {
+                    isDownloaded = isDownloaded(CommonIOUtils.getFromJson2Str(part, "cid"), avid);
+                }
+            }
+            if (isDownloaded) {
+                return;
+            }
             if (code != 0) {
                 log.error(CommonIOUtils.getFromJson2Str(result, "message"));
             }
@@ -283,6 +302,9 @@ public class BilibiliDownloadCore2 {
     }
 
     private void downLoadByAPI(@NotNull String quality_level, String cid, JsonElement mainJson, JsonElement partJson) {
+        if (isDownloaded(cid, avid)) {
+            return;
+        }
         String avid = CommonIOUtils.getFromJson2Str(mainJson, "aid");
         String bvid = CommonIOUtils.getFromJson2Str(mainJson, "bvid");
         int videos = CommonIOUtils.getFromJson2Integer(mainJson, "videos");
@@ -291,14 +313,10 @@ public class BilibiliDownloadCore2 {
         String part = CommonIOUtils.getFromJson2Str(partJson, "part");
         int page = CommonIOUtils.getFromJson2Integer(partJson, "page");
         String url = "https://api.bilibili.com/x/player/playurl?avid=" + avid + "&cid=" + cid + "&bvid=&qn=" + (quality_level.equals("") ? "112" : quality_level) + "&type=&otype=json&fnver=0&fnval=16&fourk=1";
-        if (filter && isDownloaded(cid, avid)) {
-            already.set(already.get() == null ? 0 : already.get() + 1);
-            log.debug(title);
-            return;
-        }
+
         Data data = new Data();
         data.setUrl(url);
-        data.setHeader(configParams.properties.cookies);
+        data.setHeader("cookie:SESSDATA=6211e9c2%2C1695036681%2C689a1%2A31;");
         CommonIOUtils.withTimer(data);
         JsonElement json = JsonParser.parseString(Objects.requireNonNull(data.getString()));
         int code = CommonIOUtils.getFromJson2Integer(json, "code");
@@ -336,6 +354,29 @@ public class BilibiliDownloadCore2 {
         videoInfo.setLocalPath(videoData.getDesSavePath());
         videoData.setTimeLength(videoInfo.getTimeLength());
         videoData.setVideoId(avid);
+        if (FFMEPGToolsPatch.isExists(videoData)) {
+            RestResponse restResponse = crudTools.commonApiSave(videoInfo);
+            if (!restResponse.isSuccess()) {
+                throw new RuntimeException("保存记录失败");
+            }
+            return;
+        }
+        if (filter && isDownloaded(cid, avid)) {
+            already.set(already.get() == null ? 0 : already.get() + 1);
+            VideoInfo exist = getVideoInfoByCid(cid);
+            assert exist != null;
+            if (exist.getLocalPath().equalsIgnoreCase(videoInfo.getLocalPath())) {
+                return;
+            }
+            try {
+                FileUtils.moveFile(new File(exist.getLocalPath()), new File(videoInfo.getLocalPath()));
+            } catch (IOException e) {
+                log.error("移动失败，有可能文件重复");
+                log.error("错误原因：", e);
+            }
+            log.debug(title);
+            return;
+        }
         if (FFMEPGToolsPatch.isExists(videoData)) {
             RestResponse restResponse = crudTools.commonApiSave(videoInfo);
             if (!restResponse.isSuccess()) {
@@ -425,7 +466,7 @@ public class BilibiliDownloadCore2 {
         }
     }
 
-    private void doM4s(JsonElement json, String avid, String bvid, String current_quality, VideoInfo video, VideoData videoData) {
+    private void doM4s(JsonElement json, String avid, String bvid, String current_quality, VideoInfo videoInfo, VideoData videoData) {
 
         JsonElement videoElement = CommonIOUtils.getFromJson2(json, "data-dash-video");
         JsonElement audioElement = CommonIOUtils.getFromJson2(json, "data-dash-audio");
@@ -433,8 +474,14 @@ public class BilibiliDownloadCore2 {
 //            log.error(avid + "解析出错");
 //            System.exit(1);
 //        }
-        JsonElement videoM4s = videoElement.getAsJsonArray().get(0);
-        JsonElement audioM4s = audioElement.getAsJsonArray().get(0);
+        JsonElement videoM4s = null;
+        JsonElement audioM4s = null;
+        if (!videoElement.isJsonNull()) {
+            videoM4s= videoElement.getAsJsonArray().get(0);
+        }
+        if (!audioElement.isJsonNull()) {
+            audioM4s = audioElement.getAsJsonArray().get(0);
+        }
         if (!CommonIOUtils.getFromJson2Str(videoM4s, "id").equalsIgnoreCase(current_quality)) {
             log.error(avid + "解析出错");
             System.exit(1);
@@ -443,52 +490,64 @@ public class BilibiliDownloadCore2 {
         // 下载每个分p的分段，最后合并
         String baseUrl = CommonIOUtils.getFromJson2Str(videoM4s, "baseUrl");
 
-        DownloadDTO dto = new DownloadDTO();
-        DownloadDTO audio = new DownloadDTO();
-        dto.setUrl(baseUrl);
-        audio.setUrl(CommonIOUtils.getFromJson2Str(audioM4s, "baseUrl"));
-        dto.setWebSite("bilibili");
-        audio.setWebSite(dto.getWebSite());
-        dto.setReferer("https://www.bilibili.com/video/" + bvid);
-        video.setUrl(dto.getReferer());
+        DownloadDTO video = buildTemplate(videoM4s, bvid, avid);
+        DownloadDTO audio = buildTemplate(audioM4s, bvid, avid);
 
-        audio.setReferer(dto.getReferer());
-        dto.setHeader(
-                "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36 Edg/85.0.564.63\n");
-        audio.setHeader(dto.getHeader());
-        // 存储的是视频大小（字节）
-        dto.setFileLength(URLConnectionTool.getDataLength(dto));
-        audio.setFileLength(URLConnectionTool.getDataLength(audio));
         //如果有指定保存路径，则使用指定的路径，否则从config.properties中读取
-        pathMake.add(configParams.properties.tmp_save_path);
-        pathMake.add(avid);
-        dto.setSavePath(CommonIOUtils.makeFilePath(pathMake, dto.getUrl().substring(dto.getUrl().lastIndexOf("/") + 1, dto.getUrl().indexOf("?"))));
-        audio.setSavePath(CommonIOUtils.makeFilePath(pathMake, audio.getUrl().substring(audio.getUrl().lastIndexOf("/") + 1, audio.getUrl().indexOf("?"))));
 
-        videoData.setVideo(dto);
+        videoData.setVideo(video);
         videoData.setAudio(audio);
         DownloadTools tools = DownloadTools.getInstance(30);
-        tools.setName(video.getTitle());
-        if (!new File(dto.getSavePath()).exists() || !SaveLog.isCompeleteMultiple(dto)) {
-            tools.MultipleThread(dto);
-        } else {
-            log.debug(dto.getSavePath() + "已下载，跳过");
+        tools.setName(videoInfo.getTitle());
+        if (video != null) {
+            addDownload(tools, video);
         }
-        if (!new File(audio.getSavePath()).exists() || !SaveLog.isCompeleteMultiple(audio)) {
-            tools.MultipleThread(audio);
-        } else {
-            log.debug(audio.getSavePath() + "已下载，跳过");
+        if (audio != null) {
+            addDownload(tools, audio);
         }
         tools.shutdown();
-        if (new File(dto.getSavePath()).length() == dto.getFileLength() && new File(audio.getSavePath()).length() == audio.getFileLength()) {
-            SaveLog.saveLog(dto.getSavePath());
-            SaveLog.saveLog(audio.getSavePath());
-            log.debug(dto.getSavePath() + "下载完毕");
-            log.debug(audio.getSavePath() + "下载完毕");
+        assert video != null;
+        if (new File(video.getSavePath()).length() == video.getFileLength() && (audio == null || new File(audio.getSavePath()).length() == audio.getFileLength())) {
+            SaveLog.saveLog(video.getSavePath());
+            log.debug(video.getSavePath() + "下载完毕");
+            if (audio != null) {
+                SaveLog.saveLog(audio.getSavePath());
+                log.debug(audio.getSavePath() + "下载完毕");
+            }
         } else {
             CommonIOUtils.waitSeconds(5);
             log.error("下载大小与返回头的大小不一致，重新下载");
             throw new RuntimeException("下载大小与返回头的大小不一致，重新下载");
+        }
+    }
+
+    private DownloadDTO buildTemplate(JsonElement m4s, String bvid, String avid){
+        if (m4s == null || m4s.isJsonNull()) {
+            return null;
+        }
+        String baseUrl = CommonIOUtils.getFromJson2Str(m4s, "baseUrl");
+        List<String> pathMake = new ArrayList<>();
+        DownloadDTO downloadDTO = new DownloadDTO();
+        downloadDTO.setUrl(baseUrl);
+        downloadDTO.setWebSite("bilibili");
+        downloadDTO.setReferer("https://www.bilibili.com/video/" + bvid);
+
+        downloadDTO.setHeader(
+                "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36 Edg/85.0.564.63\n");
+        // 存储的是视频大小（字节）
+        downloadDTO.setFileLength(URLConnectionTool.getDataLength(downloadDTO));
+        //如果有指定保存路径，则使用指定的路径，否则从config.properties中读取
+        pathMake.add(configParams.properties.tmp_save_path);
+        pathMake.add(avid);
+        downloadDTO.setSavePath(CommonIOUtils.makeFilePath(pathMake, downloadDTO.getUrl().substring(downloadDTO.getUrl().lastIndexOf("/") + 1, downloadDTO.getUrl().indexOf("?"))));
+        return downloadDTO;
+    }
+
+    private void addDownload(DownloadTools tools, DownloadDTO dto){
+        if (!new File(dto.getSavePath()).exists() || !SaveLog.isCompeleteMultiple(dto)) {
+            tools.MultipleThread(dto);
+        } else {
+            log.debug(dto.getSavePath() + "已下载，跳过");
         }
     }
 
