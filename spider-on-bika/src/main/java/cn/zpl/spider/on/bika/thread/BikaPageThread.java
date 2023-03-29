@@ -1,11 +1,8 @@
 package cn.zpl.spider.on.bika.thread;
 
-import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaList;
 import cn.zpl.config.SpringContext;
-import cn.zpl.spider.on.bika.common.BikaParams;
-import cn.zpl.spider.on.bika.utils.BikaUtils;
-import cn.zpl.thread.CommonThread;
+import cn.zpl.spider.on.bika.common.BikaProperties;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
@@ -14,11 +11,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import javax.activation.DataHandler;
-import javax.annotation.Resource;
 import java.net.URLEncoder;
 import java.util.Vector;
 
@@ -32,7 +26,7 @@ public class BikaPageThread extends BikaCommonThread {
 
     CrudTools tools;
 
-    BikaParams bikaParams;
+    BikaProperties bikaProperties;
 
 
     public BikaPageThread(int page, String keyword, boolean isNeedDownload) {
@@ -40,7 +34,7 @@ public class BikaPageThread extends BikaCommonThread {
         this.keyword = keyword;
         this.isNeedDownload = isNeedDownload;
         this.tools = SpringContext.getBeanWithGenerics(CrudTools.class);
-        this.bikaParams = SpringContext.getBeanWithGenerics(BikaParams.class);
+        this.bikaProperties = SpringContext.getBeanWithGenerics(BikaProperties.class);
     }
 
     @SneakyThrows
@@ -63,7 +57,7 @@ public class BikaPageThread extends BikaCommonThread {
                     }
                 }
                 log.debug(keyword + "第" + page + "页");
-                if (bikaParams.isWriteDB()){
+                if (bikaProperties.isWriteDB()){
                     tools.commonApiSave(listVector);
                 }
                 tool.shutdown();
