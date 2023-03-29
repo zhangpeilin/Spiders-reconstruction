@@ -3,7 +3,7 @@ package cn.zpl.spider.on.bika.thread;
 import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaDownloadFailed;
 import cn.zpl.config.SpringContext;
-import cn.zpl.spider.on.bika.common.BikaParams;
+import cn.zpl.spider.on.bika.common.BikaProperties;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
 import cn.zpl.thread.CommonThread;
 import cn.zpl.util.CommonIOUtils;
@@ -42,14 +42,14 @@ public class BikaComicThread extends BikaCommonThread {
     private final String comicId;
     private final boolean isNeedDownload;
     CrudTools bikaCrudTools;
-    BikaParams bikaParams;
+    BikaProperties bikaProperties;
 
 
     public BikaComicThread(String comicId, boolean isNeedDownload) {
         this.comicId = comicId;
         this.isNeedDownload = isNeedDownload;
         this.bikaCrudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
-        this.bikaParams = SpringContext.getBeanWithGenerics(BikaParams.class);
+        this.bikaProperties = SpringContext.getBeanWithGenerics(BikaProperties.class);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class BikaComicThread extends BikaCommonThread {
         failed.setId(comicId);
         failed.setDownloadAt(String.valueOf(System.currentTimeMillis()));
         failed.setError(e.getMessage());
-        if (bikaParams.isWriteDB()){
+        if (bikaProperties.isWriteDB()){
             bikaCrudTools.commonApiSave(failed);
         }
         if (e.getMessage().contains("错误代码：400")) {
@@ -72,24 +72,24 @@ public class BikaComicThread extends BikaCommonThread {
     public void domain() {
         //获取画册信息
         String getComicsInfo = "comics/" + comicId;
-        if (!bikaUtils.isNeedUpdate(comicId) && !BikaParams.isForceDownload) {
+        if (!bikaUtils.isNeedUpdate(comicId) && !bikaProperties.isForceDownload) {
             //删除错误日志表的记录
             BikaDownloadFailed failed = new BikaDownloadFailed();
             failed.setId(comicId);
-            if (bikaParams.isWriteDB())
+            if (bikaProperties.isWriteDB())
 //            DBManager.delete(failed);
                 CrudTools.commonApiDelete("", BikaDownloadFailed.class);
             log.debug(comicId + "漫画已下载且上次更新日期在7天内，跳过");
             return;
         }
         JsonObject info = bikaUtils.getJsonByUrl(getComicsInfo);
-        if (!BikaParams.isForceDownload && bikaUtils.needSkip(info)) {
+        if (!bikaProperties.isForceDownload && bikaUtils.needSkip(info)) {
             log.debug(comicId + "跳过");
             return;
         }
 
         if (!isNeedDownload) {
-            if (bikaParams.isWriteDB()) {
+            if (bikaProperties.isWriteDB()) {
                 bikaUtils.dosave(comicId, info, isNeedDownload, "");
             }
             return;
@@ -150,7 +150,7 @@ public class BikaComicThread extends BikaCommonThread {
                 tool.shutdown();
             }
         }
-//        if (bikaParams.isWriteDB()) {
+//        if (bikaProperties.isWriteDB()) {
 //            bikaUtils.dosave(comicId, info, isNeedDownload, BikaUtils.getLocalPath(comicId, title));
 //        }
         //将新下载的内容写入压缩包中
@@ -197,7 +197,7 @@ public class BikaComicThread extends BikaCommonThread {
             log.error("删除下载目录失败");
             throw new RuntimeException(e);
         }
-        if (bikaParams.isWriteDB()) {
+        if (bikaProperties.isWriteDB()) {
             bikaUtils.dosave(comicId, info, isNeedDownload, bika.getLocalPath());
         }
         //如果压缩包已存在，则将新下载的和原有zip合并到新zip中
