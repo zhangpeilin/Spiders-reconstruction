@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="60 seconds">
-    <property name="log.path" value="/home/logs" />
-    <property name="app.name" value="commonDaoCenter" />
+    <property name="log.path" value="../logs" />
+    <property name="app.name" value="spider-on-bika" />
     <!--日志输入到控制台-->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
