@@ -8,8 +8,9 @@ import cn.zpl.common.bean.Token;
 import cn.zpl.config.CommonParams;
 import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.Data;
-import cn.zpl.spider.on.bika.common.BikaParams;
+import cn.zpl.spider.on.bika.common.BikaProperties;
 import cn.zpl.spider.on.bika.thread.BikaComicThread;
+import cn.zpl.spider.on.bika.thread.BikaPageThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
@@ -52,6 +53,7 @@ import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -69,7 +71,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
-@EnableConfigurationProperties(BikaParams.class)
+@EnableConfigurationProperties(BikaProperties.class)
 @Component
 public class BikaUtils {
 
@@ -82,7 +84,7 @@ public class BikaUtils {
     public static ThreadLocal<List<File>> result = new ThreadLocal<>();
 
     @Resource
-    BikaParams bikaParams;
+    BikaProperties bikaProperties;
     @Resource
     CrudTools tools;
 
@@ -208,7 +210,7 @@ public class BikaUtils {
     }
 
     public synchronized Bika getExists(String comicId) {
-        if (!bikaParams.isWriteDB()) {
+        if (!bikaProperties.isWriteDB()) {
             return null;
         }
         if (exists != null) {
@@ -252,7 +254,7 @@ public class BikaUtils {
 
 
     public synchronized BikaList getFromBikaList(String comicId) {
-        if (!bikaParams.isWriteDB()) {
+        if (!bikaProperties.isWriteDB()) {
             return null;
         }
         if (bika_list_exists != null) {
@@ -288,7 +290,7 @@ public class BikaUtils {
     }
 
     public boolean isNeedUpdate(String comicid) {
-        if (!bikaParams.isWriteDB()) {
+        if (!bikaProperties.isWriteDB()) {
             return true;
         }
         Bika already = getExists(comicid);
@@ -306,17 +308,17 @@ public class BikaUtils {
         return true;
     }
 
-    private void Login() {
+    private void login() {
         try {
 
             log.debug("登录失效，开始登录……");
             JsonObject jsonObject = new JsonObject();
-            jsonObject.addProperty("email", bikaParams.getEmail());
-            jsonObject.addProperty("password", bikaParams.getPassword());
+            jsonObject.addProperty("email", bikaProperties.getEmail());
+            jsonObject.addProperty("password", bikaProperties.getPassword());
             JsonObject json = postUrl("auth/sign-in", jsonObject.toString());
             if (json == null) {
                 CommonIOUtils.waitSeconds(5);
-                Login();
+                login();
             }
             String token = CommonIOUtils.getFromJson2(json, "data").getAsJsonObject().get("token").getAsString();
             Token dto = new Token();
@@ -325,7 +327,7 @@ public class BikaUtils {
             tools.commonApiSave(dto);
             currentToken = token;
         } catch (Exception e) {
-            Login();
+            login();
         }
     }
 
@@ -369,7 +371,7 @@ public class BikaUtils {
         log.debug(content);
         json = Objects.requireNonNull(CommonIOUtils.paraseJsonFromStr(content)).getAsJsonObject();
         if ("401".equals(json.get("code").getAsString()) && "unauthorized".equals(json.get("message").getAsString())) {
-            Login();
+            login();
             return postUrl(path, params);
         }
         return json;
@@ -455,7 +457,7 @@ public class BikaUtils {
         data.setWaitSeconds(1000);
         CommonIOUtils.withTimer(data);
         if (data.getStatusCode() == 401) {
-            Login();
+            login();
             return getJsonByUrl(path);
         }
         if (data.getStatusCode() == 400) {
@@ -469,7 +471,7 @@ public class BikaUtils {
             throw new RuntimeException("获取json失败");
         }
         if ("401".equals(json.get("code").getAsString()) && "unauthorized".equals(json.get("message").getAsString())) {
-            Login();
+            login();
             return getJsonByUrl(path);
         }
         if (!"200".equals(json.get("code").getAsString())) {
@@ -609,7 +611,7 @@ public class BikaUtils {
             Bika bika = getBika(info, "");
             bika.setIsDeleted(1);
 //            DBManager.update(bika);
-            if (bikaParams.isWriteDB() && !tools.commonApiSave(bika).isSuccess()) {
+            if (bikaProperties.isWriteDB() && !tools.commonApiSave(bika).isSuccess()) {
                 log.error("保存失败：" + bika);
             }
             return true;
@@ -706,7 +708,7 @@ public class BikaUtils {
     }
 
     public Path GetAvailablePath(long size, File file) {
-        List<String> savePath = bikaParams.getSavePath();
+        List<String> savePath = bikaProperties.getSavePath();
         if (file != null && file.exists()) {
             Optional<ImmutableMap<String, Object>> priority = savePath.stream().map(path -> ImmutableMap.<String, Object>of("size", new File(path).getParentFile().getFreeSpace(), "path", path)).filter(hashMap -> ((long) Objects.requireNonNull(hashMap.get("size"))) > size && String.valueOf(Objects.requireNonNull(hashMap.get("path"))).toLowerCase().startsWith(file.getPath().toLowerCase().substring(0, 1))).findAny();
             if (priority.isPresent()) {
@@ -817,5 +819,38 @@ public class BikaUtils {
 //            } else {
 //                //如果数据库不存在记录，则文件为最新记录
 //            }
+    }
+
+    public void updateAllKinds(){
+
+        String keyword = bikaProperties.getKeywords();
+        DownloadTools tool = DownloadTools.getInstance(30);
+        Arrays.stream(keyword.split("\\|")).forEach(key -> {
+            tool.setName("页面");
+            tool.setSleepTimes(2000);
+            int currentPage = 1;
+            int maxpage = getMaxPage(key);
+            do {
+                tool.ThreadExecutorAdd(new BikaPageThread(currentPage, key, false));
+                currentPage++;
+            } while (currentPage <= maxpage);
+        });
+        tool.shutdown();
+    }
+
+    private int getMaxPage(String keyword) {
+        int maxPage;
+        try {
+            String part;
+            part = "comics?page=1&c=" + URLEncoder.encode(keyword, "utf-8") + "&s=ua";
+            JsonObject partJson = getJsonByUrl(part);
+            maxPage = CommonIOUtils.getFromJson2Integer(partJson, "data-comics-pages");
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("获取最大页数失败，重新获取");
+            CommonIOUtils.waitSeconds(1);
+            return getMaxPage(keyword);
+        }
+        return maxPage;
     }
 }
