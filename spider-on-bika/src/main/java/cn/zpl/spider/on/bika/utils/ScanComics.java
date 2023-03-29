@@ -1,7 +1,5 @@
 package cn.zpl.spider.on.bika.utils;
 
-import cn.zpl.common.bean.Bika;
-import cn.zpl.spider.on.bika.common.BikaParams;
 import cn.zpl.spider.on.bika.thread.BikaPageThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
@@ -10,7 +8,6 @@ import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.ComponentScan;
 
 import javax.annotation.Resource;
 import java.net.URLEncoder;
@@ -30,7 +27,7 @@ public class ScanComics {
     @Test
     public void main(){
 
-        String keyword = "Cosplay|歐美|禁書目錄|WEBTOON|Fate|東方|SAO 刀劍神域|Love Live|艦隊收藏|非人類|強暴|NTR|人妻|重口地帶|足の恋|性轉換|SM|妹妹系|姐姐系|單行本|扶他樂園|後宮閃光|偽娘哲學|百合花園|純愛|英語 ENG|CG雜圖|碧藍幻想|圓神領域|短篇|同人|長篇|全彩|嗶咔漢化|";
+        String keyword = "";
         DownloadTools tool = DownloadTools.getInstance(30);
         Arrays.stream(keyword.split("\\|")).forEach(key -> {
             tool.setName("页面");
