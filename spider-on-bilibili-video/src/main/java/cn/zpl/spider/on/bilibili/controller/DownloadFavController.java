@@ -1,9 +1,9 @@
 package cn.zpl.spider.on.bilibili.controller;
 
 import cn.zpl.config.SpringContext;
-import cn.zpl.spider.on.bilibili.BilibiliDownloadCore2;
+import cn.zpl.spider.on.bilibili.BilibiliDownloadCore;
 import cn.zpl.spider.on.bilibili.common.BilibiliCommonUtils;
-import cn.zpl.spider.on.bilibili.common.BilibiliConfigParams;
+import cn.zpl.spider.on.bilibili.common.BilibiliProperties;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.URLConnectionTool;
 import cn.zpl.util.UrlContainer;
@@ -11,12 +11,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.File;
@@ -35,6 +33,9 @@ public class DownloadFavController {
     @Resource
     BilibiliCommonUtils utils;
 
+    @Resource
+    BilibiliProperties properties;
+
 //    private static final String uid = "404412";
 //    private static final String url = "https://api.bilibili.com/medialist/gateway/base/created?pn=1&ps=100&up_mid=" +
 //            uid + "&is_space=0&jsonp=jsonp";
@@ -49,7 +50,7 @@ public class DownloadFavController {
         String owner_name;
 //
         UrlContainer container = new UrlContainer(String.format("https://api.bilibili.com/x/v3/fav/folder/created/list-all?up_mid=%1$s&jsonp=jsonp", uid));
-        container.setHeaders(BilibiliCommonUtils.getConfigParams().properties.cookies);
+        container.setHeaders(properties.getCookies());
         HttpsURLConnection conn = URLConnectionTool.getHttpsURLConnection(container);
         try {
             owner_name = BilibiliCommonUtils.getUserInfo(uid);
@@ -59,7 +60,7 @@ public class DownloadFavController {
             JsonObject json = (JsonObject) JsonParser.parseReader(new InputStreamReader(is));
             String path = "data-list";
             JsonArray favourFolders = CommonIOUtils.getFromJson2(json, path).getAsJsonArray();
-            BilibiliDownloadCore2 bdc = SpringContext.getBeanWithGenerics(BilibiliDownloadCore2.class);
+            BilibiliDownloadCore bdc = SpringContext.getBeanWithGenerics(BilibiliDownloadCore.class);
             for (JsonElement jsonElement : favourFolders) {
                 Map<String, List<String>> result = new HashMap<>();
                 String media_id = jsonElement.getAsJsonObject().get("id").getAsString();
@@ -74,7 +75,7 @@ public class DownloadFavController {
                 }
                 if (result.size() == 1) {
                     Map.Entry<String, List<String>> entry = result.entrySet().iterator().next();
-                    bdc.getNewPath().set(BilibiliCommonUtils.getConfigParams().properties.favourite_save_path + File.separator + owner_name + "\\" + entry.getKey() + "\\");
+                    bdc.getNewPath().set(properties.getFavouriteSavePath() + File.separator + owner_name + "\\" + entry.getKey() + "\\");
                     bdc.downloadList(entry.getValue());
                 }
                 result.clear();
@@ -84,12 +85,12 @@ public class DownloadFavController {
         }
     }
 
-    private static void spaceDetail(Map<String, List<String>> result, String media_id, int pn, String uid) {
+    private void spaceDetail(Map<String, List<String>> result, String media_id, int pn, String uid) {
         String url = "https://api.bilibili.com/medialist/gateway/base/spaceDetail?media_id=" +
                 media_id + "&pn=" +
                 pn + "&ps=20&keyword=&order=mtime&type=0&tid=0&jsonp=jsonp";
         UrlContainer container = new UrlContainer(url);
-        container.setHeaders(BilibiliCommonUtils.getConfigParams().properties.cookies);
+        container.setHeaders(properties.getCookies());
         HttpsURLConnection conn = URLConnectionTool.getHttpsURLConnection(container);
         try {
             conn.setRequestProperty("Referer", "https://space.bilibili.com/" +

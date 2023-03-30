@@ -7,7 +7,7 @@ import cn.zpl.pojo.Data;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.VideoData;
 import cn.zpl.spider.on.bilibili.common.BilibiliCommonUtils;
-import cn.zpl.spider.on.bilibili.common.BilibiliConfigParams;
+import cn.zpl.spider.on.bilibili.common.BilibiliProperties;
 import cn.zpl.spider.on.bilibili.common.TransformVideId;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
@@ -49,7 +49,7 @@ public class DownloadController {
 
     private String owner_name = "";
     @Resource
-    BilibiliConfigParams configParams;
+    BilibiliProperties properties;
     @Resource
     CrudTools tools;
 
@@ -131,7 +131,7 @@ public class DownloadController {
         owner_name = BilibiliCommonUtils.getUserInfo(uid);
         Data data = new Data();
         data.setUrl("https://api.bilibili.com/x/space/wbi/arc/search?mid=" + uid + "&ps=30&tid=0&pn=" + page + "&keyword=&order=pubdate&platform=web");
-        data.setHeader(BilibiliConfigParams.BilibiliProperties.commonHeaders + configParams.properties.cookies);
+        data.setHeader(BilibiliProperties.commonHeaders + properties.getCookies());
         CommonIOUtils.withTimer(data);
         JsonElement json = CommonIOUtils.paraseJsonFromStr(data.getResult());
         int videoSize = CommonIOUtils.getFromJson2(json, "data-list-vlist").isJsonArray() ? CommonIOUtils.getFromJson2(json, "data-list-vlist").getAsJsonArray().size() : 0;
@@ -188,7 +188,7 @@ public class DownloadController {
                 return RestResponse.fail("视频不存在！");
             }
             if (code == -403) {
-                data.setHeader(configParams.properties.cookies);
+                data.setHeader(properties.getCookies());
                 CommonIOUtils.withTimer(data);
                 result = JsonParser.parseString(Objects.requireNonNull(data.getString()));
                 code = CommonIOUtils.getFromJson2Integer(result, "code");
@@ -242,7 +242,7 @@ public class DownloadController {
         String url = "https://api.bilibili.com/x/player/playurl?avid=" + avid + "&cid=" + cid + "&bvid=&qn=" + (quality_level.equals("") ? "112" : quality_level) + "&type=&otype=json&fnver=0&fnval=16&fourk=1";
 //        Data data = new Data();
         data.setUrl(url);
-        data.setHeader(configParams.properties.cookies);
+        data.setHeader(properties.getCookies());
         CommonIOUtils.withTimer(data);
         JsonElement json = JsonParser.parseString(Objects.requireNonNull(data.getString()));
         int code = CommonIOUtils.getFromJson2Integer(json, "code");
@@ -265,7 +265,7 @@ public class DownloadController {
         videoInfo.setDownloadDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 
         List<String> path = new ArrayList<>();
-        path.add(newPath.get() != null && !"".equals(newPath.get()) ? newPath.get() : configParams.properties.video_save_path);
+        path.add(newPath.get() != null && !"".equals(newPath.get()) ? newPath.get() : properties.getVideoSavePath());
         path.add(owner_name);
         String videoName = title + "(av" + avid + ")" + ".mp4";
         if (videos > 1) {
@@ -274,7 +274,7 @@ public class DownloadController {
         }
         videoData.setWebSite("bilibili");
         videoData.setDesSaveName(videoName);
-        videoData.setTmpSavePath(new File(configParams.properties.tmp_save_path, avid));
+        videoData.setTmpSavePath(new File(properties.getTmpSavePath(), avid));
         videoData.setDesSavePath(CommonIOUtils.makeFilePath(path, videoName));
         videoInfo.setLocalPath(videoData.getDesSavePath());
 
@@ -341,7 +341,7 @@ public class DownloadController {
                 // 存储的是视频大小（字节）
                 dto.setFileLength(length);
                 //如果有指定保存路径，则使用指定的路径，否则从config.properties中读取
-                pathMake.add(configParams.properties.tmp_save_path);
+                pathMake.add(properties.getTmpSavePath());
                 pathMake.add(video_id);
                 dto.setSavePath(CommonIOUtils.makeFilePath(pathMake, "p" + page + " order" + order + ".flv"));
                 videoData.getPartList().add(dto.getSavePath());
@@ -399,7 +399,7 @@ public class DownloadController {
         dto.setFileLength(URLConnectionTool.getDataLength(dto));
         audio.setFileLength(URLConnectionTool.getDataLength(audio));
         //如果有指定保存路径，则使用指定的路径，否则从config.properties中读取
-        pathMake.add(configParams.properties.tmp_save_path);
+        pathMake.add(properties.getTmpSavePath());
         pathMake.add(avid);
         dto.setSavePath(CommonIOUtils.makeFilePath(pathMake, dto.getUrl().substring(dto.getUrl().lastIndexOf("/") + 1, dto.getUrl().indexOf("?"))));
         audio.setSavePath(CommonIOUtils.makeFilePath(pathMake, audio.getUrl().substring(audio.getUrl().lastIndexOf("/") + 1, audio.getUrl().indexOf("?"))));

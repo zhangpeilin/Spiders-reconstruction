@@ -1,13 +1,10 @@
 package cn.zpl.spider.on.bilibili;
 
-import cn.zpl.common.bean.Bika;
-import cn.zpl.common.bean.ExceptionList;
 import cn.zpl.common.bean.NasPage;
 import cn.zpl.common.bean.VideoInfo;
 import cn.zpl.config.SpringContext;
 import cn.zpl.config.UrlConfig;
 import cn.zpl.spider.on.bilibili.common.BilibiliCommonUtils;
-import cn.zpl.spider.on.bilibili.common.BilibiliConfigParams;
 import cn.zpl.util.CrudTools;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,8 +27,6 @@ import java.util.List;
 public class TestConfig {
 
     @Resource
-    BilibiliConfigParams configParams;
-    @Resource
     CrudTools tools;
 
     @Resource
@@ -43,14 +38,14 @@ public class TestConfig {
         System.out.println(bv1hR4y1B7zH);
         if (new File(bv1hR4y1B7zH.get(0).getLocalPath()).exists()) {
             System.out.println(bv1hR4y1B7zH.get(0).getLocalPath() + "存在");
-            BilibiliDownloadCore2 bilibiliDownloadCore2 = new BilibiliDownloadCore2();
+            BilibiliDownloadCore bilibiliDownloadCore2 = new BilibiliDownloadCore();
             bilibiliDownloadCore2.downloadList(Collections.singletonList("BV1WM4y167Tx"));
         }
     }
 
     @Test
     public void test2() {
-        System.out.println(bilibiliCommonUtils.getExists("900735459"));
+        System.out.println(bilibiliCommonUtils.getVideoInfo("900735459"));
     }
 
     @Test

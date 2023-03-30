@@ -1,11 +1,9 @@
 package cn.zpl.spider.on.bilibili.common;
 
-import cn.zpl.common.bean.Bika;
+import cn.zpl.common.bean.ExceptionList;
 import cn.zpl.common.bean.VideoInfo;
-import cn.zpl.config.SpringContext;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
-import cn.zpl.util.URLConnectionTool;
 import cn.zpl.util.UrlContainer;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -15,9 +13,9 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -33,15 +31,27 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+/**
+ * @author zpl
+ */
 @Component
+@EnableConfigurationProperties(BilibiliProperties.class)
 public class BilibiliCommonUtils {
 
     @Resource
     CrudTools tools;
 
-    static ThreadLocal<BilibiliConfigParams> configParamsThreadLocal = new ThreadLocal<>();
-    public static LoadingCache<String, VideoInfo> exists;
-    public synchronized VideoInfo getExists(String cid) {
+//    static ThreadLocal<BilibiliConfigParams> configParamsThreadLocal = new ThreadLocal<>();
+    public static LoadingCache<String, Object> exists;
+
+    public VideoInfo getVideoInfo(String cid) {
+        return (VideoInfo) getExists( "video_info" + ":" + cid);
+    }
+
+    public ExceptionList getExceptionList(String cid) {
+        return (ExceptionList) getExists( "exception_list" + ":" + cid);
+    }
+    private synchronized Object getExists(String cid) {
         if (exists != null) {
             try {
                 List<String> list = new ArrayList<>();
@@ -50,7 +60,7 @@ public class BilibiliCommonUtils {
             } catch (ExecutionException e) {
                 throw new RuntimeException(e);
             }
-            VideoInfo exist = exists.getIfPresent(cid);
+            Object exist = exists.getIfPresent(cid);
             if (exist == null) {
                 try {
                     return exists.get(cid);
@@ -61,31 +71,40 @@ public class BilibiliCommonUtils {
                 return exist;
             }
         }
-        exists = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(2000, TimeUnit.SECONDS).build(new CacheLoader<String, VideoInfo>() {
+        exists = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(2000, TimeUnit.SECONDS).build(new CacheLoader<String, Object>() {
             @Override
-            public VideoInfo load(@NotNull String key) {
-                List<VideoInfo> bikas = tools.commonApiQueryBySql(String.format("select * from video_info where video_id = '%1$s'", key), VideoInfo.class);
-                if (bikas.size() != 0) {
-                    return bikas.get(0);
+            //key格式为表名:主键
+            public Object load(@NotNull String key) {
+                String[] split = key.split(",");
+                String tableName = split[0];
+                String queryKey = split[1];
+                Class<?> entity = CommonIOUtils.getEntityExists(tableName);
+                List<?> objects = tools.commonApiQueryBySql(String.format("select * from %2$s where video_id = '%1$s'", queryKey, tableName), entity);
+                if (objects.size() != 0) {
+                    return objects.get(0);
                 }
                 return null;
             }
 
             @Override
-            public Map<String, VideoInfo> loadAll(Iterable<? extends String> keys) throws Exception {
-                List<VideoInfo> bikas = tools.commonApiQueryBySql("select * from video_info", VideoInfo.class);
-                return bikas.stream().collect(Collectors.toMap(VideoInfo::getVideoId, video_info -> video_info));
+            public Map<String, Object> loadAll(Iterable<? extends String> keys) {
+                List<VideoInfo> videoInfos = tools.commonApiQueryBySql("select * from video_info", VideoInfo.class);
+                List<ExceptionList> exceptionLists = tools.commonApiQueryBySql("select * from exception_list", ExceptionList.class);
+                Map<String, Object> videoInfoMap = videoInfos.stream().collect(Collectors.toMap(videoInfo -> "video_info" + videoInfo.getVideoId(), videoInfo -> videoInfo));
+                Map<String, Object> exceptionListMap = exceptionLists.stream().collect(Collectors.toMap(exceptionList -> "exception_list" + exceptionList.getVideoId(), exceptionList -> exceptionList));
+                videoInfoMap.putAll(exceptionListMap);
+                return videoInfoMap;
             }
         });
         return getExists(cid);
     }
 
-    public static BilibiliConfigParams getConfigParams() {
-        if (configParamsThreadLocal.get() == null) {
-            configParamsThreadLocal.set(SpringContext.getBeanWithGenerics(BilibiliConfigParams.class));
-        }
-        return configParamsThreadLocal.get();
-    }
+//    public static BilibiliConfigParams getConfigParams() {
+//        if (configParamsThreadLocal.get() == null) {
+//            configParamsThreadLocal.set(SpringContext.getBeanWithGenerics(BilibiliConfigParams.class));
+//        }
+//        return configParamsThreadLocal.get();
+//    }
 
     public static String getUserInfo(String uid) throws JsonIOException, JsonSyntaxException {
 

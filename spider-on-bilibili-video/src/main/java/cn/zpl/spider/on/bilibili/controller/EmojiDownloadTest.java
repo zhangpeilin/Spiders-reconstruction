@@ -2,7 +2,6 @@ package cn.zpl.spider.on.bilibili.controller;
 
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.SynchronizeLock;
-import cn.zpl.spider.on.bilibili.common.BilibiliConfigParams;
 import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.DownloadTools;
@@ -10,11 +9,13 @@ import cn.zpl.util.URLConnectionTool;
 import com.google.gson.JsonElement;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EmojiDownload {
+/**
+ * @author zpl
+ */
+public class EmojiDownloadTest {
 
     @Test
     public void domain() {
