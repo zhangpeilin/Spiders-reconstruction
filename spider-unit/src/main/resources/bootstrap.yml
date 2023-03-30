@@ -6,9 +6,9 @@ spring:
           uri: git@codehub.devcloud.cn-north-4.huaweicloud.com:my_config_center00001/spider_config_center.git
           order: 1
           search-paths: spider_config_center
-          basedir: C:\Users\zpl\config-git
+          basedir: ../config-git
         bootstrap: true
       label: master
       profile: online
   application:
-    name: daocenter,common
+    name: daocenter,common,spider-unit
