@@ -33,8 +33,8 @@ import java.util.stream.Collectors;
 public class ChapterThread implements Callable<Map<String, Object>> {
 
 
-    private JsonElement element;
-    private Vector<Future<DownloadDTO>> futureVector = new Vector<>();
+    private final JsonElement element;
+    private final Vector<Future<DownloadDTO>> futureVector = new Vector<>();
 
     BilibiliMangaProperties bilibiliMangaProperties;
 
@@ -49,7 +49,7 @@ public class ChapterThread implements Callable<Map<String, Object>> {
         try {
             return domain();
         } catch (Exception e) {
-            log.error("章节线程出错：\n" + e.getMessage());
+            log.error("章节线程出错：\n",e);
             CommonIOUtils.waitSeconds(5);
             return call();
         }
