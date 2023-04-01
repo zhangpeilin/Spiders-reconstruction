@@ -40,13 +40,19 @@ public class DownloadFavController {
 //    private static final String url = "https://api.bilibili.com/medialist/gateway/base/created?pn=1&ps=100&up_mid=" +
 //            uid + "&is_space=0&jsonp=jsonp";
 
-    @GetMapping("/downloadFav/{uid}")
-    public String downloadFav(@PathVariable("uid") String uid) {
-        doTheOne(uid);
+    @GetMapping("/downloadFav/{uid}/{gallery}")
+    public String downloadFav(@PathVariable("uid") String uid, @PathVariable(value = "gallery", required = false) String gallery) {
+        doTheOne(uid, gallery);
         return "success";
     }
 
-    public void doTheOne(String uid) {
+    @GetMapping("/downloadFav/{uid}")
+    public String downloadFav(@PathVariable("uid") String uid) {
+        doTheOne(uid, null);
+        return "success";
+    }
+
+    public void doTheOne(String uid, String gallery) {
         String owner_name;
 //
         UrlContainer container = new UrlContainer(String.format("https://api.bilibili.com/x/v3/fav/folder/created/list-all?up_mid=%1$s&jsonp=jsonp", uid));
@@ -65,9 +71,9 @@ public class DownloadFavController {
                 Map<String, List<String>> result = new HashMap<>();
                 String media_id = jsonElement.getAsJsonObject().get("id").getAsString();
                 String title = jsonElement.getAsJsonObject().get("title").getAsString();
-//                if (!title.equals("原神2")) {
-//                    continue;
-//                }
+                if (gallery != null && !title.equals(gallery)) {
+                    continue;
+                }
                 int media_count = jsonElement.getAsJsonObject().get("media_count").getAsInt();
                 int page = media_count / 20 + 1;
                 for (int i = 1; i <= page; i++) {

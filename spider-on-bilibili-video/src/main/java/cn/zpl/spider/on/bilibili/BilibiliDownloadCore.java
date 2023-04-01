@@ -454,7 +454,7 @@ public class BilibiliDownloadCore {
         if (!audioElement.isJsonNull()) {
             audioM4s = audioElement.getAsJsonArray().get(0);
         }
-        if (!CommonIOUtils.getFromJson2Str(videoM4s, "id").equalsIgnoreCase(current_quality)) {
+        if (Integer.parseInt(CommonIOUtils.getFromJson2Str(videoM4s, "id")) < Integer.parseInt(current_quality)) {
             log.error(avid + "解析出错");
             System.exit(1);
         }
