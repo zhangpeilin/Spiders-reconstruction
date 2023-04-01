@@ -50,4 +50,6 @@ public class BilibiliProperties {
     public String mangaSavePath;
     public String favouriteSavePath;
     public String ffmpeg;
+
+    public boolean merge;
 }

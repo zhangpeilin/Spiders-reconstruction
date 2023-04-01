@@ -5,6 +5,7 @@ import cn.zpl.common.bean.VideoInfo;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.UrlContainer;
+import com.google.common.base.CaseFormat;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -55,10 +56,9 @@ public class BilibiliCommonUtils {
         if (exists != null) {
             try {
                 List<String> list = new ArrayList<>();
-                list.add("900735459");
+                list.add("video_info:900735459");
                 exists.getAll(list);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
             }
             Object exist = exists.getIfPresent(cid);
             if (exist == null) {
@@ -75,10 +75,11 @@ public class BilibiliCommonUtils {
             @Override
             //key格式为表名:主键
             public Object load(@NotNull String key) {
-                String[] split = key.split(",");
+                String[] split = key.split(":");
                 String tableName = split[0];
+                String entityName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, tableName);
                 String queryKey = split[1];
-                Class<?> entity = CommonIOUtils.getEntityExists(tableName);
+                Class<?> entity = CommonIOUtils.getEntityExists(entityName);
                 List<?> objects = tools.commonApiQueryBySql(String.format("select * from %2$s where video_id = '%1$s'", queryKey, tableName), entity);
                 if (objects.size() != 0) {
                     return objects.get(0);
@@ -90,8 +91,8 @@ public class BilibiliCommonUtils {
             public Map<String, Object> loadAll(Iterable<? extends String> keys) {
                 List<VideoInfo> videoInfos = tools.commonApiQueryBySql("select * from video_info", VideoInfo.class);
                 List<ExceptionList> exceptionLists = tools.commonApiQueryBySql("select * from exception_list", ExceptionList.class);
-                Map<String, Object> videoInfoMap = videoInfos.stream().collect(Collectors.toMap(videoInfo -> "video_info" + videoInfo.getVideoId(), videoInfo -> videoInfo));
-                Map<String, Object> exceptionListMap = exceptionLists.stream().collect(Collectors.toMap(exceptionList -> "exception_list" + exceptionList.getVideoId(), exceptionList -> exceptionList));
+                Map<String, Object> videoInfoMap = videoInfos.stream().collect(Collectors.toMap(videoInfo -> "video_info:" + videoInfo.getVideoId(), videoInfo -> videoInfo));
+                Map<String, Object> exceptionListMap = exceptionLists.stream().collect(Collectors.toMap(exceptionList -> "exception_list:" + exceptionList.getVideoId(), exceptionList -> exceptionList));
                 videoInfoMap.putAll(exceptionListMap);
                 return videoInfoMap;
             }

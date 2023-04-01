@@ -6,6 +6,7 @@ import cn.zpl.config.CommonParams;
 import cn.zpl.pojo.Data;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.VideoData;
+import cn.zpl.spider.on.bilibili.BilibiliDownloadCore;
 import cn.zpl.spider.on.bilibili.common.BilibiliCommonUtils;
 import cn.zpl.spider.on.bilibili.common.BilibiliProperties;
 import cn.zpl.spider.on.bilibili.common.TransformVideId;
@@ -56,6 +57,9 @@ public class DownloadController {
     @Resource
     FFMEPGToolsPatch ffmepgToolsPatch;
 
+    @Resource
+    BilibiliDownloadCore downloadCore;
+
     ThreadLocal<String> getNewPath() {
         return newPath;
     }
@@ -65,7 +69,7 @@ public class DownloadController {
     @GetMapping("/download/{bid}")
     public RestResponse downloadById(@PathVariable("bid") String bid) {
         try {
-            return mainBusiness(bid);
+            downloadCore.mainBusiness(bid);
         } catch (Exception e) {
             log.error("下载错误：", e);
             RestResponse.fail(e.getMessage());
@@ -202,7 +206,7 @@ public class DownloadController {
             Document document = CommonIOUtils.getDocumentFromUrl("https://www.bilibili.com/video/" + video_id);
             ;
             Element titleEle = document.selectFirst("div#viewbox_report h1.video-title.tit");
-            Element upInfo = document.selectFirst("div.u-info a.username");
+            Element upInfo = document.selectFirst("div#v_upinfo a.username");
             if (titleEle != null) {
                 result.getAsJsonObject().addProperty("title", titleEle.text());
             } else {

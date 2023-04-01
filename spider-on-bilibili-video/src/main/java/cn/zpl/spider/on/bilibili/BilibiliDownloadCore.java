@@ -170,7 +170,7 @@ public class BilibiliDownloadCore {
         }
     }
 
-    void mainBusiness(@NotNull String videoId) {
+    public void mainBusiness(@NotNull String videoId) {
 
         //^\d+$
         if (videoId.startsWith("http")) {
@@ -367,6 +367,9 @@ public class BilibiliDownloadCore {
         if (CommonIOUtils.getFromJson2(json, "data-dash-video").isJsonNull()) {
             //1p多段下载
             dealMultiplePart(json, avid, videoData, page, videoInfo);
+            if (!properties.merge) {
+                return;
+            }
             if (!FFMEPGToolsPatch.mergeBilibiliVideo(videoData)) {
                 log.error("不应该出现在这，video_id：" + avid);
                 System.exit(1);
@@ -374,6 +377,9 @@ public class BilibiliDownloadCore {
         }
         if (!CommonIOUtils.getFromJson2(json, "data-dash-video").isJsonNull()) {
             doM4s(json, avid, bvid, currentQuality, videoInfo, videoData);
+            if (!properties.merge) {
+                return;
+            }
             if (!ffmepgToolsPatch.mergeBilibiliVideo2(videoData)) {
                 log.error("不应该出现在这，video_id：" + avid);
                 System.exit(1);
@@ -511,7 +517,7 @@ public class BilibiliDownloadCore {
 
     private void addDownload(DownloadTools tools, DownloadDTO dto){
         if (!new File(dto.getSavePath()).exists() || !SaveLog.isCompeleteMultiple(dto)) {
-            tools.MultipleThread(dto);
+            tools.MultipleThreadWithLog(dto);
         } else {
             log.debug(dto.getSavePath() + "已下载，跳过");
         }
