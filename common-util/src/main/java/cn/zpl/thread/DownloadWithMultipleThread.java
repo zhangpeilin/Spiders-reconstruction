@@ -173,6 +173,10 @@ public class DownloadWithMultipleThread extends CommonThread implements Runnable
             log.debug(data.getSavePath() + "已下载，跳过");
             return infoHolder.setCompleteInfo(startIndex, endIndex);
         }
+        if (1073741824 > new File(data.getSavePath()).getParentFile().getFreeSpace()) {
+            log.error("磁盘空间不足1GB，停止下载，程序退出" + data.getSavePath());
+            System.exit(0);
+        }
         UrlContainer container = new UrlContainer(data);
         HttpURLConnection conn = container.isHttps() ?
                 URLConnectionTool.getHttpsURLConnection(container) : URLConnectionTool.getHttpURLConnection(container);

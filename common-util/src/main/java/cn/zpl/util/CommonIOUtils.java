@@ -48,6 +48,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.reflections.Reflections;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.util.Assert;
 import org.springframework.util.DigestUtils;
@@ -87,9 +88,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
@@ -106,6 +109,7 @@ public class CommonIOUtils {
 
     private static final ThreadLocal<DoRetry> retry = new ThreadLocal<>();
     private static final ThreadLocal<Integer> count = new ThreadLocal<>();
+    public static Set<Class<? extends Serializable>> entityList = new HashSet<>();
     public static CloseableHttpClient closeableHttpClient;
     public static ResponseHandler<byte[]> byteHandler;
     public static ResponseHandler<String> strHandler;
@@ -1376,5 +1380,25 @@ public class CommonIOUtils {
                 addAll(chapterSet);
             }
         };
+    }
+    public static Class<?> getEntityExists(String entity) {
+        Class<?> aClass;
+        if (entityList.isEmpty()) {
+            Reflections reflections = new Reflections("cn.zpl.common.bean");
+            entityList.addAll(reflections.getSubTypesOf(Serializable.class));
+            reflections = new Reflections("BOOT-INF.classes.cn.zpl.commondaocenter.bean");
+//            ConfigurationBuilder builder = new ConfigurationBuilder();
+//            builder.addClassLoaders(this.getClass().getClassLoader());
+//            builder.forPackage("cn.zpl.commondaocenter.bean", this.getClass().getClassLoader());
+//            Reflections reflections1 = new Reflections(builder);
+//            Set<Class<? extends Serializable>> subTypesOf = reflections1.getSubTypesOf(Serializable.class);
+//            log.debug("找到的类：{}", subTypesOf);
+
+//            subTypesOf.forEach(System.out::println);
+            entityList.addAll(reflections.getSubTypesOf(Serializable.class));
+        }
+        Optional<Class<? extends Serializable>> first = entityList.stream().filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(entity)).findFirst();
+//        log.debug(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, "PictureAnalyze"));
+        return first.orElse(null);
     }
 }
