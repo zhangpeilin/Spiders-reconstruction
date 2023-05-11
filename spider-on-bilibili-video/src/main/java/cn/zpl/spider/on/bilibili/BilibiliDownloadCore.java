@@ -165,8 +165,12 @@ public class BilibiliDownloadCore {
             log.debug(cid + "已排除");
             return true;
         } else {
-            ExceptionList exist = (ExceptionList) bilibiliCommonUtils.getExceptionList(cid);
-            return exist != null;
+            ExceptionList exist = bilibiliCommonUtils.getExceptionList(cid);
+            boolean isException = exist != null;
+            if (isException) {
+                exception.add(cid);
+            }
+            return isException;
         }
     }
 

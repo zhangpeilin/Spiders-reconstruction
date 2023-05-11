@@ -12,6 +12,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -36,6 +37,7 @@ import java.util.zip.ZipInputStream;
  * @author zpl
  */
 @Component
+@Slf4j
 @EnableConfigurationProperties(BilibiliProperties.class)
 public class BilibiliCommonUtils {
 
@@ -44,6 +46,7 @@ public class BilibiliCommonUtils {
 
 //    static ThreadLocal<BilibiliConfigParams> configParamsThreadLocal = new ThreadLocal<>();
     public static LoadingCache<String, Object> exists;
+    public static boolean cacheLoaded = false;
 
     public VideoInfo getVideoInfo(String cid) {
         return (VideoInfo) getExists( "video_info" + ":" + cid);
@@ -54,11 +57,18 @@ public class BilibiliCommonUtils {
     }
     private synchronized Object getExists(String cid) {
         if (exists != null) {
-            try {
-                List<String> list = new ArrayList<>();
-                list.add("video_info:900735459");
-                exists.getAll(list);
-            } catch (Exception e) {
+            log.debug("当前缓存中数据条数：{}", exists.size());
+            if (!cacheLoaded) {
+                new Thread(() -> {
+                    try {
+                        log.debug("开始加载全量缓存");
+                        cacheLoaded = true;
+                        List<String> list = new ArrayList<>();
+                        list.add("video_info:900735459");
+                        exists.getAll(list);
+                    } catch (Exception ignored) {
+                    }
+                }).start();
             }
             Object exist = exists.getIfPresent(cid);
             if (exist == null) {
