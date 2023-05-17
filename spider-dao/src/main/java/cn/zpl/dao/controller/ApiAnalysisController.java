@@ -75,7 +75,6 @@ public class ApiAnalysisController {
     UrlConfig config;
     public static Set<Class<? extends Serializable>> entityList = new HashSet<>();
 
-    public ThreadLocal<Class<?>> entityCache = new ThreadLocal<>();
     private static final LoadingCache<String, Class<?>> cache = CacheBuilder.newBuilder()
             .maximumSize(2000)
             .expireAfterWrite(12, TimeUnit.HOURS)
@@ -94,15 +93,17 @@ public class ApiAnalysisController {
     public <T> RestResponse commonEntitySave(@RequestBody JSONObject requestJson) {
         String entity = requestJson.getString("entity");
         Object data = requestJson.get("data");
-        if (checkEntityExists(entity)) {
+        try {
+            checkEntityExists(entity);
+        } catch (ExecutionException e) {
             return RestResponse.fail("找不到实体类");
         }
-        if (entityList.isEmpty()) {
-            Reflections reflections = new Reflections("cn.zpl.common.bean");
-            entityList.addAll(reflections.getSubTypesOf(Serializable.class));
-            reflections = new Reflections("BOOT-INF.classes.cn.zpl.commondaocenter.bean");
-            entityList.addAll(reflections.getSubTypesOf(Serializable.class));
-        }
+//        if (entityList.isEmpty()) {
+//            Reflections reflections = new Reflections("cn.zpl.common.bean");
+//            entityList.addAll(reflections.getSubTypesOf(Serializable.class));
+//            reflections = new Reflections("BOOT-INF.classes.cn.zpl.commondaocenter.bean");
+//            entityList.addAll(reflections.getSubTypesOf(Serializable.class));
+//        }
         T serializable = null;
         Optional<Class<? extends Serializable>> first = entityList.stream().filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(entity)).findFirst();
         if (first.isPresent()) {
@@ -138,8 +139,10 @@ public class ApiAnalysisController {
      */
     @GetMapping("/api/query/{entity}")
     @SuppressWarnings("unchecked")
-    public RestResponse apiAnalysis2(@PathVariable("entity") String entity, @RequestParam(value = "fetchProperties", required = false) String fetchProperties, @RequestParam(value = "condition", required = false) String condition, @RequestParam(value = "size", required = false) Integer size, @RequestParam(value = "page", required = false) Page<Object> page) {
-        if (checkEntityExists(entity)) {
+    public <T> RestResponse apiAnalysis2(@PathVariable("entity") String entity, @RequestParam(value = "fetchProperties", required = false) String fetchProperties, @RequestParam(value = "condition", required = false) String condition, @RequestParam(value = "size", required = false) Integer size, @RequestParam(value = "page", required = false) Page<T> page) {
+        try {
+            checkEntityExists(entity);
+        } catch (ExecutionException e) {
             return RestResponse.fail("找不到实体类");
         }
         //预处理为空的标记为[*]
@@ -156,13 +159,12 @@ public class ApiAnalysisController {
         log.debug(fetchProperties);
         log.debug(condition);
         log.debug(String.valueOf(size));
-//        IService<Object> iService = (IService<Object>) SpringContext.getBeanDefinitionName(entity);
-        IService<Object> iService = null;
-        try {
-            iService = SpringContext.getBeanWithGenerics((Class<Object>) cache.get(entity));
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        IService<T> iService = (IService<T>) SpringContext.getBeanDefinitionName(entity);
+//        try {
+//            IService<T> iService = (IService<T>) SpringContext.getBeanDefinitionName(entity);
+//        } catch (ExecutionException e) {
+//            throw new RuntimeException(e);
+//        }
         if (iService == null) {
             log.error("未找到service类");
             return RestResponse.fail("未找到service类");
@@ -196,7 +198,7 @@ public class ApiAnalysisController {
         }
         Matcher conditionMatcher = compile.matcher(condition);
         Matcher columnMatcher = compile.matcher(fetchProperties);
-        QueryWrapper<Object> objectQueryWrapper = new QueryWrapper<>();
+        QueryWrapper<T> objectQueryWrapper = new QueryWrapper<>();
         while (conditionMatcher.find()) {
             log.debug(conditionMatcher.group());
             String key = conditionMatcher.group();
@@ -215,7 +217,7 @@ public class ApiAnalysisController {
         if (!columns.isEmpty()) {
             objectQueryWrapper.select(columns.toArray(new String[0]));
         }
-        List<Object> list = iService.page(page, objectQueryWrapper).getRecords();
+        List<T> list = iService.page(page, objectQueryWrapper).getRecords();
         return RestResponse.ok().list(list);
     }
 
@@ -249,30 +251,16 @@ public class ApiAnalysisController {
         return ok;
     }
 
-    @SneakyThrows
-    private boolean checkEntityExists(String entity) {
+    private void checkEntityExists(String entity) throws ExecutionException {
         Class<?> aClass = cache.get(entity);
-        return aClass == null;
     }
 
     private static Class<?> getEntityExists(String entity) {
-        Class<?> aClass;
         if (entityList.isEmpty()) {
             Reflections reflections = new Reflections("cn.zpl.common.bean");
             entityList.addAll(reflections.getSubTypesOf(Serializable.class));
-            reflections = new Reflections("BOOT-INF.classes.cn.zpl.commondaocenter.bean");
-//            ConfigurationBuilder builder = new ConfigurationBuilder();
-//            builder.addClassLoaders(this.getClass().getClassLoader());
-//            builder.forPackage("cn.zpl.commondaocenter.bean", this.getClass().getClassLoader());
-//            Reflections reflections1 = new Reflections(builder);
-//            Set<Class<? extends Serializable>> subTypesOf = reflections1.getSubTypesOf(Serializable.class);
-//            log.debug("找到的类：{}", subTypesOf);
-
-//            subTypesOf.forEach(System.out::println);
-            entityList.addAll(reflections.getSubTypesOf(Serializable.class));
         }
         Optional<Class<? extends Serializable>> first = entityList.stream().filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(entity)).findFirst();
-//        log.debug(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, "PictureAnalyze"));
         return first.orElse(null);
     }
 
