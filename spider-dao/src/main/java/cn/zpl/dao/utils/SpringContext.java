@@ -45,15 +45,9 @@ public class SpringContext implements ApplicationContextAware {
     }
 
     public static Object getBeanDefinitionName(String entityName) {
-        ResolvableType resolvableType = ResolvableType.forClassWithGenerics(IService.class, Bika.class);
-        ObjectProvider<Object> beanProvider = applicationContext.getBeanProvider(resolvableType);
-        Object ifAvailable = beanProvider.getIfAvailable();
         String[] beanDefinitionNames = applicationContext.getBeanDefinitionNames();
         if (classSet.isEmpty()) {
             Arrays.stream(beanDefinitionNames).forEach(s -> {
-//                Object bean = getBean(s);
-//                String beanClassName = ((AnnotationConfigServletWebServerApplicationContext) applicationContext).getBeanFactory().getBeanDefinition(s).getBeanClassName();
-//                ((AnnotationConfigServletWebServerApplicationContext) applicationContext).getBeanFactory().getBeanDefinition(s);
                 try {
                     Class<?> beanClass = ((AbstractBeanDefinition) ((AnnotationConfigServletWebServerApplicationContext) applicationContext).getBeanFactory().getBeanDefinition(s)).getBeanClass();
                     classSet.add(beanClass);

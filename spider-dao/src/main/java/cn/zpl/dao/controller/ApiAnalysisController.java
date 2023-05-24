@@ -139,9 +139,7 @@ public class ApiAnalysisController {
     @GetMapping("/api/query/{entity}")
     @SuppressWarnings("unchecked")
     public RestResponse apiAnalysis2(@PathVariable("entity") String entity, @RequestParam(value = "fetchProperties", required = false) String fetchProperties, @RequestParam(value = "condition", required = false) String condition, @RequestParam(value = "size", required = false) Integer size, @RequestParam(value = "page", required = false) Page<Object> page) {
-        if (checkEntityExists(entity)) {
-            return RestResponse.fail("找不到实体类");
-        }
+        entity = entity.toLowerCase();
         //预处理为空的标记为[*]
         if (StringUtils.isEmpty(fetchProperties)) {
             fetchProperties = config.getNothing();
@@ -156,13 +154,7 @@ public class ApiAnalysisController {
         log.debug(fetchProperties);
         log.debug(condition);
         log.debug(String.valueOf(size));
-//        IService<Object> iService = (IService<Object>) SpringContext.getBeanDefinitionName(entity);
-        IService<Object> iService = null;
-        try {
-            iService = SpringContext.getBeanWithGenerics((Class<Object>) cache.get(entity));
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        IService<Object> iService = (IService<Object>) SpringContext.getBeanDefinitionName(entity);
         if (iService == null) {
             log.error("未找到service类");
             return RestResponse.fail("未找到service类");
