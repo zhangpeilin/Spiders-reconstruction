@@ -90,8 +90,9 @@ public class BikaUtils {
 
     public static final Map<String, AtomicInteger> progress = new HashMap<>();
 
-    //    @Async("BikaAsync")
-    public void search(String key, boolean download) {
+//    @Async("BikaAsync")
+    public String search(String key, boolean download) {
+        StringBuilder stringBuilder = new StringBuilder();
         try {
             String url = "comics/search?page=1&q=" + URLEncoder.encode(key, "utf-8");
             JsonObject partJson = getJsonByUrl(url);
@@ -100,17 +101,21 @@ public class BikaUtils {
             DownloadTools tool = DownloadTools.getInstance(2);
             tool.setName("漫画");
             tool.setSleepTimes(10000);
+
             for (JsonElement detail : comics.getAsJsonArray()) {
                 if (download) {
                     tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
                 } else {
-                    System.out.printf("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"));
+//                    System.out.printf("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"));
+                    stringBuilder.append(String.format("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"))).append("\n");
+                    log.debug(String.format("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id")));
                 }
             }
             tool.shutdown();
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
+        return stringBuilder.toString();
     }
 
     public void H24() {
@@ -142,10 +147,11 @@ public class BikaUtils {
     }
 
 
+    @Async("BikaAsync")
     public void downloadById(String id) {
 
         //H24 D7 D30
-        DownloadTools tool = DownloadTools.getInstance(10);
+        DownloadTools tool = DownloadTools.getInstance(1);
         tool.setName("漫画");
         tool.setSleepTimes(10000);
         tool.ThreadExecutorAdd(new BikaComicThread(id, true));
@@ -821,6 +827,7 @@ public class BikaUtils {
 //            }
     }
 
+    @Async("BikaAsync")
     public void updateAllKinds(){
 
         String keyword = bikaProperties.getKeywords();

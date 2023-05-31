@@ -49,11 +49,23 @@ public class DownloadController {
         return RestResponse.ok().msg("下载提交成功");
     }
 
+    @GetMapping("/search/key/{key}")
+    public RestResponse search(@PathVariable("key") String key) {
+        String result = bikaUtils.search(key, false);
+        return RestResponse.ok().msg(result);
+    }
+
     @GetMapping("/check")
     public RestResponse check() {
         checkZip("");
         return RestResponse.ok("检查完毕");
     }
+    @GetMapping("/updateAllKinds")
+    public RestResponse updateAllKinds() {
+        bikaUtils.updateAllKinds();
+        return RestResponse.ok("扫描开始");
+    }
+
 
     @PostMapping("/check")
     public RestResponse checkPath(@RequestBody String path) {
