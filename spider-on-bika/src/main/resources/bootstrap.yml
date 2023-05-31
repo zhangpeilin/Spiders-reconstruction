@@ -4,4 +4,4 @@ spring:
       label: dev
       name: bika,common
       profile: online
-      uri: http://localhost:2233/config
+      uri: http://172.18.0.10:2233/config
