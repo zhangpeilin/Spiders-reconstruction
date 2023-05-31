@@ -14,10 +14,10 @@ COPY .ssh /root/.ssh/
 EXPOSE 3344
 ENTRYPOINT ["java","-jar","/common-config-center.jar"]
 
-FROM azul/zulu-openjdk:8u332-8.62.0.19 as common-dao-center
-COPY *dao*.jar /common-dao-center.jar
-EXPOSE 8087
-ENTRYPOINT ["java","-jar","/common-dao-center.jar"]
+#FROM azul/zulu-openjdk:8u332-8.62.0.19 as common-dao-center
+#COPY *dao*.jar /common-dao-center.jar
+#EXPOSE 8087
+#ENTRYPOINT ["java","-jar","/common-dao-center.jar"]
 
 FROM azul/zulu-openjdk:8u332-8.62.0.19 as spider-unit
 COPY *unit*.jar /spider-unit.jar
