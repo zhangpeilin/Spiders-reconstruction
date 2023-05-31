@@ -24,3 +24,8 @@ COPY *unit*.jar /spider-unit.jar
 COPY .ssh /root/.ssh/
 EXPOSE 2233
 ENTRYPOINT ["java","-jar","/spider-unit.jar"]
+
+FROM azul/zulu-openjdk:8u332-8.62.0.19 as spider-on-bika
+COPY *bika*.jar /spider-on-bika.jar
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/spider-on-bika.jar"]
