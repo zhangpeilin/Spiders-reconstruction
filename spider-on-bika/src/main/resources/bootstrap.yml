@@ -1,7 +1,7 @@
 spring:
   cloud:
     config:
-      label: dev
+      label: docker
       name: bika,common
       profile: online
       uri: http://172.18.0.10:2233/config
