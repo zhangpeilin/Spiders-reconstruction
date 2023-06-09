@@ -168,6 +168,29 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.4.14</version>
+                <configuration>
+                    <serverId>docker-registry</serverId>
+                    <registryUrl>http://192.168.139.130:30002</registryUrl>
+                    <baseImage>http://192.168.139.130:30002/spider/jdk8:v1</baseImage>
+                    <imageTags>${project.version}</imageTags>
+                    <cmd>["java", "-jar", "/app/${project.build.finalName}.jar"]</cmd>
+                    <resources>
+                        <resource>
+                            <targetPath>
+                                /app/
+                            </targetPath>
+                            <directory>
+                                ${project.build.directory}
+                            </directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                    </resources>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
