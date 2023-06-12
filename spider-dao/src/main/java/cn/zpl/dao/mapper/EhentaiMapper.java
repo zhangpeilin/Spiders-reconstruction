@@ -1,6 +1,6 @@
 package cn.zpl.dao.mapper;
 
-import cn.zpl.dao.bean.Ehentai;
+import cn.zpl.common.bean.Ehentai;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

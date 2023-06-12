@@ -151,7 +151,7 @@ public class ApiAnalysisController {
             log.error("未找到service类");
             return RestResponse.fail("未找到service类");
         }
-        Pattern compile = Pattern.compile("[^=\\[\\],']+");
+        Pattern compile = Pattern.compile("(\\w+)\\s*=\\s*['\"]*([^'\"\\](?:and)*]+)['\"]*");
         if (condition.startsWith("[sql:")) {
             List<Map<String, Object>> list = new ArrayList<>();
             SqlSession sqlSession = openSession();
@@ -182,13 +182,10 @@ public class ApiAnalysisController {
         Matcher columnMatcher = compile.matcher(fetchProperties);
         QueryWrapper<T> objectQueryWrapper = new QueryWrapper<>();
         while (conditionMatcher.find()) {
-            log.debug(conditionMatcher.group());
-            String key = conditionMatcher.group();
-            if (!conditionMatcher.find()) {
-                return RestResponse.fail("传入查询条件不完整");
-            }
-            log.debug(conditionMatcher.group());
-            String value = conditionMatcher.group();
+            String key = conditionMatcher.group(1);
+            String value = conditionMatcher.group(2);
+            log.debug(key);
+            log.debug(value);
             objectQueryWrapper.and(wrapper -> wrapper.eq(key.trim(), value.trim()));
         }
         List<String> columns = new ArrayList<>();

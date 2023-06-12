@@ -1,6 +1,6 @@
 package cn.zpl.dao.service.impl;
 
-import cn.zpl.dao.bean.Ehentai;
+import cn.zpl.common.bean.Ehentai;
 import cn.zpl.dao.mapper.EhentaiMapper;
 import cn.zpl.dao.service.IEhentaiService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

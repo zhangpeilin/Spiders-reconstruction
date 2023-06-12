@@ -1,7 +1,7 @@
 package cn.zpl.dao.controller;
 
+import cn.zpl.common.bean.Ehentai;
 import cn.zpl.common.bean.RestResponse;
-import cn.zpl.dao.bean.Ehentai;
 import cn.zpl.dao.service.IEhentaiService;
 import cn.zpl.dao.utils.CommonUtils;
 import org.springframework.web.bind.annotation.GetMapping;
