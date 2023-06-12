@@ -90,6 +90,11 @@ public class ApiAnalysisController {
     public <T> RestResponse commonEntitySave(@RequestBody JSONObject requestJson) {
         String entity = requestJson.getString("entity");
         Object data = requestJson.get("data");
+        try {
+            cache.get(entity);
+        } catch (ExecutionException e) {
+            return RestResponse.fail("找不到实体类");
+        }
         T serializable = null;
         Optional<Class<? extends Serializable>> first = entityList.stream().filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(entity)).findFirst();
         if (first.isPresent()) {
