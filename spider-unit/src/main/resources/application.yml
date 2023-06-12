@@ -1,18 +1,6 @@
-spring:
-  cloud:
-    config:
-      server:
-        git:
-          private-key:
-
-        prefix:
-          config
-        bootstrap: true
-  instance:
-    hostname: localhost
-    prefer-ip-address: true
+eureka:
   client:
-    register-with-eureka: false
-    fetch-registry: true
-    service-url:
-      defaultZone: http://localhost:2233/eureka/
+    register-with-eureka: true
+spring:
+  application:
+    name: spider-unit

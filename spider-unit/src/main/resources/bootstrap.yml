@@ -8,7 +8,7 @@ spring:
           search-paths: spider_config_center
           basedir: ../config-git
         bootstrap: true
-      label: master
+      label: dev
       profile: online
   application:
     name: daocenter,common,spider-unit
