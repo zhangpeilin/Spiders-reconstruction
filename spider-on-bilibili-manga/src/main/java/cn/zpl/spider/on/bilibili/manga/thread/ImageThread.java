@@ -42,14 +42,14 @@ public class ImageThread implements Callable<DownloadDTO> {
         //{"urls":"[\"/bfs/manga/8dd9d08a2fdf684d0fda366c072ee93c98917d17.jpg@748w.jpg\"]"}
         List<String> pathMake = new ArrayList<>();
         //漫画保存位置
-        pathMake.add(bilibiliMangaProperties.mangaSavePath);
+        pathMake.add(bilibiliMangaProperties.getMangaSavePath());
         String imgUrl = pic.getAsString();
         String fileType = imgUrl.substring(imgUrl.lastIndexOf("."));
         String width = CommonIOUtils.getFromJson2Str(clip, "r");
         String order = CommonIOUtils.getFromJson2Str(clip, "pic");
         String response = URLConnectionTool.postUrl(bilibiliMangaProperties.ImageTokenUrl,
                 "{\"urls\":\"[\\\"" + imgUrl +
-                        "@" + width + "w" + fileType + "\\\"]\"}", bilibiliMangaProperties.commonHeaders);
+                        "@" + width + "w" + fileType + "\\\"]\"}", bilibiliMangaProperties.getCommonHeaders());
         JsonElement token = CommonIOUtils.paraseJsonFromStr(response);
         JsonElement[] urlStr = CommonIOUtils.getFromJson3(token, "data-url");
         JsonElement[] tokenStr = CommonIOUtils.getFromJson3(token, "data-token");
@@ -67,7 +67,7 @@ public class ImageThread implements Callable<DownloadDTO> {
         pathMake.add("".equalsIgnoreCase(title) ? chapter_order : CommonIOUtils.generateChapterName(title, chapter_order));
         DownloadDTO dto = new DownloadDTO();
         dto.setUrl(imgUrlWithToken);
-        dto.setHeader(bilibiliMangaProperties.commonHeaders);
+        dto.setHeader(bilibiliMangaProperties.getCommonHeaders());
         dto.setSavePath(CommonIOUtils.makeFilePath(pathMake, order + fileType));
         return dto;
     }

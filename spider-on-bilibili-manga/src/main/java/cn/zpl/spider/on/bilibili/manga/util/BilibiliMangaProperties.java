@@ -9,14 +9,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class BilibiliMangaProperties {
 
     @Value("${spider.bilibili.cookies}")
-    public String bilibiliCookies;
-    public String commonHeaders;
-    public String getComicDetailUrl;
+    String bilibiliCookies;
 
-    public String mangaSavePath;
+    String commonHeaders;
+
+    String getComicDetailUrl;
+
+    String mangaSavePath;
 
     public String getImageIndexUrl;
 
     public String ImageTokenUrl;
+
+    String GetEpisodeBuyInfoUrl;
+    String BuyEpisodeUrl;
 
 }

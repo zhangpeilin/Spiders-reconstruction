@@ -1,6 +1,8 @@
 package cn.zpl.spider.on.bilibili.manga.util;
 
+import cn.zpl.common.bean.BilibiliManga;
 import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.CrudTools;
 import cn.zpl.util.URLConnectionTool;
 import cn.zpl.util.UrlContainer;
 import com.google.gson.JsonElement;
@@ -14,6 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -23,6 +26,8 @@ public class BilibiliCommonUtils {
 
     @Resource
     BilibiliMangaProperties bilibiliMangaProperties;
+    @Resource
+    CrudTools tools;
 
     public static String getUserInfo(String uid) throws JsonIOException, JsonSyntaxException {
 
@@ -70,5 +75,14 @@ public class BilibiliCommonUtils {
         if (headers == null)
             headers = bilibiliMangaProperties.commonHeaders;
         return URLConnectionTool.postUrl(path, params, headers);
+    }
+
+    public BilibiliManga getComicById(String comicId) {
+        List<BilibiliManga> bilibiliMangas = tools.commonApiQuery(String.format(" comic_id = %1$s", comicId), BilibiliManga.class);
+        if (bilibiliMangas.isEmpty()) {
+            return null;
+        } else {
+            return bilibiliMangas.get(0);
+        }
     }
 }

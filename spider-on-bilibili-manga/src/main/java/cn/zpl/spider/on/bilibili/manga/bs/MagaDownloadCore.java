@@ -21,7 +21,7 @@ import java.util.concurrent.Future;
 @Component
 public class MagaDownloadCore {
 
-    private static MagaDownloadCore core;
+    private static MagaDownloadCore magaDownloadCore;
 
     @Resource
     BilibiliMangaProperties mangaProperties;
@@ -36,13 +36,13 @@ public class MagaDownloadCore {
         getComicDetail(comic_id, false);
     }
 
-    String getComicDetail(String comic_id, boolean needLogin) {
+    public String getComicDetail(String comic_id, boolean needLogin) {
         try {
             Vector<Future<Map<String, Object>>> futureVector = new Vector<>();
-            String detailStr = URLConnectionTool.postUrl(mangaProperties.getComicDetailUrl,
+            String detailStr = URLConnectionTool.postUrl(mangaProperties.getGetComicDetailUrl(),
                     "{\"comic_id\":" + comic_id +
-                            "}", needLogin ? mangaProperties.commonHeaders + mangaProperties.bilibiliCookies :
-                            mangaProperties.commonHeaders);
+                            "}", needLogin ? mangaProperties.getCommonHeaders() + mangaProperties.getBilibiliCookies() :
+                            mangaProperties.getCommonHeaders());
             JsonElement detailJson = CommonIOUtils.paraseJsonFromStr(detailStr);
             if (CommonIOUtils.getFromJson2Integer(detailJson, "code") != 0) {
                 log.error("返回结果不符合预期，请检查" + detailStr);
