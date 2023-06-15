@@ -145,45 +145,72 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
+<!--    <build>-->
+<!--        <plugins>-->
+<!--            <plugin>-->
+<!--                <groupId>org.springframework.boot</groupId>-->
+<!--                <artifactId>spring-boot-maven-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <goals>-->
+<!--                            <goal>repackage</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                    <excludes>-->
+<!--                        <exclude>-->
+<!--                            <groupId>org.projectlombok</groupId>-->
+<!--                            <artifactId>lombok</artifactId>-->
+<!--                        </exclude>-->
+<!--                    </excludes>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
+<!--            <plugin>-->
+<!--                <groupId>com.spotify</groupId>-->
+<!--                <artifactId>docker-maven-plugin</artifactId>-->
+<!--                <version>0.4.14</version>-->
+<!--                <configuration>-->
+<!--                    <serverId>docker-registry</serverId>-->
+<!--                    <registryUrl>http://192.168.139.130:30002</registryUrl>-->
+<!--                    <baseImage>http://192.168.139.130:30002/spider/jdk8:v1</baseImage>-->
+<!--                    <imageTags>${project.version}</imageTags>-->
+<!--                    <cmd>["java", "-jar", "/app/${project.build.finalName}.jar"]</cmd>-->
+<!--                    <resources>-->
+<!--                        <resource>-->
+<!--                            <targetPath>-->
+<!--                                /app/-->
+<!--                            </targetPath>-->
+<!--                            <directory>-->
+<!--                                ${project.build.directory}-->
+<!--                            </directory>-->
+<!--                            <include>${project.build.finalName}.jar</include>-->
+<!--                        </resource>-->
+<!--                    </resources>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
+<!--        </plugins>-->
+<!--    </build>-->
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>com.spotify</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
-                <version>0.4.14</version>
+                <version>1.1.0</version>
                 <configuration>
-                    <serverId>docker-registry</serverId>
-                    <registryUrl>http://192.168.139.130:30002</registryUrl>
-                    <baseImage>http://192.168.139.130:30002/spider/jdk8:v1</baseImage>
-                    <imageTags>${project.version}</imageTags>
-                    <cmd>["java", "-jar", "/app/${project.build.finalName}.jar"]</cmd>
+                    <imageName>my-docker-image</imageName>
+                    <imageTags>
+                        <imageTag>${project.version}</imageTag>
+                        <imageTag>latest</imageTag>
+                    </imageTags>
+                    <dockerDirectory>src/main/docker</dockerDirectory>
+                    <buildArgs>
+                        <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
+                    </buildArgs>
                     <resources>
                         <resource>
-                            <targetPath>
-                                /app/
-                            </targetPath>
-                            <directory>
-                                ${project.build.directory}
-                            </directory>
+                            <targetPath>/</targetPath>
+                            <directory>${project.build.directory}</directory>
                             <include>${project.build.finalName}.jar</include>
                         </resource>
                     </resources>
