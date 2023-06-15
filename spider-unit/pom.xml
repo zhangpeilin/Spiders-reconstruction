@@ -145,11 +145,11 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
-<!--    <build>-->
-<!--        <plugins>-->
-<!--            <plugin>-->
-<!--                <groupId>org.springframework.boot</groupId>-->
-<!--                <artifactId>spring-boot-maven-plugin</artifactId>-->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
 <!--                <executions>-->
 <!--                    <execution>-->
 <!--                        <goals>-->
@@ -165,12 +165,28 @@
 <!--                        </exclude>-->
 <!--                    </excludes>-->
 <!--                </configuration>-->
-<!--            </plugin>-->
-<!--            <plugin>-->
-<!--                <groupId>com.spotify</groupId>-->
-<!--                <artifactId>docker-maven-plugin</artifactId>-->
-<!--                <version>0.4.14</version>-->
-<!--                <configuration>-->
+            </plugin>
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>1.1.0</version>
+                <configuration>
+                    <imageName>http://192.168.139.130:30002/${project.artifactId}:${project.version}</imageName>
+                    <baseImage>ascdc/jdk8</baseImage>
+                    <entryPoint>["java", "-jar", "/app/${project.build.finalName}.jar"]</entryPoint>
+                    <pushImage>true</pushImage>
+                    <registryUrl>http://192.168.139.130:30002</registryUrl>
+                    <resources>
+                        <resource>
+                            <targetPath>/app</targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                    </resources>
+                    <dockerHost>http://192.168.139.130:2375</dockerHost>
+
+
+
 <!--                    <serverId>docker-registry</serverId>-->
 <!--                    <registryUrl>http://192.168.139.130:30002</registryUrl>-->
 <!--                    <baseImage>http://192.168.139.130:30002/spider/jdk8:v1</baseImage>-->
@@ -187,36 +203,36 @@
 <!--                            <include>${project.build.finalName}.jar</include>-->
 <!--                        </resource>-->
 <!--                    </resources>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
-<!--        </plugins>-->
-<!--    </build>-->
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>com.spotify</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <version>1.1.0</version>
-                <configuration>
-                    <baseImage>http://192.168.139.130:30002/spider/jdk8:v1</baseImage>
-                    <imageName>my-docker-image</imageName>
-                    <imageTags>
-                        <imageTag>${project.version}</imageTag>
-                        <imageTag>latest</imageTag>
-                    </imageTags>
-                    <dockerDirectory>src/main/docker</dockerDirectory>
-                    <buildArgs>
-                        <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
-                    </buildArgs>
-                    <resources>
-                        <resource>
-                            <targetPath>/</targetPath>
-                            <directory>${project.build.directory}</directory>
-                            <include>${project.build.finalName}.jar</include>
-                        </resource>
-                    </resources>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+<!--    <build>-->
+<!--        <plugins>-->
+<!--            <plugin>-->
+<!--                <groupId>com.spotify</groupId>-->
+<!--                <artifactId>docker-maven-plugin</artifactId>-->
+<!--                <version>1.1.0</version>-->
+<!--                <configuration>-->
+<!--                    <baseImage>http://192.168.139.130:30002/spider/jdk8:v1</baseImage>-->
+<!--                    <imageName>my-docker-image</imageName>-->
+<!--                    <imageTags>-->
+<!--                        <imageTag>${project.version}</imageTag>-->
+<!--                        <imageTag>latest</imageTag>-->
+<!--                    </imageTags>-->
+<!--                    <dockerDirectory>src/main/docker</dockerDirectory>-->
+<!--                    <buildArgs>-->
+<!--                        <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>-->
+<!--                    </buildArgs>-->
+<!--                    <resources>-->
+<!--                        <resource>-->
+<!--                            <targetPath>/</targetPath>-->
+<!--                            <directory>${project.build.directory}</directory>-->
+<!--                            <include>${project.build.finalName}.jar</include>-->
+<!--                        </resource>-->
+<!--                    </resources>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
+<!--        </plugins>-->
+<!--    </build>-->
 </project>
