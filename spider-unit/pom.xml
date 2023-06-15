@@ -198,6 +198,7 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <version>1.1.0</version>
                 <configuration>
+                    <baseImage>http://192.168.139.130:30002/spider/jdk8:v1</baseImage>
                     <imageName>my-docker-image</imageName>
                     <imageTags>
                         <imageTag>${project.version}</imageTag>
