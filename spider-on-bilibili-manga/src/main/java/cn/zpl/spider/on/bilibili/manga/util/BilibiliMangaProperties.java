@@ -24,4 +24,6 @@ public class BilibiliMangaProperties {
     String GetEpisodeBuyInfoUrl;
     String BuyEpisodeUrl;
 
+    int queueSize;
+
 }

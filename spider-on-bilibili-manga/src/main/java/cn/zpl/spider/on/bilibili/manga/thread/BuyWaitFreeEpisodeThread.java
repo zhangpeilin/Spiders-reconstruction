@@ -1,6 +1,7 @@
 package cn.zpl.spider.on.bilibili.manga.thread;
 
 import cn.zpl.common.bean.BilibiliManga;
+import cn.zpl.common.bean.Page;
 import cn.zpl.spider.on.bilibili.manga.bs.MagaDownloadCore;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliCommonUtils;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
@@ -9,18 +10,22 @@ import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import com.google.gson.JsonElement;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.map.SingletonMap;
 import org.junit.Test;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 @Slf4j
 @Scope("prototype")
 @Component
-public class BuyWaitFreeEpisodeThread extends CommonThread {
+public class BuyWaitFreeEpisodeThread implements Callable<Map<String, String>> {
 
     @Resource
     BilibiliCommonUtils utils;
@@ -44,8 +49,8 @@ public class BuyWaitFreeEpisodeThread extends CommonThread {
         this.epId = epId;
     }
 
-    public void test() {
-        List<BilibiliManga> bilibiliMangas = tools.commonApiQuery(String.format("allow_wait_free = %1$s and wait_free_at < now() and chapter_wait_buy <> %2$s", 1, 0), BilibiliManga.class);
+    public void waitStart() {
+        List<BilibiliManga> bilibiliMangas = tools.commonApiQuery(String.format("allow_wait_free = %1$s and wait_free_at < now() and chapter_wait_buy <> %2$s", 1, 0), null, BilibiliManga.class, new Page(1, -1));
         bilibiliMangas.forEach(o -> doBusiness(o.getChapterWaitBuy()));
     }
 
@@ -58,10 +63,10 @@ public class BuyWaitFreeEpisodeThread extends CommonThread {
         }
     }
 
-    private void doBusiness(String ep_id) {
+    private String doBusiness(String ep_id) {
         if (StringUtils.isEmpty(ep_id)) {
             log.error("未传入漫画信息，方法返回");
-            return;
+            return "";
         }
         //获取漫画信息，根据wait_free_at获取下次解锁时间，与本地时间比较如果不到解锁时间，那么下载已解锁章节
         String param = "{\"ep_id\":" + ep_id + "}";
@@ -70,7 +75,7 @@ public class BuyWaitFreeEpisodeThread extends CommonThread {
         if (CommonIOUtils.getFromJson2Str(resultJson, "code").equalsIgnoreCase("unauthenticated")) {
             //需要登录，那么直接退出系统
             log.error("需要重新登录");
-            System.exit(0);
+            return "";
         }
         boolean allow_wait_free = CommonIOUtils.getFromJson2Boolean(resultJson, "data-allow_wait_free");
         boolean is_locked = CommonIOUtils.getFromJson2Boolean(resultJson, "data-is_locked");
@@ -85,13 +90,11 @@ public class BuyWaitFreeEpisodeThread extends CommonThread {
             log.debug(buyResult);
             if (CommonIOUtils.getIntegerFromJson(CommonIOUtils.paraseJsonFromStr(buyResult), "code") == 0) {
                 //购买完成，调用漫画下载进程
-                magaDownloadCore.getComicDetail(comic_id, true);
-                return;
+                return magaDownloadCore.getComicDetail(comic_id, true);
             }
         }
         if (!is_locked) {
-            magaDownloadCore.getComicDetail(comic_id, true);
-            return;
+            return magaDownloadCore.getComicDetail(comic_id, true);
         }
         log.warn("章节" + ep_id + "需要" + wait_free_at + "后才能解锁");
         BilibiliManga manga = utils.getComicById(comic_id);
@@ -104,10 +107,11 @@ public class BuyWaitFreeEpisodeThread extends CommonThread {
         }
         manga.setWaitFreeAt(wait_free_at);
         tools.commonApiSave(manga);
+        return wait_free_at;
     }
 
     @Override
-    public void domain() {
-        doBusiness(epId);
+    public Map<String, String> call() {
+        return Collections.singletonMap(epId, doBusiness(epId));
     }
 }

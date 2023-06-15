@@ -28,7 +28,7 @@ public class MagaDownloadCore {
     @Resource
     CrudTools crudTools;
     public void test() {
-        getComicDetail("mc28199".replace("mc", "").replaceAll("[()]", ""), true);
+        getComicDetail("25501".replace("mc", "").replaceAll("[()]", ""), true);
 //        getComicDetailForFree("mc26787");
     }
 
@@ -94,7 +94,7 @@ public class MagaDownloadCore {
             manga.setWaitFreeAt(wait_free_at);
             manga.setAllowWaitFree("false".equalsIgnoreCase(allow_wait_free) ? 0 : 1);
             crudTools.commonApiSave(manga);
-            return manga.getSavePath() == null ? "" : manga.getSavePath();
+            return wait_free_at;
         } catch (Exception e) {
             log.error("漫画第一层解析失败：\n", e);
             return getComicDetail(comic_id, needLogin);

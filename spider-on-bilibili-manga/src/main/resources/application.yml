@@ -8,4 +8,5 @@ eureka:
     service-url:
       defaultZone: http://172.18.0.4:7001/eureka/
   instance:
-    ip-address: true
+    ip-address: 192.168.139.100
+    non-secure-port: 8888

@@ -85,4 +85,12 @@ public class BilibiliCommonUtils {
             return bilibiliMangas.get(0);
         }
     }
+
+    public List<BilibiliManga> getWaitCompleteList(int size) {
+        return tools.commonApiQueryBySql("select ifnull(TIMESTAMPDIFF(SECOND,wait_free_at,now()),100) as diff,t.* from bilibili_manga t where allow_wait_free = 1 and chapter_wait_buy <> 0 order by diff desc limit " + size, BilibiliManga.class);
+    }
+
+    public List<BilibiliManga> getWaitList() {
+        return tools.commonApiQueryBySql("select ifnull(TIMESTAMPDIFF(SECOND,wait_free_at,now()),100) as diff,t.* from bilibili_manga t where allow_wait_free = 1 and chapter_wait_buy <> 0 order by diff desc", BilibiliManga.class);
+    }
 }

@@ -49,7 +49,7 @@
     <!--</appender>-->
     <!---->
     <!--<logger name="xxx" level="INFO">-->
-    <logger name ="cn.zpl.commondaocenter.controller" level = "DEBUG">
+    <logger name ="cn.zpl" level = "DEBUG">
         <appender-ref ref="DEBUG_FILE" />
     </logger>
     <!--<appender-ref ref="permission"/>-->
