@@ -150,6 +150,42 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>1.1.0</version>
+                <configuration>
+                    <imageName>192.168.139.130:30002/spider/${project.artifactId}:${project.version}</imageName>
+                    <baseImage>azul/zulu-openjdk:8u332-8.62.0.19</baseImage>
+                    <entryPoint>["java", "-jar", "/${project.artifactId}.jar"]</entryPoint>
+                    <pushImage>true</pushImage>
+                    <registryUrl>192.168.139.130:30002</registryUrl>
+                    <serverId>my-docker-registry</serverId>
+                    <resources>
+                        <resource>
+                            <targetPath></targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                    </resources>
+                    <dockerHost>http://192.168.139.130:2375/</dockerHost>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+<!--    <build>-->
+<!--        <plugins>-->
+<!--            <plugin>-->
+<!--                <groupId>org.springframework.boot</groupId>-->
+<!--                <artifactId>spring-boot-maven-plugin</artifactId>-->
 <!--                <executions>-->
 <!--                    <execution>-->
 <!--                        <goals>-->
@@ -157,56 +193,56 @@
 <!--                        </goals>-->
 <!--                    </execution>-->
 <!--                </executions>-->
+<!--&lt;!&ndash;                <configuration>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <excludes>&ndash;&gt;-->
+<!--&lt;!&ndash;                        <exclude>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <groupId>org.projectlombok</groupId>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <artifactId>lombok</artifactId>&ndash;&gt;-->
+<!--&lt;!&ndash;                        </exclude>&ndash;&gt;-->
+<!--&lt;!&ndash;                    </excludes>&ndash;&gt;-->
+<!--&lt;!&ndash;                </configuration>&ndash;&gt;-->
+<!--            </plugin>-->
+<!--            <plugin>-->
+<!--                <groupId>com.spotify</groupId>-->
+<!--                <artifactId>docker-maven-plugin</artifactId>-->
+<!--                <version>1.1.0</version>-->
 <!--                <configuration>-->
-<!--                    <excludes>-->
-<!--                        <exclude>-->
-<!--                            <groupId>org.projectlombok</groupId>-->
-<!--                            <artifactId>lombok</artifactId>-->
-<!--                        </exclude>-->
-<!--                    </excludes>-->
-<!--                </configuration>-->
-            </plugin>
-            <plugin>
-                <groupId>com.spotify</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <version>1.1.0</version>
-                <configuration>
-                    <imageName>http://192.168.139.130:30002/${project.artifactId}:${project.version}</imageName>
-                    <baseImage>ascdc/jdk8</baseImage>
-                    <entryPoint>["java", "-jar", "/app/${project.build.finalName}.jar"]</entryPoint>
-                    <pushImage>true</pushImage>
-                    <registryUrl>http://192.168.139.130:30002</registryUrl>
-                    <resources>
-                        <resource>
-                            <targetPath>/app</targetPath>
-                            <directory>${project.build.directory}</directory>
-                            <include>${project.build.finalName}.jar</include>
-                        </resource>
-                    </resources>
-                    <dockerHost>http://192.168.139.130:2375</dockerHost>
-
-
-
-<!--                    <serverId>docker-registry</serverId>-->
+<!--                    <imageName>http://192.168.139.130:30002/${project.artifactId}:${project.version}</imageName>-->
+<!--                    <baseImage>ascdc/jdk8</baseImage>-->
+<!--                    <entryPoint>["java", "-jar", "/app/${project.build.finalName}.jar"]</entryPoint>-->
+<!--                    <pushImage>true</pushImage>-->
 <!--                    <registryUrl>http://192.168.139.130:30002</registryUrl>-->
-<!--                    <baseImage>http://192.168.139.130:30002/spider/jdk8:v1</baseImage>-->
-<!--                    <imageTags>${project.version}</imageTags>-->
-<!--                    <cmd>["java", "-jar", "/app/${project.build.finalName}.jar"]</cmd>-->
 <!--                    <resources>-->
 <!--                        <resource>-->
-<!--                            <targetPath>-->
-<!--                                /app/-->
-<!--                            </targetPath>-->
-<!--                            <directory>-->
-<!--                                ${project.build.directory}-->
-<!--                            </directory>-->
+<!--                            <targetPath>/app</targetPath>-->
+<!--                            <directory>${project.build.directory}</directory>-->
 <!--                            <include>${project.build.finalName}.jar</include>-->
 <!--                        </resource>-->
 <!--                    </resources>-->
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+<!--                    <dockerHost>192.168.139.130:2375</dockerHost>-->
+
+
+
+<!--&lt;!&ndash;                    <serverId>docker-registry</serverId>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <registryUrl>http://192.168.139.130:30002</registryUrl>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <baseImage>http://192.168.139.130:30002/spider/jdk8:v1</baseImage>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <imageTags>${project.version}</imageTags>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <cmd>["java", "-jar", "/app/${project.build.finalName}.jar"]</cmd>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <resources>&ndash;&gt;-->
+<!--&lt;!&ndash;                        <resource>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <targetPath>&ndash;&gt;-->
+<!--&lt;!&ndash;                                /app/&ndash;&gt;-->
+<!--&lt;!&ndash;                            </targetPath>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <directory>&ndash;&gt;-->
+<!--&lt;!&ndash;                                ${project.build.directory}&ndash;&gt;-->
+<!--&lt;!&ndash;                            </directory>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <include>${project.build.finalName}.jar</include>&ndash;&gt;-->
+<!--&lt;!&ndash;                        </resource>&ndash;&gt;-->
+<!--&lt;!&ndash;                    </resources>&ndash;&gt;-->
+<!--                </configuration>-->
+<!--            </plugin>-->
+<!--        </plugins>-->
+<!--    </build>-->
 <!--    <build>-->
 <!--        <plugins>-->
 <!--            <plugin>-->
