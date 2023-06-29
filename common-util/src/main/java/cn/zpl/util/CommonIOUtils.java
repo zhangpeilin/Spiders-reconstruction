@@ -1360,6 +1360,11 @@ public class CommonIOUtils {
         return str;
     }
 
+    public static void testLog(){
+        log.debug("debug日志");
+        log.info("info日志");
+    }
+
     public void domain() {
         System.out.println(replaceParam("https://user.qzone.qq.com/proxy/domain/photo.qzone.qq.com/fcgi-bin/cgi_floatview_photo_list_v2?g_tk=690943553&callback=viewer_Callback&t=733176778&topicId=V138wU941273CH&picKey=NRMAVjR0M2g1OVVMU1k0bHZhSXNFWQcAcGhvdG9jcQ!!&shootTime=&cmtOrder=1&fupdate=1&plat=qzone&source=qzone&cmtNum=10&likeNum=5&inCharset=utf-8&outCharset=utf-8&callbackFun=viewer&offset=0&number=15&uin=512239520&hostUin=1350377182&appid=4&isFirst=1&sortOrder=1&showMode=1&need_private_comment=1&prevNum=9&postNum=18&_=1621493069305", "picKey", "新的值"));
     }

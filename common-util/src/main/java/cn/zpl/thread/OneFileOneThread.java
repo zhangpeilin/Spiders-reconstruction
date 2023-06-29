@@ -146,6 +146,9 @@ public class OneFileOneThread implements Runnable {
                     run();
                     return;
                 }
+                if (data.getFileLength() == 0) {
+                    data.setFileLength(saveDir.length());
+                }
                 //当时图片类型信息时，如果标志位不需要记录日志，则跳过
                 if (data.isNeedLog()) {
                     synchronized (lock) {

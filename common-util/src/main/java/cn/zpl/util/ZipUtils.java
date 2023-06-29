@@ -19,6 +19,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.changes.ChangeSet;
 import org.apache.commons.compress.changes.ChangeSetPerformer;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.springframework.beans.BeanUtils;
@@ -35,6 +36,7 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -70,6 +73,33 @@ public class ZipUtils {
             zipOutputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static Path unzipFile2Dir(String zipFileName, String outputFolder, String fileExtension) throws IOException {
+        try (org.apache.commons.compress.archivers.zip.ZipFile zipFile = new org.apache.commons.compress.archivers.zip.ZipFile(new File(zipFileName))) {
+            Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+            Path path = Paths.get(outputFolder);
+            Path unzipFolder = null;
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = entries.nextElement();
+                String entryName = entry.getName();
+                if (entryName.endsWith(fileExtension)) {
+                    File outputFile = new File(outputFolder + "/" + entryName);
+                    if (unzipFolder == null) {
+                        unzipFolder = path.relativize(outputFile.toPath()).getName(0);
+                    }
+                    if (!outputFile.getParentFile().exists()) {
+                        outputFile.getParentFile().mkdirs();
+                    }
+                    InputStream inputStream = zipFile.getInputStream(entry);
+                    FileOutputStream outputStream = new FileOutputStream(outputFile);
+                    IOUtils.copy(inputStream, outputStream);
+                    inputStream.close();
+                    outputStream.close();
+                }
+            }
+            return unzipFolder;
         }
     }
 
@@ -384,7 +414,8 @@ public class ZipUtils {
 
     /**
      * 追加文件到zip
-     *
+     * @param folder2Add 要添加的新内容所在目录
+     * @param zipPath 目标压缩包
      * @param replace 需要替换的内容，用于目录结构更新，key是要替换的旧值，value是新值
      */
     @SneakyThrows
@@ -393,17 +424,18 @@ public class ZipUtils {
         long start = System.currentTimeMillis();
         Path zipFilePath = Paths.get(zipPath);
         String tempName = CruxIdGenerator.generate() + ".zip";
-        Path tmpZip = Paths.get(zipFilePath.getParent().toString(), tempName);
+        Path start1 = Paths.get(folder2Add);
+        Path tmpZip = start1.getParent().resolve(tempName);
         try (org.apache.commons.compress.archivers.zip.ZipFile zipFile = new org.apache.commons.compress.archivers.zip.ZipFile(zipFilePath.toFile())) {
             ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(Files.newOutputStream(tmpZip));
             outputStream.setLevel(ZipEntry.STORED);
             ChangeSet changeSet = new ChangeSet();
-            try (Stream<Path> pathStream = Files.walk(Paths.get(folder2Add))) {
+            try (Stream<Path> pathStream = Files.walk(start1)) {
                 pathStream.forEach(path -> {
                     File fileToAdd = path.toFile();
                     try {
                         ZipParameters zipParameters = new ZipParameters();
-                        zipParameters.setDefaultFolderPath(Paths.get(folder2Add).getParent().toString());
+                        zipParameters.setDefaultFolderPath(start1.getParent().toString());
                         String relativeFileName = net.lingala.zip4j.util.FileUtils.getRelativeFileName(fileToAdd, zipParameters);
                         ArchiveEntry archiveEntry = outputStream.createArchiveEntry(fileToAdd, relativeFileName);
                         changeSet.add(archiveEntry, archiveEntry.isDirectory() ? null : Files.newInputStream(fileToAdd.toPath()));
@@ -414,6 +446,7 @@ public class ZipUtils {
             }
             ChangeSetPerformer changeSetPerformer = replace == null ? new ChangeSetPerformer(changeSet) : new ChangeSetPerformer(changeSet, replace);
             changeSetPerformer.perform(zipFile, outputStream);
+            outputStream.close();
             long end = System.currentTimeMillis();
             System.out.println("耗时：" + (end - start));
         } catch (IOException e) {
