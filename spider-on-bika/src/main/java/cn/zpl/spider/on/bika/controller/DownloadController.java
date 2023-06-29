@@ -4,9 +4,12 @@ import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaList;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.SpringContext;
+import cn.zpl.spider.on.bika.common.BikaProperties;
+import cn.zpl.spider.on.bika.thread.BikaComicThread;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
+import cn.zpl.util.DownloadTools;
 import cn.zpl.util.SaveLog;
 import cn.zpl.util.ZipUtils;
 import com.alibaba.fastjson.JSON;
@@ -22,13 +25,16 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @RestController
@@ -36,6 +42,12 @@ public class DownloadController {
 
     @Resource
     BikaUtils bikaUtils;
+
+    @Resource
+    BikaProperties properties;
+
+    @Resource
+    CrudTools tools;
 
     @GetMapping("/download/key/{key}")
     public RestResponse downloadByKey(@PathVariable("key") String key) {
@@ -47,6 +59,17 @@ public class DownloadController {
     public RestResponse downloadById(@PathVariable("id") String id) {
         bikaUtils.downloadById(id);
         return RestResponse.ok().msg("下载提交成功");
+    }
+
+    @GetMapping("/downloadBySql/{count}")
+    public RestResponse downloadBySql(@PathVariable("count") String count) {
+        DownloadTools tool = DownloadTools.getInstance(5);
+        tool.setName("漫画");
+        tool.setSleepTimes(10000);
+        List<BikaList> list = tools.commonApiQueryBySql("select * from bika t where downloaded_at < 1682185916000 and is_deleted = 0 order by likes_count desc limit " + count, BikaList.class);
+        list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId(), true)));
+        tool.shutdown();
+        return RestResponse.ok().msg("更新提交成功");
     }
 
     @GetMapping("/search/key/{key}")
@@ -80,6 +103,39 @@ public class DownloadController {
         return RestResponse.ok("检查完毕");
     }
 
+    /**
+     * 更新记录的存储路径
+     */
+    @GetMapping("/updateSavePath")
+    public RestResponse updateSavePath() {
+        List<String> savePath = Collections.singletonList("F:\\bika");
+        int batchSize = 200;
+        for (String pathStr : savePath) {
+            File path = new File(pathStr);
+            CopyOnWriteArrayList<Bika> result = new CopyOnWriteArrayList<>();
+            if (path.exists()) {
+                Collection<File> files = FileUtils.listFiles(path, new String[]{"zip"}, true);
+                files.stream().parallel().forEach(file -> {
+                    String fileId = CommonIOUtils.getFileId(file);
+                    if (StringUtils.isEmpty(fileId)) {
+                        return;
+                    }
+                    Bika exist = bikaUtils.getExists(fileId);
+                    if (exist == null || exist.getLocalPath().equalsIgnoreCase(file.getPath())) {
+                        return;
+                    }
+                    exist.setLocalPath(file.getPath());
+                    result.add(exist);
+                });
+                IntStream.iterate(0, n -> n + batchSize)
+                        .limit((result.size() + batchSize - 1) / batchSize)
+                        .parallel()
+                        .forEach(i -> tools.commonApiSave(result.subList(i, Math.min(i + batchSize, result.size()))));
+            }
+        }
+        return RestResponse.ok("路径更新完毕");
+    }
+
     @GetMapping("/echoNotExists")
     public void echoNotExists() {
         CrudTools crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
@@ -89,7 +145,7 @@ public class DownloadController {
         bikaStream.sorted((o1, o2) -> o2.getLikesCount() - o1.getLikesCount()).forEach(bika -> {
             File exists = new File(bika.getLocalPath());
             System.out.println(bika.getLocalPath());
-            SaveLog.saveLog("M:\\" + exists.getName());
+            SaveLog.saveLog("h:\\" + exists.getName());
         });
     }
 

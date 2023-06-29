@@ -26,7 +26,8 @@ public class UpdateComics {
         tool.setName("漫画");
         tool.setSleepTimes(10000);
 //        List<BikaList> list = tools.commonApiQueryBySql("select a.epsCount, a.realPagesCount, a.* from v_bika_list a where not exists(select 1 from bika b where b.id = a.id and b.isDeleted = 1) and realPagesCount <> epsCount", BikaList.class);
-        List<BikaList> list = tools.commonApiQueryBySql("select * from bika_list where title like '%女主陷阱%';", BikaList.class);
+//        List<BikaList> list = tools.commonApiQueryBySql("select * from bika_list where title like '%疫情%'", BikaList.class);
+        List<BikaList> list = tools.commonApiQueryBySql("select * from bika_list where local_path is null order by likes_count desc limit 50;", BikaList.class);
         list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId(), true)));
         tool.shutdown();
     }

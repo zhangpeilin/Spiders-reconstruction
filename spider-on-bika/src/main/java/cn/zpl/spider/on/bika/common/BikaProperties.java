@@ -19,4 +19,5 @@ public class BikaProperties {
     private List<String> savePath;
     private boolean writeDB = true;
     private String keywords;
+    private String tempPath;
 }

@@ -5,6 +5,7 @@ import cn.zpl.common.bean.Bika;
 import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.SynchronizeLock;
+import cn.zpl.spider.on.bika.common.BikaProperties;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
 import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
@@ -15,6 +16,8 @@ import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Vector;
 
 @Slf4j
@@ -29,18 +32,23 @@ public class BikaChapterThread implements Runnable {
     private final String chapterPath;
     BikaUtils utils;
 
-    BikaChapterThread(String chapterNum, String title, String comicId) {
+    BikaProperties properties;
+
+    BikaChapterThread(String chapterNum, String title, String comicId, Path downloadPath) {
         this.chapterNum = chapterNum;
         this.title = title;
         this.comicid = comicId;
         utils = SpringContext.getBeanWithGenerics(BikaUtils.class);
+        properties = SpringContext.getBeanWithGenerics(BikaProperties.class);
         //路径不在固定，由数据库记录的路径确定上层目录
         Bika exist = utils.getExists(comicId);
-        if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
-            this.chapterPath = exist.getLocalPath().replace(".zip", "") + "\\" + chapterNum;
-        } else {
-            this.chapterPath = BikaUtils.defaultSavePath + "\\(" + comicId + ")" + title + "\\" + chapterNum;
-        }
+        this.chapterPath = downloadPath.resolve(chapterNum).toString();
+//        if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
+////            this.chapterPath = exist.getLocalPath().replace(".zip", "") + "\\" + chapterNum;
+//            this.chapterPath = Paths.get(properties.getTempPath()).resolve("(" + comicId + ")" + title).resolve(chapterNum).toString();
+//        } else {
+//            this.chapterPath = BikaUtils.defaultSavePath + "\\(" + comicId + ")" + title + "\\" + chapterNum;
+//        }
     }
 
     @Override

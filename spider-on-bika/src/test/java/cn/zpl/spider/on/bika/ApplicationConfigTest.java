@@ -3,7 +3,7 @@ package cn.zpl.spider.on.bika;
 import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaList;
 import cn.zpl.config.SpringContext;
-import cn.zpl.spider.on.bika.common.BikaParams;
+import cn.zpl.spider.on.bika.common.BikaProperties;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class ApplicationConfigTest {
 
     @Resource
-    BikaParams params;
+    BikaProperties params;
 
     @Test
     public void loadConfig() {
