@@ -4,9 +4,11 @@ package cn.zpl.spider.on.bilibili.manga.controller;
 import cn.zpl.common.bean.BilibiliManga;
 import cn.zpl.common.bean.Page;
 import cn.zpl.spider.on.bilibili.manga.bs.MagaDownloadCore;
+import cn.zpl.spider.on.bilibili.manga.config.BilibiliMangaConfig;
 import cn.zpl.spider.on.bilibili.manga.config.MyEventListener;
 import cn.zpl.spider.on.bilibili.manga.thread.BuyWaitFreeEpisodeThread;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliCommonUtils;
+import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,6 +28,8 @@ public class TestController {
 
     @Resource
     BilibiliCommonUtils utils;
+    @Resource
+    BilibiliMangaProperties properties;
 
     @GetMapping("/downloadManga/{comicId}")
     public String testEureka(@PathVariable("comicId") String comicId){
@@ -39,6 +43,11 @@ public class TestController {
         comicIds.forEach(comicId -> magaDownloadCore.getComicDetail(comicId, true));
         buyWaitFreeEpisodeThread.waitStart();
         return "success";
+    }
+
+    @GetMapping("/getMangaSavePath")
+    public String test(){
+        return properties.getMangaSavePath();
     }
 }
 

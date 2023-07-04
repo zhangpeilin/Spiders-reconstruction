@@ -9,9 +9,11 @@ import cn.zpl.util.DownloadTools;
 import cn.zpl.util.URLConnectionTool;
 import com.google.gson.JsonElement;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.map.SingletonMap;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
@@ -36,7 +38,7 @@ public class MagaDownloadCore {
         getComicDetail(comic_id, false);
     }
 
-    public String getComicDetail(String comic_id, boolean needLogin) {
+    public Map<String, String> getComicDetail(String comic_id, boolean needLogin) {
         try {
             Vector<Future<Map<String, Object>>> futureVector = new Vector<>();
             String detailStr = URLConnectionTool.postUrl(mangaProperties.getGetComicDetailUrl(),
@@ -51,7 +53,7 @@ public class MagaDownloadCore {
                 manga.setAllowWaitFree(2);
                 manga.setMark(detailStr);
                 crudTools.commonApiSave(manga);
-                return detailStr;
+                return Collections.emptyMap();
             }
             JsonElement ep_list = CommonIOUtils.getFromJson2(detailJson, "data-ep_list");
             String comic_name = CommonIOUtils.filterFileName(CommonIOUtils.getFromJson2Str(detailJson, "data-title"));
@@ -94,8 +96,9 @@ public class MagaDownloadCore {
             manga.setWaitFreeAt(wait_free_at);
             manga.setAllowWaitFree("false".equalsIgnoreCase(allow_wait_free) ? 0 : 1);
             crudTools.commonApiSave(manga);
-            return wait_free_at;
+            return Collections.singletonMap(String.valueOf(min[1]), wait_free_at);
         } catch (Exception e) {
+
             log.error("漫画第一层解析失败：\n", e);
             return getComicDetail(comic_id, needLogin);
         }

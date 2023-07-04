@@ -25,7 +25,7 @@ import java.util.concurrent.Callable;
 @Slf4j
 @Scope("prototype")
 @Component
-public class BuyWaitFreeEpisodeThread implements Callable<Map<String, String>> {
+public class BuyWaitFreeEpisodeThread implements Callable<Map<String, Map<String, String>>> {
 
     @Resource
     BilibiliCommonUtils utils;
@@ -63,10 +63,10 @@ public class BuyWaitFreeEpisodeThread implements Callable<Map<String, String>> {
         }
     }
 
-    private String doBusiness(String ep_id) {
+    private Map<String, String> doBusiness(String ep_id) {
         if (StringUtils.isEmpty(ep_id)) {
             log.error("未传入漫画信息，方法返回");
-            return "";
+            return Collections.emptyMap();
         }
         //获取漫画信息，根据wait_free_at获取下次解锁时间，与本地时间比较如果不到解锁时间，那么下载已解锁章节
         String param = "{\"ep_id\":" + ep_id + "}";
@@ -75,7 +75,7 @@ public class BuyWaitFreeEpisodeThread implements Callable<Map<String, String>> {
         if (CommonIOUtils.getFromJson2Str(resultJson, "code").equalsIgnoreCase("unauthenticated")) {
             //需要登录，那么直接退出系统
             log.error("需要重新登录");
-            return "";
+            return Collections.emptyMap();
         }
         boolean allow_wait_free = CommonIOUtils.getFromJson2Boolean(resultJson, "data-allow_wait_free");
         boolean is_locked = CommonIOUtils.getFromJson2Boolean(resultJson, "data-is_locked");
@@ -107,11 +107,11 @@ public class BuyWaitFreeEpisodeThread implements Callable<Map<String, String>> {
         }
         manga.setWaitFreeAt(wait_free_at);
         tools.commonApiSave(manga);
-        return wait_free_at;
+        return Collections.singletonMap(ep_id, wait_free_at);
     }
 
     @Override
-    public Map<String, String> call() {
+    public Map<String, Map<String, String>> call() {
         return Collections.singletonMap(epId, doBusiness(epId));
     }
 }

@@ -86,6 +86,15 @@ public class BilibiliCommonUtils {
         }
     }
 
+    public BilibiliManga getComicByEpId(String epId) {
+        List<BilibiliManga> bilibiliMangas = tools.commonApiQuery(String.format(" chapter_wait_buy = %1$s", epId), BilibiliManga.class);
+        if (bilibiliMangas.isEmpty()) {
+            return null;
+        } else {
+            return bilibiliMangas.get(0);
+        }
+    }
+
     public List<BilibiliManga> getWaitCompleteList(int size) {
         return tools.commonApiQueryBySql("select ifnull(TIMESTAMPDIFF(SECOND,wait_free_at,now()),100) as diff,t.* from bilibili_manga t where allow_wait_free = 1 and chapter_wait_buy <> 0 order by diff desc limit " + size, BilibiliManga.class);
     }
