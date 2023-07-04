@@ -165,15 +165,20 @@
                 <configuration>
                     <imageName>192.168.139.130:30002/spider/${project.artifactId}:${project.version}</imageName>
                     <baseImage>azul/zulu-openjdk:8u332-8.62.0.19</baseImage>
-                    <entryPoint>["java", "-jar", "/${project.artifactId}.jar"]</entryPoint>
+                    <entryPoint>["java", "-jar", "${project.build.finalName}.jar"]</entryPoint>
                     <pushImage>true</pushImage>
                     <registryUrl>192.168.139.130:30002</registryUrl>
                     <serverId>my-docker-registry</serverId>
                     <resources>
                         <resource>
-                            <targetPath></targetPath>
+                            <targetPath>/</targetPath>
                             <directory>${project.build.directory}</directory>
                             <include>${project.build.finalName}.jar</include>
+                        </resource>
+                        <resource>
+                            <targetPath>/root</targetPath>
+                            <directory>src/main/resources</directory>
+                            <include>.ssh/*</include>
                         </resource>
                     </resources>
                     <dockerHost>http://192.168.139.130:2375/</dockerHost>
