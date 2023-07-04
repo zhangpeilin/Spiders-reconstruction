@@ -118,8 +118,8 @@ public class BikaUtils {
         return stringBuilder.toString();
     }
 
+    @Async("BikaAsync")
     public void H24() {
-
         //H24 D7 D30
         String url = "comics/leaderboard?tt=H24&ct=VC";
         JsonObject partJson = getJsonByUrl(url);

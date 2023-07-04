@@ -55,6 +55,12 @@ public class DownloadController {
         return RestResponse.ok().msg("下载提交成功");
     }
 
+    @GetMapping("download/H24")
+    public RestResponse downloadH24() {
+        bikaUtils.H24();
+        return RestResponse.ok("H24下载提交成功");
+    }
+
     @GetMapping("/download/id/{id}")
     public RestResponse downloadById(@PathVariable("id") String id) {
         bikaUtils.downloadById(id);
@@ -66,7 +72,7 @@ public class DownloadController {
         DownloadTools tool = DownloadTools.getInstance(5);
         tool.setName("漫画");
         tool.setSleepTimes(10000);
-        List<BikaList> list = tools.commonApiQueryBySql("select * from bika t where downloaded_at < 1682185916000 and is_deleted = 0 order by likes_count desc limit " + count, BikaList.class);
+        List<BikaList> list = tools.commonApiQueryBySql("select * from bika_list t where downloaded_at < 1682185916000 and is_deleted = 0 and likes_count > 2000 and not exists(select 1 from bika_download_failed f where f.id = t.id) order by likes_count desc limit " + count, BikaList.class);
         list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId(), true)));
         tool.shutdown();
         return RestResponse.ok().msg("更新提交成功");
