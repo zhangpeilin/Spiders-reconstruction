@@ -49,4 +49,6 @@ public class Ehentai implements Serializable {
     private String create_time;
 
     private int finish;
+
+    private long size;
 }

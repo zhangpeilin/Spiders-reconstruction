@@ -34,6 +34,8 @@ public class BilibiliManga implements Serializable {
 
     private String mark;
 
+    private Long diff;
+
     public String getComicId() {
         return comicId;
     }
