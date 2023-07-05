@@ -5,7 +5,6 @@ import cn.zpl.common.bean.BikaDownloadFailed;
 import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.bika.common.BikaProperties;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
-import cn.zpl.thread.CommonThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.CruxIdGenerator;
@@ -15,29 +14,16 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
-import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.model.FileHeader;
-import net.lingala.zip4j.model.ZipParameters;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 
-import javax.annotation.Resource;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 public class BikaComicThread extends BikaCommonThread {
@@ -116,25 +102,30 @@ public class BikaComicThread extends BikaCommonThread {
             //则将压缩包中list.txt文件解压到存档目录中，并将该位置设为下载路径;
             //下载完成后，将新增内容和源压缩包中内容拷贝到新的临时zip中，临时zip中使用新的目录存放，拷贝完成后旧zip删除解压路径删除，临时zip重命名为新名称，更新数据库
             if (existZip.exists()) {
+                //如果压缩包校验不通过，则全部解压
                 try {
-                    Path unzipped = ZipUtils.unzipFile2Dir(ex.getPath(), bikaProperties.getTempPath(), "list.txt");
-                    //解压到临时目录中
+                    Path unzipped;
+                    if (!ZipUtils.checkZipStatus(existZip.getPath())) {
+                        unzipped = ZipUtils.unzipFileWithCorruptErr(existZip.getPath(), bikaProperties.getTempPath());
+                        FileUtils.delete(existZip);
+                    } else {
+                        unzipped = ZipUtils.unzipFile2Dir(ex.getPath(), bikaProperties.getTempPath(), "list.txt");
+                    }
                     downloadPath = Paths.get(bikaProperties.getTempPath()).resolve(unzipped == null ? Paths.get(BikaUtils.getFolder(comicId, title)) : unzipped);
                 } catch (IOException e) {
                     log.error("解压出错", e);
+                    if (existZip.length() < 314572800) {
+                        log.error("文件解压失败，文件小于300MB，删除后重新下载");
+                        try {
+                            FileUtils.delete(existZip);
+                        } catch (IOException exc) {
+                            throw new RuntimeException(exc);
+                        }
+                    } else {
+                        log.error("文件解压失败，文件大于300MB，需要人工介入");
+                        return;
+                    }
                 }
-                //将压缩包中所有list.txt文件解压到目录中
-//                try (ZipFile zipFile = new ZipFile(existZip)) {
-//                    zipFile.setCharset(Charset.forName("gbk"));
-//                    List<FileHeader> fileHeaders = zipFile.getFileHeaders();
-//                    for (FileHeader fileHeader : fileHeaders) {
-//                        if (fileHeader.getFileName().endsWith("list.txt")) {
-//                            zipFile.extractFile(fileHeader, existZip.getParentFile().getPath());
-//                        }
-//                    }
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
             }
         }
         if (exist == null || !new File(exist.getLocalPath()).exists()){
@@ -165,9 +156,6 @@ public class BikaComicThread extends BikaCommonThread {
                 tool.shutdown();
             }
         }
-//        if (bikaProperties.isWriteDB()) {
-//            bikaUtils.dosave(comicId, info, isNeedDownload, BikaUtils.getLocalPath(comicId, title));
-//        }
         //将新下载的内容写入压缩包中
         Bika bika = bikaUtils.getExists(comicId);
         File existZip = new File(bika.getLocalPath());
@@ -205,9 +193,7 @@ public class BikaComicThread extends BikaCommonThread {
             boolean renameTo = existZip.renameTo(newZip);
             if (!renameTo) {
                 log.error("重命名失败，保存原名称");
-            }  //                bika.setLocalPath(newZip.getPath());
-            //                bika.setTitle(title);
-            //                bikaCrudTools.commonApiSave(bika);
+            }
 
         }
         try {
@@ -219,42 +205,6 @@ public class BikaComicThread extends BikaCommonThread {
         if (bikaProperties.isWriteDB()) {
             bikaUtils.dosave(comicId, info, isNeedDownload, bika.getLocalPath());
         }
-        //如果压缩包已存在，则将新下载的和原有zip合并到新zip中
-//        if (existZip.exists()) {
-//            //如果原路径不包含新目录，则新zip中使用新目录结构
-//            if (!bika.getLocalPath().contains(BikaUtils.getFolder(comicId, title))) {
-//                ZipUtils.append2Zip(bika.getLocalPath().replace(".zip", ""), bika.getLocalPath(), new HashMap<String, String>(){{
-//                    put(existZip.getName().replace(".zip", ""), BikaUtils.getFolder(comicId, title));
-//                }});
-//            }
-//        }
-//        try (ZipFile zipFile = new ZipFile(bika.getLocalPath() + ".zip")) {
-//            zipFile.setCharset(Charset.forName("gbk"));
-//            ZipParameters zipParameters = new ZipParameters();
-//            File file = new File(bika.getLocalPath());
-//            File[] dirs = file.listFiles((dir, name) -> dir.isDirectory() && !name.endsWith("txt"));
-//            //遍历目录，如果有新增的目录，则解压所有文件，然后重新压缩
-//            assert dirs != null;
-//            Optional<File> any = Arrays.stream(dirs).filter(dir -> {
-//                File imageFile = FileUtils.listFiles(dir, null, true).stream().filter(tmp -> tmp.isFile() && !tmp.getName().endsWith(".txt")).findFirst().orElse(null);
-//                return imageFile != null;
-//            }).findAny();
-//            start = System.currentTimeMillis();
-//            if (any.isPresent()) {
-//                //将压缩包释放
-//                zipFile.extractAll(new File(bika.getLocalPath()).getParent());
-//            }
-////            FileUtils.listFiles(file, null, true);
-////            Collection<File> files = FileUtils.listFiles(file, null, true);
-////            遍历添加文件速度太慢
-////            for (File tmp : files) {
-////                zipFile.addFile(tmp);
-////            }
-//            //不删除原压缩包耗时：19400
-//            //删除原压缩包耗时：14480
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
     }
 
     private void compressFolder2ZipAndMove(Bika bika, File downloadDir, File desFile) {

@@ -2,11 +2,14 @@ package cn.zpl.spider.on.bika;
 
 import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaList;
+import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.bika.common.BikaProperties;
+import cn.zpl.spider.on.bika.thread.BikaComicThread;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
+import cn.zpl.util.DownloadTools;
 import cn.zpl.util.SaveLog;
 import cn.zpl.util.ZipUtils;
 import org.apache.commons.io.FileUtils;
@@ -40,6 +43,58 @@ public class ApplicationConfigTest {
     @Test
     public void loadConfig() {
         System.out.println(params.getSavePath());
+        {
+            DownloadTools tool = DownloadTools.getInstance(5);
+            tool.setName("漫画");
+            tool.setSleepTimes(10000);
+            String str = "5821871d5f6b9a4f93dd0f6d,\n" +
+                    "58218fc75f6b9a4f93e341b9,\n" +
+                    "58218fc75f6b9a4f93e341b9,\n" +
+                    "58218fcd5f6b9a4f93e346ef,\n" +
+                    "58218ffa5f6b9a4f93e36b9d,\n" +
+                    "582194245f6b9a4f93e68b31,\n" +
+                    "5821a1cb5f6b9a4f93ef4385,\n" +
+                    "5821a5315f6b9a4f93f1532d,\n" +
+                    "5821adaf5f6b9a4f93f5fc07,\n" +
+                    "587e542ebb673b69bc8bcff9,\n" +
+                    "587f85bbed084469d6c457f9,\n" +
+                    "5885ee953f65ce7fcdd5d218,\n" +
+                    "58da7dd3dc3eda279e4a411a,\n" +
+                    "58dcda66da056e7f97b70a2c,\n" +
+                    "590e9d34b21192073e8c9091,\n" +
+                    "5936bf8be1f5381f6e37c3ec,\n" +
+                    "594b313927970c3a21237bbc,\n" +
+                    "5957bcb721e277475e6f56b2,\n" +
+                    "5968384acc8ec80cd59bdafb,\n" +
+                    "596b15146f10593244ceaab9,\n" +
+                    "596ed7536f10593244cec2e8,\n" +
+                    "59e4c9053fc27312a09939fe,\n" +
+                    "5ac0e889d5f5652f2ad71858,\n" +
+                    "5aca0391b81c0a161180d6e1,\n" +
+                    "5afbc62f3035530aef2e5f43,\n" +
+                    "5b114e8c87bb266ca9ba6e5f,\n" +
+                    "5b3e38d7199aa92ca9914787,\n" +
+                    "5b77d091836a6151858cc12b,\n" +
+                    "5c06995cdcb1c3176437f17b,\n" +
+                    "5c166d6ebafe76224d84aaac,\n" +
+                    "5c2b39ef9063e71bb9ba0597,\n" +
+                    "5c2dd367a660eb4466f206a7,\n" +
+                    "5c73a66f939410787059ffea,\n" +
+                    "5c943d05099a0a452e115897,\n" +
+                    "5ca8b88ac9809970d39f0a32,\n" +
+                    "5cb88f31ca60d64e2687ca8d,\n" +
+                    "5cbf2b0490707c7edc5e2dc7,\n" +
+                    "5ced643352c88a706444b10e,\n" +
+                    "5d3332f45be4130a396b1573,\n" +
+                    "5d4586dd6ec29d1707865a68,\n" +
+                    "5d4daf804721ec029d4c40a8,\n" +
+                    "5d52cf9b5422a75212c3f292,\n" +
+                    "5d73b1e3140d327c4093441c,";
+            for (String s : str.split(",\n")) {
+                tool.ThreadExecutorAdd(new BikaComicThread(s, true));
+            }
+            tool.shutdown();
+        }
     }
 
     @Test
