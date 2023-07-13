@@ -134,16 +134,16 @@ public class BikaUtils {
             stringList.add(CommonIOUtils.getFromJson2Str(detail, "_id"));
         }
         tool.shutdown();
-//        stringList.forEach(s -> {
-//            File file = new File(getExists(s).getLocalPath());
-//            if (file.exists()) {
-//                try {
-//                    FileUtils.copyDirectoryToDirectory(file, new File("e:\\bika24H"));
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        });
+        stringList.forEach(s -> {
+            File file = new File(getExists(s).getLocalPath());
+            if (file.exists()) {
+                try {
+                    FileUtils.copyFileToDirectory(file, new File("d:\\bika24H"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
 

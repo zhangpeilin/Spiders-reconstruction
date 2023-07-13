@@ -51,9 +51,11 @@ public class BikaComicThread extends BikaCommonThread {
         failed.setError(e.getMessage());
         if (bikaProperties.isWriteDB()){
             Bika exists = bikaUtils.getExists(comicId);
-            exists.setDownloadedAt(failed.getDownloadAt());
+            if (exists != null) {
+                exists.setDownloadedAt(failed.getDownloadAt());
+                bikaCrudTools.commonApiSave(exists);
+            }
             bikaCrudTools.commonApiSave(failed);
-            bikaCrudTools.commonApiSave(exists);
         }
         if (e.getMessage().contains("错误代码：400")) {
             return false;
@@ -69,9 +71,9 @@ public class BikaComicThread extends BikaCommonThread {
             //删除错误日志表的记录
             BikaDownloadFailed failed = new BikaDownloadFailed();
             failed.setId(comicId);
-            if (bikaProperties.isWriteDB())
-//            DBManager.delete(failed);
+            if (bikaProperties.isWriteDB()){
                 CrudTools.commonApiDelete("", BikaDownloadFailed.class);
+            }
             log.debug(comicId + "漫画已下载且上次更新日期在7天内，跳过");
             return;
         }
@@ -128,7 +130,7 @@ public class BikaComicThread extends BikaCommonThread {
                 }
             }
         }
-        if (exist == null || !new File(exist.getLocalPath()).exists()){
+        if (exist == null || !new File(exist.getLocalPath()).exists()) {
             //如果数据库中没有记录，或者记录位置没有文件，保存记录并且预置保存位置
             bikaUtils.dosave(comicId, info, isNeedDownload, bikaUtils.GetAvailablePath(0, null) + File.separator + BikaUtils.getFolder(comicId, title) + ".zip");
             bikaUtils.invalidCache(comicId);
@@ -171,7 +173,7 @@ public class BikaComicThread extends BikaCommonThread {
             //如果原路径不包含新目录，则新zip中使用新目录结构
             Map<String, String> replace = null;
             if (!bika.getLocalPath().contains(BikaUtils.getFolder(comicId, title))) {
-                replace = new HashMap<String, String>(){{
+                replace = new HashMap<String, String>() {{
                     put(existZip.getName().replace(".zip", ""), BikaUtils.getFolder(comicId, title));
                 }};
             }
@@ -191,6 +193,7 @@ public class BikaComicThread extends BikaCommonThread {
             //重命名压缩包
             File newZip = new File(existZip.getParent(), BikaUtils.getFolder(comicId, title) + ".zip");
             boolean renameTo = existZip.renameTo(newZip);
+            bika.setLocalPath(newZip.getPath());
             if (!renameTo) {
                 log.error("重命名失败，保存原名称");
             }
