@@ -1,5 +1,6 @@
 package cn.zpl.common.bean;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
@@ -43,7 +44,7 @@ public class Ehentai implements Serializable {
 
     private String parody;
 
-//    @TableField("`group`")
+    @TableField("`group`")
     private String group;
 
     private String create_time;
@@ -51,4 +52,8 @@ public class Ehentai implements Serializable {
     private int finish;
 
     private long size;
+
+    private String language;
+
+    private String savePath;
 }

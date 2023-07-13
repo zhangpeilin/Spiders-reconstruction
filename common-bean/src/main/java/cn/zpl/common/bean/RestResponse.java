@@ -3,6 +3,7 @@ package cn.zpl.common.bean;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.PropertyNamingStrategy;
 import com.alibaba.fastjson.parser.ParserConfig;
+import org.apache.ibatis.type.JdbcType;
 import lombok.NonNull;
 
 import java.util.HashMap;
