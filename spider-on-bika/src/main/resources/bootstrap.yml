@@ -1,7 +1,14 @@
 spring:
   cloud:
     config:
-      label: docker
+      label: dev
       name: bika,common
       profile: online
-      uri: http://172.18.0.10:2233/config
+      uri: http://192.168.139.130:32710/config
+eureka:
+  instance:
+    hostname: http://192.168.139.130:32710
+
+management:
+  server:
+    port: 32710

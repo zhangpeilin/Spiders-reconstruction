@@ -1,7 +1,7 @@
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:2233/eureka/
+      defaultZone: http://192.168.139.130:32710/eureka
     register-with-eureka: false
   instance:
     ip-address: true
