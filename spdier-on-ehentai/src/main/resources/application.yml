@@ -1,0 +1,6 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://192.168.139.130:32710/eureka
+server:
+  port: 8081

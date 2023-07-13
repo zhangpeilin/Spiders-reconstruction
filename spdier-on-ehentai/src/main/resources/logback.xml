@@ -2,7 +2,7 @@
 <!--ehentai日志-->
 <configuration scan="true" scanPeriod="60 seconds">
     <property name="log.path" value="/home/logs" />
-    <property name="app.name" value="commonDaoCenter" />
+    <property name="app.name" value="spider-on-ehentai" />
     <!--日志输入到控制台-->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

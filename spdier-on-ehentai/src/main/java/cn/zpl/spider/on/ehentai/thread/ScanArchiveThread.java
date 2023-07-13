@@ -4,14 +4,11 @@ import cn.zpl.common.bean.Ehentai;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.Data;
-import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.spider.on.ehentai.config.EhentaiConfig;
 import cn.zpl.spider.on.ehentai.util.EUtil;
 import cn.zpl.thread.CommonThread;
-import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
-import cn.zpl.util.UnZipUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -21,14 +18,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.File;
-import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -41,18 +34,13 @@ import java.util.regex.Pattern;
  * @author zpl
  */
 @Slf4j
-public class DownLoadArchiveThread extends CommonThread {
+public class ScanArchiveThread extends CommonThread {
 
     EhentaiConfig ehentaiConfig;
     Pattern pattern = Pattern.compile("[\\d,]+");
 
-    boolean isDownload = true;
-
-    public void setDownload(boolean flag) {
-        this.isDownload = flag;
-    }
     EUtil util;
-    public DownLoadArchiveThread(String url) {
+    public ScanArchiveThread(String url) {
         this.setUrl(url);
         ehentaiConfig = SpringContext.getBeanWithGenerics(EhentaiConfig.class);
         util = new EUtil();
@@ -67,7 +55,7 @@ public class DownLoadArchiveThread extends CommonThread {
         } catch (InterruptedException ignored) {
         }
         Ehentai eh = util.getEh(EUtil.getGalleryId(getUrl()));
-        if (eh != null && eh.getFinish() == 1) {
+        if (eh != null) {
             log.debug("{}-->{}已下载，跳过", getUrl(), eh.getTitle());
             return;
         }
@@ -83,7 +71,7 @@ public class DownLoadArchiveThread extends CommonThread {
         Document document = Jsoup.parse(data.getResult());
         Element favcount = document.selectFirst("td#favcount");
         Elements tagList = document.select("div#taglist td");
-        Map<String, Object> infomation = new HashMap<>();
+        Map<String, Object> information = new HashMap<>();
         String key = null;
         for (int i = 0; i < tagList.size(); i++) {
             //偶数时是大类名，奇数是具体值
@@ -96,10 +84,10 @@ public class DownLoadArchiveThread extends CommonThread {
                     values.append(child.text()).append(",");
                 }
                 values.deleteCharAt(values.length() - 1).append("]");
-                infomation.put(key, values.toString());
+                information.put(key, values.toString());
             }
         }
-        ehentai = JSON.toJavaObject(new JSONObject(infomation), Ehentai.class);
+        ehentai = JSON.toJavaObject(new JSONObject(information), Ehentai.class);
 
         assert favcount != null;
         Matcher faviconMatcher = pattern.matcher(favcount.text());
@@ -151,75 +139,11 @@ public class DownLoadArchiveThread extends CommonThread {
                             e.printStackTrace();
                         }
                         ehentai.setCost(String.valueOf(gp));
-                        if (gp > 100000) {
-                            if (ehentaiConfig.isSaveDb()) {
-                                RestResponse restResponse = tools.commonApiSave(ehentai);
-                                log.debug("保存是否成功：{}", restResponse.isSuccess());
-                            }
-                            log.error("当前漫画未下载：{}", url);
-                            return;
-                        }
-                        log.info("下载消耗点数：" + gp);
                     }
                 }
                 if (ehentaiConfig.isSaveDb()) {
                     RestResponse restResponse = tools.commonApiSave(ehentai);
                     log.debug("保存是否成功：{}", restResponse.isSuccess());
-                }
-                if (form.attr("action").startsWith("http")) {
-                    Data d1 = new Data();
-                    d1.setUrl(form.attr("action"));
-                    d1.setHeader(ehentaiConfig.getEhentaiCookies() + "\nContent-Type: application/x-www-form-urlencoded; charset=UTF-8");
-                    d1.setProxy(true);
-                    d1.setParams("dltype=org&dlcheck=Download+Original+Archive");
-                    Map<String, String> vp = new HashMap<>();
-                    vp.put("dltype", "org");
-                    vp.put("dlcheck", "Download Original Archive");
-                    d1.setValuePairs(vp);
-
-                    String result = CommonIOUtils.postUrl(d1);
-                    Element tmpUrl = CommonIOUtils.getElementFromStr(result, "p#continue");
-                    Data data1 = new Data();
-                    data1.setAlwaysRetry();
-                    data1.setProxy(true);
-                    data1.setUrl(Objects.requireNonNull(tmpUrl.selectFirst("a")).attr("href"));
-                    CommonIOUtils.withTimer(data1);
-                    Document doc = Jsoup.parse(data1.getResult());
-                    doc.setBaseUri(data1.getBaseUrl());
-                    Element downUrl = CommonIOUtils.getElementFromStr(doc, "div#db a");
-                    Element fileName = CommonIOUtils.getElementFromStr(doc, "div#db strong");
-                    DownloadDTO dto = new DownloadDTO();
-                    dto.setProxy(true);
-                    dto.setUrl(downUrl.absUrl("href"));
-                    dto.setFileName(CommonIOUtils.filterFileName2(fileName.text()));
-                    List<String> path = new ArrayList<>();
-                    path.add(ehentaiConfig.getSavePath());
-                    path.add("archive");
-                    path.add(DateFormatUtils.format(new Date(), "yyyyMMdd"));
-                    dto.setSavePath(CommonIOUtils.makeFilePath(path, dto.getFileName()));
-                    OneFileOneThread thread2 = new OneFileOneThread(dto);
-                    if (isDownload) {
-                        thread2.run();
-                    } else {
-                        ehentai.setFinish(0);
-                        tools.commonApiSave(ehentai);
-                    }
-                    if (thread2.getData().isComplete()) {
-                        ehentai.setSavePath(dto.getSavePath());
-                        ehentai.setFinish(1);
-                        ehentai.setSize(thread2.getData().getFileLength());
-                        tools.commonApiSave(ehentai);
-                    }
-                    try {
-                        if (!ehentaiConfig.isUnzip()) {
-                            return;
-                        }
-                        String dest = UnZipUtils.unZip(new File(dto.getSavePath()), "G:\\exhentai\\archive\\20201226\\sw\\" + dto.getFileName().replace(".zip", ""), "");
-                        log.debug("解压成功，目录为：" + dest);
-                    } catch (IOException e) {
-                        log.error("解压失败");
-                        e.printStackTrace();
-                    }
                 }
             }
         }
