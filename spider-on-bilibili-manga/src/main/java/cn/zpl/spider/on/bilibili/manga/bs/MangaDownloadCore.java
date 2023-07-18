@@ -7,9 +7,9 @@ import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
 import cn.zpl.util.URLConnectionTool;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.map.SingletonMap;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -21,9 +21,9 @@ import java.util.concurrent.Future;
 
 @Slf4j
 @Component
-public class MagaDownloadCore {
+public class MangaDownloadCore {
 
-    private static MagaDownloadCore magaDownloadCore;
+    private static MangaDownloadCore magaDownloadCore;
 
     @Resource
     BilibiliMangaProperties mangaProperties;
@@ -101,6 +101,28 @@ public class MagaDownloadCore {
 
             log.error("漫画第一层解析失败：\n", e);
             return getComicDetail(comic_id, needLogin);
+        }
+    }
+
+    public JsonArray getEpIds(String comicId) {
+        try {
+            String detailStr = URLConnectionTool.postUrl(mangaProperties.getGetComicDetailUrl(),
+                    "{\"comic_id\":" + comicId +
+                            "}", mangaProperties.getCommonHeaders() + mangaProperties.getBilibiliCookies());
+            JsonElement detailJson = CommonIOUtils.paraseJsonFromStr(detailStr);
+            if (CommonIOUtils.getFromJson2Integer(detailJson, "code") != 0) {
+                log.error("返回结果不符合预期，请检查" + detailStr);
+                BilibiliManga manga = new BilibiliManga();
+                manga.setComicId(comicId);
+                manga.setAllowWaitFree(2);
+                manga.setMark(detailStr);
+                crudTools.commonApiSave(manga);
+            }
+            JsonElement list = CommonIOUtils.getFromJson2(detailJson, "data-ep_list");
+            return list.isJsonArray() ? list.getAsJsonArray() : null;
+        } catch (Exception e) {
+            log.error("获取章节列表失败", e);
+            return null;
         }
     }
 }

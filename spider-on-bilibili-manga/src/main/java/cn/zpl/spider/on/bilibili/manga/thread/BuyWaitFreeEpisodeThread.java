@@ -2,16 +2,13 @@ package cn.zpl.spider.on.bilibili.manga.thread;
 
 import cn.zpl.common.bean.BilibiliManga;
 import cn.zpl.common.bean.Page;
-import cn.zpl.spider.on.bilibili.manga.bs.MagaDownloadCore;
+import cn.zpl.spider.on.bilibili.manga.bs.MangaDownloadCore;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliCommonUtils;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
-import cn.zpl.thread.CommonThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import com.google.gson.JsonElement;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.map.SingletonMap;
-import org.junit.Test;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -36,13 +33,9 @@ public class BuyWaitFreeEpisodeThread implements Callable<Map<String, Map<String
     CrudTools tools;
 
     @Resource
-    MagaDownloadCore magaDownloadCore;
+    MangaDownloadCore magaDownloadCore;
 
     String epId;
-
-//    public BuyWaitFreeEpisodeThread(String epId) {
-//        this.epId = epId;
-//    }
 
 
     public void setEpId(String epId) {
@@ -52,15 +45,6 @@ public class BuyWaitFreeEpisodeThread implements Callable<Map<String, Map<String
     public void waitStart() {
         List<BilibiliManga> bilibiliMangas = tools.commonApiQuery(String.format("allow_wait_free = %1$s and wait_free_at < now() and chapter_wait_buy <> %2$s", 1, 0), null, BilibiliManga.class, new Page(1, -1));
         bilibiliMangas.forEach(o -> doBusiness(o.getChapterWaitBuy()));
-    }
-
-    public void run(String ep_id) {
-        try {
-            doBusiness(ep_id);
-        } catch (Exception e) {
-            log.error("主方法出错，程序继续执行，请及时检查\n", e);
-            doBusiness(ep_id);
-        }
     }
 
     private Map<String, String> doBusiness(String ep_id) {

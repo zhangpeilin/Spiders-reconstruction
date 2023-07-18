@@ -1,7 +1,6 @@
 package cn.zpl.spider.on.bilibili.manga;
 
 import cn.zpl.common.bean.BilibiliManga;
-import cn.zpl.spider.on.bilibili.manga.bs.MagaDownloadCore;
 import cn.zpl.spider.on.bilibili.manga.thread.BuyWaitFreeEpisodeThread;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliCommonUtils;
 import cn.zpl.util.CrudTools;
