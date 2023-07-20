@@ -115,10 +115,8 @@ public class ApplicationConfigTest {
     @Test
     public void domain() {
         BikaUtils bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
-//        bikaUtils.search("異種相姦", false);
-        bikaUtils.downloadById("5c40280ad7df306bf6f737a4");
-//        bikaUtils.showH24();
-//        bikaUtils.favourite();
+        System.out.println(bikaUtils.getBikaExist("582185a15f6b9a4f93dbf957"));
+        System.out.println(bikaUtils.getBikaListExist("582185ab5f6b9a4f93dbff9b"));
     }
 
     @Test
@@ -156,7 +154,7 @@ public class ApplicationConfigTest {
         CrudTools crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
         for (File file : files) {
             String fileId = CommonIOUtils.getFileId(file);
-            Bika exist = bikaUtils.getExists(fileId);
+            Bika exist = bikaUtils.getBikaExist(fileId);
             //如果数据库记录的位置没有文件，则以该文件为准更新
             if (exist != null) {
                 File localFile = new File(exist.getLocalPath());
@@ -197,7 +195,7 @@ public class ApplicationConfigTest {
     @Test
     public void testExists() {
         BikaUtils beanWithGenerics = SpringContext.getBeanWithGenerics(BikaUtils.class);
-        beanWithGenerics.getExists("5821859d5f6b9a4f93dbf719");
+        beanWithGenerics.getBikaExist("5821859d5f6b9a4f93dbf719");
     }
 
     @Test
@@ -213,7 +211,7 @@ public class ApplicationConfigTest {
 //            }
 //        });
         List<String> notExists = bikaLists.stream().filter(bikaList -> !StringUtils.isEmpty(bikaList.getLocalPath())).parallel().filter(bikaList -> {
-            Bika exists = bikaUtils.getExists(bikaList.getId());
+            Bika exists = bikaUtils.getBikaExist(bikaList.getId());
             File file = new File(exists.getLocalPath());
             return !file.exists();
         }).map(BikaList::getId).collect(Collectors.toList());

@@ -67,12 +67,13 @@ public class DownloadController {
         return RestResponse.ok().msg("下载提交成功");
     }
 
-    @GetMapping("/downloadBySql/{count}")
-    public RestResponse downloadBySql(@PathVariable("count") String count) {
+    @GetMapping("/downloadBySql/{count}/{like}")
+    public RestResponse downloadBySql(@PathVariable("count") String count, @PathVariable("like") String likeCount) {
         DownloadTools tool = DownloadTools.getInstance(5);
         tool.setName("漫画");
         tool.setSleepTimes(10000);
-        List<BikaList> list = tools.commonApiQueryBySql("select * from bika_list t where likes_count > 10000 and local_path is null and categories not like '%耽美花園%' and not exists(select 1 from bika_download_failed p where p.id = t.id)  order by likes_count desc limit " + count, BikaList.class);
+        List<BikaList> list = tools.commonApiQueryBySql("select * from bika_list t where likes_count > " + likeCount +
+                " and local_path is null and not (categories like '%CG雜圖%' and pages_count > 100 ) and categories not like '%耽美花園%' and categories not like '%生肉%' and not exists(select 1 from bika_download_failed p where p.id = t.id)  order by likes_count desc limit " + count, BikaList.class);
         list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId(), true)));
         tool.shutdown();
         return RestResponse.ok().msg("更新提交成功");
@@ -126,7 +127,7 @@ public class DownloadController {
                     if (StringUtils.isEmpty(fileId)) {
                         return;
                     }
-                    Bika exist = bikaUtils.getExists(fileId);
+                    Bika exist = bikaUtils.getBikaExist(fileId);
                     if (exist == null || exist.getLocalPath().equalsIgnoreCase(file.getPath())) {
                         return;
                     }
@@ -145,12 +146,19 @@ public class DownloadController {
     @GetMapping("/echoNotExists")
     public void echoNotExists() {
         CrudTools crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
-        List<Bika> bikas = crudTools.commonApiQueryBySql("select * from bika where is_deleted = 0 order by  likes_count desc", Bika.class);
+        List<Bika> bikas = crudTools.commonApiQueryBySql("select * from bika t", Bika.class);
         CopyOnWriteArrayList<Bika> copyOnWriteArrayList = new CopyOnWriteArrayList<>(bikas);
         Stream<Bika> bikaStream = copyOnWriteArrayList.stream().filter(bika -> !StringUtils.isEmpty(bika.getLocalPath())).filter(bika -> !new File(bika.getLocalPath()).exists());
         bikaStream.sorted((o1, o2) -> o2.getLikesCount() - o1.getLikesCount()).forEach(bika -> {
             File exists = new File(bika.getLocalPath());
             System.out.println(bika.getLocalPath());
+            BikaList fromBikaList = bikaUtils.getFromBikaList(bika.getId());
+            if (fromBikaList != null) {
+                fromBikaList.setLocalPath("99999");
+                crudTools.commonApiSave(fromBikaList);
+            }
+            bika.setLocalPath("99999");
+            crudTools.commonApiSave(bika);
             SaveLog.saveLog("h:\\" + exists.getName());
         });
     }
@@ -187,7 +195,7 @@ public class DownloadController {
 
     public void checkZip2() {
         BikaUtils bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
-        Collection<File> files = FileUtils.listFiles(new File("N:\\bika"), new String[]{"zip"}, true);
+        Collection<File> files = FileUtils.listFiles(new File("E:\\bika"), new String[]{"zip"}, true);
         Map<String, List<File>> group = files.stream().collect(Collectors.groupingBy(file -> file.getName().substring(file.getName().lastIndexOf(".") + 1)));
         for (Map.Entry<String, List<File>> entry : group.entrySet()) {
             Function<File, List<String>> callback = null;
@@ -270,7 +278,7 @@ public class DownloadController {
         CrudTools crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
         for (File file : files) {
             String fileId = CommonIOUtils.getFileId(file);
-            Bika exist = bikaUtils.getExists(fileId);
+            Bika exist = bikaUtils.getBikaExist(fileId);
             //如果数据库记录的位置没有文件，则以该文件为准更新
             if (exist != null) {
                 File localFile = new File(exist.getLocalPath());

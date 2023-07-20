@@ -41,14 +41,7 @@ public class BikaChapterThread implements Runnable {
         utils = SpringContext.getBeanWithGenerics(BikaUtils.class);
         properties = SpringContext.getBeanWithGenerics(BikaProperties.class);
         //路径不在固定，由数据库记录的路径确定上层目录
-        Bika exist = utils.getExists(comicId);
         this.chapterPath = downloadPath.resolve(chapterNum).toString();
-//        if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
-////            this.chapterPath = exist.getLocalPath().replace(".zip", "") + "\\" + chapterNum;
-//            this.chapterPath = Paths.get(properties.getTempPath()).resolve("(" + comicId + ")" + title).resolve(chapterNum).toString();
-//        } else {
-//            this.chapterPath = BikaUtils.defaultSavePath + "\\(" + comicId + ")" + title + "\\" + chapterNum;
-//        }
     }
 
     @Override
@@ -91,14 +84,6 @@ public class BikaChapterThread implements Runnable {
             }
             i++;
             if (i > max_age) {
-//                if (dtoVector.isEmpty()) {
-//                    BikaEmptyChapterRecordsEntity entity = new BikaEmptyChapterRecordsEntity();
-//                    entity.setId(comicid);
-//                    entity.setUrl(getImgs);
-//                    entity.setReason("章节图片数为0，跳过待检");
-//                    if (BikaParams.writeDB)
-//                    DBManager.ForceSave(entity);
-//                }
                 break;
             }
         }
@@ -109,8 +94,8 @@ public class BikaChapterThread implements Runnable {
         SynchronizeLock lock = new SynchronizeLock();
         DownloadTools tools = DownloadTools.getInstance(10);
         tools.setSleepTimes(2000);
-        tools.setLock(lock);
-        tools.setName(title + "的images");
+        tools.setName(title + "的第" + chapterNum + "章");
+        tools.removeFromCache();
         dtoVector.forEach(dto -> {
             dto.setSynchronizeLock(lock);
             dto.setProgress(BikaUtils.progress);

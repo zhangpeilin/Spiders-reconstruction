@@ -50,7 +50,7 @@ public class BikaComicThread extends BikaCommonThread {
         failed.setDownloadAt(String.valueOf(System.currentTimeMillis()));
         failed.setError(e.getMessage());
         if (bikaProperties.isWriteDB()){
-            Bika exists = bikaUtils.getExists(comicId);
+            Bika exists = bikaUtils.getBikaExist(comicId);
             if (exists != null) {
                 exists.setDownloadedAt(failed.getDownloadAt());
                 bikaCrudTools.commonApiSave(exists);
@@ -67,7 +67,7 @@ public class BikaComicThread extends BikaCommonThread {
         Thread.currentThread().setName(comicId);
         //获取画册信息
         String getComicsInfo = "comics/" + comicId;
-        if (!bikaUtils.isNeedUpdate(comicId) && !bikaProperties.isForceDownload) {
+        if (!bikaUtils.isNeedUpdate(comicId) && !BikaProperties.isForceDownload) {
             //删除错误日志表的记录
             BikaDownloadFailed failed = new BikaDownloadFailed();
             failed.setId(comicId);
@@ -78,7 +78,7 @@ public class BikaComicThread extends BikaCommonThread {
             return;
         }
         JsonObject info = bikaUtils.getJsonByUrl(getComicsInfo);
-        if (!bikaProperties.isForceDownload && bikaUtils.needSkip(info)) {
+        if (!BikaProperties.isForceDownload && bikaUtils.needSkip(info)) {
             log.debug(comicId + "跳过");
             return;
         }
@@ -91,7 +91,7 @@ public class BikaComicThread extends BikaCommonThread {
         }
 
         String title = CommonIOUtils.filterFileName(CommonIOUtils.getFromJson2Str(info, "data-comic-title"));
-        Bika exist = bikaUtils.getExists(comicId);
+        Bika exist = bikaUtils.getBikaExist(comicId);
         //默认目录，如果存在zip文件则替换为解压目录
         Path downloadPath = Paths.get(bikaProperties.getTempPath()).resolve(Paths.get(BikaUtils.getFolder(comicId, title)));
         //判断是否存在id编号相同但文件夹名不同的目录
@@ -159,7 +159,7 @@ public class BikaComicThread extends BikaCommonThread {
             }
         }
         //将新下载的内容写入压缩包中
-        Bika bika = bikaUtils.getExists(comicId);
+        Bika bika = bikaUtils.getBikaExist(comicId);
         File existZip = new File(bika.getLocalPath());
         File downloadDir = downloadPath.toFile();
         if (!downloadDir.exists()) {

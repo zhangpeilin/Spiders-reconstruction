@@ -17,6 +17,7 @@ import cn.zpl.util.DownloadTools;
 import cn.zpl.util.GetSignature;
 import cn.zpl.util.ZipUtils;
 import com.alibaba.fastjson.JSON;
+import com.google.common.base.CaseFormat;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -75,12 +76,13 @@ import java.util.stream.Collectors;
 @Component
 public class BikaUtils {
 
-    //    public static Map<String, Bika> exists = new ConcurrentHashMap<>();
-    public static LoadingCache<String, Bika> exists;
+    public static LoadingCache<String, Object> exists;
 
     public static LoadingCache<String, BikaList> bika_list_exists;
     private static String currentToken = "";
     public static String defaultSavePath = "e:\\bika";
+
+    public static boolean cacheLoaded = false;
     public static ThreadLocal<List<File>> result = new ThreadLocal<>();
 
     @Resource
@@ -106,7 +108,6 @@ public class BikaUtils {
                 if (download) {
                     tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
                 } else {
-//                    System.out.printf("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"));
                     stringBuilder.append(String.format("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"))).append("\n");
                     log.debug(String.format("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id")));
                 }
@@ -135,7 +136,7 @@ public class BikaUtils {
         }
         tool.shutdown();
         stringList.forEach(s -> {
-            File file = new File(getExists(s).getLocalPath());
+            File file = new File(getBikaExist(s).getLocalPath());
             if (file.exists()) {
                 try {
                     FileUtils.copyFileToDirectory(file, new File("d:\\bika24H"));
@@ -207,55 +208,8 @@ public class BikaUtils {
         }
     }
 
-    public LoadingCache<String, Bika> loadCache() {
-        return exists;
-    }
-
     public void invalidCache(String comicId) {
         exists.invalidate(comicId);
-    }
-
-    public synchronized Bika getExists(String comicId) {
-        if (!bikaProperties.isWriteDB()) {
-            return null;
-        }
-        if (exists != null) {
-            try {
-                List<String> list = new ArrayList<>();
-                list.add("1111");
-                exists.getAll(list);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-            Bika exist = exists.getIfPresent(comicId);
-            if (exist == null) {
-                try {
-                    return exists.get(comicId);
-                } catch (Exception e) {
-//                        log.error("加载失败", e);
-                    return null;
-                }
-            } else {
-                return exist;
-            }
-        }
-        exists = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(2000, TimeUnit.SECONDS).build(new CacheLoader<String, Bika>() {
-            @Override
-            public Bika load(@NotNull String key) {
-                List<Bika> bikas = tools.commonApiQueryBySql(String.format("select * from bika where id = '%1$s'", key), Bika.class);
-                if (bikas.size() != 0) {
-                    return bikas.get(0);
-                }
-                return null;
-            }
-
-            @Override
-            public Map<String, Bika> loadAll(Iterable<? extends String> keys) throws Exception {
-                List<Bika> bikas = tools.commonApiQueryBySql("select * from bika", Bika.class);
-                return bikas.stream().collect(Collectors.toMap(Bika::getId, bika -> bika));
-            }
-        });
-        return getExists(comicId);
     }
 
 
@@ -295,11 +249,74 @@ public class BikaUtils {
         return getFromBikaList(comicId);
     }
 
+
+    public Bika getBikaExist(String id) {
+        return (Bika) getExists( "bika" + ":" + id);
+    }
+
+    public BikaList getBikaListExist(String id) {
+        return (BikaList) getExists( "bika_list" + ":" + id);
+    }
+    private synchronized Object getExists(String cid) {
+        if (exists != null) {
+            log.debug("当前缓存中数据条数：{}", exists.size());
+            if (!cacheLoaded) {
+                new Thread(() -> {
+                    try {
+                        log.debug("开始加载全量缓存");
+                        cacheLoaded = true;
+                        List<String> list = new ArrayList<>();
+                        list.add("bika:5821859e5f6b9a4f93dbf759");
+                        exists.getAll(list);
+                    } catch (Exception ignored) {
+                    }
+                }).start();
+            }
+            Object exist = exists.getIfPresent(cid);
+            if (exist == null) {
+                try {
+                    return exists.get(cid);
+                } catch (Exception e) {
+                    return null;
+                }
+            } else {
+                return exist;
+            }
+        }
+        exists = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(2000, TimeUnit.SECONDS).build(new CacheLoader<String, Object>() {
+            @Override
+            //key格式为表名:主键
+            public Object load(@NotNull String key) {
+                String[] split = key.split(":");
+                String tableName = split[0];
+                String entityName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, tableName);
+                String queryKey = split[1];
+                Class<?> entity = CommonIOUtils.getEntityExists(entityName);
+                List<?> objects = tools.commonApiQueryBySql(String.format("select * from %2$s where id = '%1$s'", queryKey, tableName), entity);
+                if (objects.size() != 0) {
+                    return objects.get(0);
+                }
+                return null;
+            }
+
+            @Override
+            public Map<String, Object> loadAll(Iterable<? extends String> keys) {
+                List<Bika> bikas = tools.commonApiQueryBySql("select * from bika", Bika.class);
+                List<BikaList> bikaList = tools.commonApiQueryBySql("select * from bika_list", BikaList.class);
+                Map<String, Object> videoInfoMap = bikas.stream().collect(Collectors.toMap(bika -> "bika:" + bika.getId(), bika -> bika));
+                Map<String, Object> ListMap = bikaList.stream().collect(Collectors.toMap(list -> "bika_list:" + list.getId(), list -> list));
+                videoInfoMap.putAll(ListMap);
+                return videoInfoMap;
+            }
+        });
+        return getExists(cid);
+    }
+
     public boolean isNeedUpdate(String comicid) {
         if (!bikaProperties.isWriteDB()) {
             return true;
         }
-        Bika already = getExists(comicid);
+        Bika already = getBikaExist(comicid);
         if (already != null) {
             if (already.getIsDeleted() != null && already.getIsDeleted() == 1) {
                 return false;
@@ -671,7 +688,7 @@ public class BikaUtils {
 
     public static String getLocalPath(String comicId, String title) {
         BikaUtils bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
-        Bika exist = bikaUtils.getExists(comicId);
+        Bika exist = bikaUtils.getBikaExist(comicId);
         String chapterPath;
         if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
             return exist.getLocalPath();
@@ -765,7 +782,7 @@ public class BikaUtils {
         if (fileId == null) {
             return;
         }
-        Bika exist = bikaUtils.getExists(fileId);
+        Bika exist = bikaUtils.getBikaExist(fileId);
         if (exist != null) {
             File localFile = new File(exist.getLocalPath());
             if (!localFile.exists()) {
