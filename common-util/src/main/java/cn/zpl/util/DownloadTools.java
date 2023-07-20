@@ -8,6 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -15,34 +18,28 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class DownloadTools {
 
-    public Object getLock() {
-        return lock;
+    public static ConcurrentHashMap<Integer, Map<String, DownloadTools>> executorCache = new ConcurrentHashMap<>();
+
+    public static DownloadTools getToolsByName(String name) {
+        Map.Entry<Integer, Map<String, DownloadTools>> mapEntry = executorCache.entrySet().stream().filter(integerMapEntry -> integerMapEntry.getValue().get(name) != null).findFirst().orElse(null);
+        if (mapEntry != null) {
+            return executorCache.get(mapEntry.getKey()).get(name);
+        } else {
+            return null;
+        }
     }
-
-    public void setLock(Object lock) {
-        this.lock = lock;
-    }
-
-    private Object lock;
-
-    @Deprecated
-    public static String cache = "n:\\视频爬虫\\temp\\";
-
-    public int getParts() {
-        return parts;
-    }
-
-    public void setParts(int parts) {
-        this.parts = parts;
-    }
-
-    private int parts = 0;
 
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
+        Map<String, DownloadTools> toolsMap = executorCache.remove(this.hashCode());
+        if (toolsMap != null) {
+            toolsMap.clear();
+            toolsMap.put(name, this);
+            executorCache.put(this.hashCode(), toolsMap);
+        }
         this.name = name;
     }
 
@@ -61,16 +58,26 @@ public class DownloadTools {
     private ThreadPoolExecutor executor;
 
     public static DownloadTools getInstance(int coreSize){
-        return new DownloadTools(coreSize);
+        DownloadTools downloadTools = new DownloadTools(coreSize);
+        executorCache.put(downloadTools.hashCode(), new HashMap<String, DownloadTools>(){
+            {
+                put(downloadTools.getName(), downloadTools);
+            }
+        });
+        return downloadTools;
     }
 
-    private DownloadTools(int coreSise) {
-        this.executor = new ThreadPoolExecutor(coreSise, coreSise, 200,
+    public void removeFromCache() {
+        executorCache.remove(this.hashCode());
+    }
+
+    private DownloadTools(int coreSize) {
+        this.executor = new ThreadPoolExecutor(coreSize, coreSize, 200,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
     }
 
-    public void restart(int coreSise){
-        this.executor = new ThreadPoolExecutor(coreSise, coreSise, 200,
+    public void restart(int coreSize){
+        this.executor = new ThreadPoolExecutor(coreSize, coreSize, 200,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
     }
     public void setCorePoolSize(int count) {
@@ -108,7 +115,7 @@ public class DownloadTools {
                 }
             }
 
-            long threadCount = parts == 0 ? executor.getCorePoolSize() : parts;
+            long threadCount = executor.getCorePoolSize();
             //如果大小超过500MB，则按照20MB一份切割
             if (length > 524288000) {
                 threadCount = length / 20971520;
@@ -146,7 +153,7 @@ public class DownloadTools {
                     log.error("创建目录失败：" + saveDir);
                 }
             }
-            long threadCount = parts == 0 ? executor.getCorePoolSize() : parts;
+            long threadCount = executor.getCorePoolSize();
             //如果大小超过500MB，则按照20MB一份切割
             if (length > 524288000) {
                 threadCount = length / 20971520;
@@ -184,32 +191,7 @@ public class DownloadTools {
                 e.printStackTrace();
             }
         }
-    }
-
-    public void keepRunning(long sleepTimes){
-        while (!executor.isTerminated()) {
-            try {
-                Thread.sleep(sleepTimes);
-                log.info("【" + name + "】线程池，其中核心线程数目：" + executor.getPoolSize()
-                        + "，待执行任务数目：" + executor.getQueue().size()
-                        + "，已完成任务数目：" + executor.getCompletedTaskCount());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void printStatus() {
-        log.info("【" + name + "】线程池，其中核心线程数目：" + executor.getPoolSize()
-                + "，待执行任务数目：" + executor.getQueue().size()
-                + "，已完成任务数目：" + executor.getCompletedTaskCount());
-    }
-
-    /**
-     * 获取进度信息
-     */
-    public void progress() {
-
+        executorCache.remove(this.hashCode());
     }
 }
 

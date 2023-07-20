@@ -165,7 +165,7 @@ public class OneFileOneThread implements Runnable {
             if (!data.doRetry()) {
                 return;
             }
-            log.error("报错：", e);
+            log.error("报错", e);
             if (126816256 > new File(data.getSavePath()).getParentFile().getFreeSpace()) {
                 log.error("磁盘空间不足120MB，停止下载，程序退出");
                 System.exit(0);

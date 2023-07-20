@@ -63,10 +63,10 @@ public class SaveLogForImages {
             try {
                 File file = new File(saveDir.getParent(), "list.txt");
                 if (!file.exists()) {
-                    if (file.getParentFile().mkdirs()) {
+                    if (!file.getParentFile().mkdirs()) {
                         log.warn(file.getParentFile().getPath() + "日志路径创建失败，可能有风险");
                     }
-                    if (file.createNewFile()) {
+                    if (!file.createNewFile()) {
                         log.warn(file.getPath() + "日志文件创建失败，可能有风险");
                     }
                 }

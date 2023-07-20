@@ -58,11 +58,19 @@ public abstract class CommonThread implements Runnable, Callable<MultiPartInfoHo
                 }
                 log.debug("准备重试");
                 run();
+            } else {
+                retryMaxFailed();
             }
         }
     }
     public boolean doWhenFailed(Exception e){
         return true;
+    }
+
+    /**
+     * 尝试次数超过最大值后执行该方法
+     */
+    public void retryMaxFailed(){
     }
 
     public abstract void domain() throws Exception;
