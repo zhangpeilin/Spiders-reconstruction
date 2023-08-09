@@ -59,9 +59,8 @@ public class MangaDownloadController {
     }
 
     @PostMapping("/batchBuy")
-    public String batchBuyEp(@RequestParam("comicIds") List<String> comicList) {
+    public String batchBuyEp(@RequestParam("comicIds") List<String> comicList, @RequestParam("buyTime") Integer buyTime) {
         DownloadTools tools = DownloadTools.getInstance(2);
-        int buyTime = 3;
         for (String comicId : comicList) {
             JsonArray epIds = mangaDownloadCore.getEpIds(comicId);
             List<EpEntity> objects = JSON.parseArray(epIds.toString(), EpEntity.class);
