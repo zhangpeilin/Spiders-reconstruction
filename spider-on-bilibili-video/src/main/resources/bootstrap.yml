@@ -1,7 +1,7 @@
 spring:
   cloud:
     config:
-      label: Lenovo
+      label: dev
       name: common,bilibili
       profile: online
-      uri: http://localhost:2233/config
+      uri: http://192.168.139.130:32710/config

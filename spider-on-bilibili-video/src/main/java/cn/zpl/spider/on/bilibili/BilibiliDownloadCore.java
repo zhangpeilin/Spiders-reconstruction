@@ -284,7 +284,7 @@ public class BilibiliDownloadCore {
         int page = CommonIOUtils.getFromJson2Integer(partJson, "page");
         String url = "https://api.bilibili.com/x/player/playurl?avid=" + avid + "&cid=" + cid + "&bvid=&qn=" + ("".equals(qualityLevel) ? "112" : qualityLevel) + "&type=&otype=json&fnver=0&fnval=16&fourk=1";
         data.setUrl(url);
-        data.setHeader("cookie:SESSDATA=6211e9c2%2C1695036681%2C689a1%2A31;");
+        data.setHeader(properties.getCookies());
         CommonIOUtils.withTimer(data);
         JsonElement json = JsonParser.parseString(Objects.requireNonNull(data.getString()));
         int code = CommonIOUtils.getFromJson2Integer(json, "code");

@@ -2,11 +2,13 @@ package cn.zpl.spider.on.bilibili.common;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 
 /**
  * @author zpl
  */
 @Data
+@RefreshScope
 @ConfigurationProperties(prefix = "spider.bilibili")
 public class BilibiliProperties {
 
