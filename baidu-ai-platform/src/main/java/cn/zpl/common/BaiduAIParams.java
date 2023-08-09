@@ -1,7 +1,5 @@
 package cn.zpl.common;
 
-import cn.zpl.annotation.Value;
-import cn.zpl.util.InitConfigFactory;
 import lombok.Data;
 
 @Data
