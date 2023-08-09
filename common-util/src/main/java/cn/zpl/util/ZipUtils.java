@@ -26,8 +26,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
+import javax.imageio.ImageIO;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -47,9 +50,10 @@ import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -61,6 +65,123 @@ import java.util.zip.ZipOutputStream;
 @Slf4j
 public class ZipUtils {
 
+
+    public static final ConcurrentHashMap<File, List<FingerPrint>> cache = new ConcurrentHashMap<>();
+
+    public static boolean checkZipSimulate(String file1, String file2) {
+        int count = 10;
+        //读取压缩包中前10张图片进行比较，如果存在相似度>0.8的，连续3个，判定压缩包为相似
+        try (org.apache.commons.compress.archivers.zip.ZipFile zipFile1 = new org.apache.commons.compress.archivers.zip.ZipFile(file1); org.apache.commons.compress.archivers.zip.ZipFile zipFile2 = new org.apache.commons.compress.archivers.zip.ZipFile(file2)) {
+            List<FingerPrint> first = cache.get(new File(file1)) != null ? new ArrayList<>(cache.get(new File(file1))) : new ArrayList<>();
+            List<FingerPrint> second = cache.get(new File(file2)) != null ? new ArrayList<>(cache.get(new File(file2))) : new ArrayList<>();
+            if (first.isEmpty()) {
+                first.addAll(getArchive2FingerPrint(zipFile1, count));
+                cache.put(new File(file1), first);
+            }
+            if (second.isEmpty()) {
+                second.addAll(getArchive2FingerPrint(zipFile2, count));
+                cache.put(new File(file2), second);
+            }
+            List<FingerPrint> matchList = first.stream().filter(f1 -> {
+                if (f1 == null) {
+                    return false;
+                }
+                Optional<FingerPrint> any = second.parallelStream().filter(f2 -> {
+                    if (f2 == null) {
+                        return false;
+                    }
+                    return f1.compare(f2) > 0.8;
+                }).findAny();
+                return any.isPresent();
+            }).collect(Collectors.toList());
+            System.out.println(matchList.size());
+            System.out.println(matchList.size() > first.size() * 0.6);
+            //60%图片相似，认为压缩包相同
+            return matchList.size() > first.size() * 0.6;
+//            List<byte[]> first = new ArrayList<>(getArchive2Byte(zipFile1, 5));
+//            List<byte[]> second = new ArrayList<>(getArchive2Byte(zipFile2, 5));
+//            List<byte[]> matchList = first.parallelStream().filter(bytes1 -> {
+//                Optional<byte[]> any = second.parallelStream().filter(bytes2 -> {
+//                    try {
+//                        FingerPrint f1 = new FingerPrint(ImageIO.read(new ByteArrayInputStream(bytes1)));
+//                        FingerPrint f2 = new FingerPrint(ImageIO.read(new ByteArrayInputStream(bytes2)));
+//                        return f1.compare(f2) > 0.8;
+//                    } catch (IOException e) {
+//                        return false;
+//                    }
+//                }).findAny();
+//                return any.isPresent();
+//            }).collect(Collectors.toList());
+//            //60%图片相似，认为压缩包相同
+//            return matchList.size() > first.size() * 0.6;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+//            throw new RuntimeException(e);
+        }
+    }
+
+    public static List<FingerPrint> getArchive2FingerPrint(org.apache.commons.compress.archivers.zip.ZipFile zipFile, Integer count) throws IOException {
+        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+        List<byte[]> bytes = new ArrayList<>();
+        while (bytes.size() < count && entries.hasMoreElements()) {
+            ZipArchiveEntry zipArchiveEntry = entries.nextElement();
+            if (!zipArchiveEntry.isDirectory()) {
+                InputStream inputStream = zipFile.getInputStream(zipArchiveEntry);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    bos.write(buffer, 0, bytesRead);
+                }
+                inputStream.close();
+                bos.close();
+                bytes.add(bos.toByteArray());
+            }
+        }
+        return bytes.parallelStream().map(b -> {
+            try {
+                return new FingerPrint(ImageIO.read(new ByteArrayInputStream(b)));
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }).collect(Collectors.toList());
+    }
+
+    public static byte[] getArchive2Byte(ZipArchiveEntry archiveEntry, org.apache.commons.compress.archivers.zip.ZipFile zipFile) throws IOException {
+        InputStream inputStream = zipFile.getInputStream(archiveEntry);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            bos.write(buffer, 0, bytesRead);
+        }
+        inputStream.close();
+        bos.close();
+        return bos.toByteArray();
+    }
+
+    public static List<byte[]> getArchive2Byte(org.apache.commons.compress.archivers.zip.ZipFile zipFile, Integer count) throws IOException {
+        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+        List<byte[]> result = new ArrayList<>();
+        while (result.size() < count && entries.hasMoreElements()) {
+            ZipArchiveEntry zipArchiveEntry = entries.nextElement();
+            if (!zipArchiveEntry.isDirectory()) {
+                InputStream inputStream = zipFile.getInputStream(zipArchiveEntry);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    bos.write(buffer, 0, bytesRead);
+                }
+                inputStream.close();
+                bos.close();
+                result.add(bos.toByteArray());
+            }
+        }
+        return result;
+    }
 
     @SneakyThrows
     public static boolean checkZipStatus(String zipFilePath) {
@@ -874,27 +995,76 @@ class test4 {
 
 class test1 {
     public static void main(String[] args) {
-        //耗时：2013 耗时：2981 耗时：2615
-        long start = System.currentTimeMillis();
-        Path oriTar = Paths.get("c:\\test\\test.tar");
-        try (TarArchiveInputStream inputStream = new TarArchiveInputStream(Files.newInputStream(oriTar))) {
-            TarArchiveOutputStream outputStream = new TarArchiveOutputStream(Files.newOutputStream(Paths.get("c:\\test\\new.tar")));
-            ChangeSet changeSet = new ChangeSet();
-            Collection<File> files = FileUtils.listFiles(new File("C:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）"), null, true);
-            for (File fileToAdd : files) {
-                ZipParameters zipParameters = new ZipParameters();
-                zipParameters.setDefaultFolderPath("c:\\test\\");
-                String relativeFileName = net.lingala.zip4j.util.FileUtils.getRelativeFileName(fileToAdd, zipParameters);
-                ArchiveEntry archiveEntry = outputStream.createArchiveEntry(fileToAdd, relativeFileName);
-                changeSet.add(archiveEntry, Files.newInputStream(fileToAdd.toPath()));
-            }
-            ChangeSetPerformer changeSetPerformer = new ChangeSetPerformer(changeSet);
-            changeSetPerformer.perform(inputStream, outputStream);
-            long end = System.currentTimeMillis();
-            System.out.println("耗时：" + (end - start));
+        //读取压缩包中前10张图片进行比较，如果存在相似度>9的，连续3个，判定压缩包为相似
+        try (org.apache.commons.compress.archivers.zip.ZipFile zipFile1 = new org.apache.commons.compress.archivers.zip.ZipFile("G:\\ehentai\\archive\\20230515\\[Bunga] Kenshin Nadeshiko [Chinese] [无毒汉化组] [Digital].zip"); org.apache.commons.compress.archivers.zip.ZipFile zipFile2 = new org.apache.commons.compress.archivers.zip.ZipFile("G:\\ehentai\\archive\\20230611\\[dam] Watashi wa Tada Skirt o Mijikaku shita dake 我不過是把裙子往上捲短一點而已 [Chinese] [Digital].zip")) {
+            List<FingerPrint> first = new ArrayList<>(getArchive2FingerPrint(zipFile1, 5));
+            List<FingerPrint> second = new ArrayList<>(getArchive2FingerPrint(zipFile2, 5));
+            List<FingerPrint> matchList = first.stream().filter(f1 -> {
+                if (f1 == null) {
+                    return false;
+                }
+                Optional<FingerPrint> any = second.parallelStream().filter(f2 -> {
+                    if (f2 == null) {
+                        return false;
+                    }
+                    return f1.compare(f2) > 0.8;
+                }).findAny();
+                return any.isPresent();
+            }).collect(Collectors.toList());
+            System.out.println(matchList.size());
+            System.out.println(matchList.size() > first.size() * 0.6);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static List<byte[]> getArchive2Byte(org.apache.commons.compress.archivers.zip.ZipFile zipFile , Integer count) throws IOException {
+        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+        List<byte[]> result = new ArrayList<>();
+        while (result.size() < count && entries.hasMoreElements()) {
+                ZipArchiveEntry zipArchiveEntry = entries.nextElement();
+                if (!zipArchiveEntry.isDirectory()) {
+                    InputStream inputStream = zipFile.getInputStream(zipArchiveEntry);
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        bos.write(buffer, 0, bytesRead);
+                    }
+                    inputStream.close();
+                    bos.close();
+                    result.add(bos.toByteArray());
+                }
+        }
+        return result;
+    }
+
+    public static List<FingerPrint> getArchive2FingerPrint(org.apache.commons.compress.archivers.zip.ZipFile zipFile , Integer count) throws IOException {
+        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+        List<byte[]> bytes = new ArrayList<>();
+        while (bytes.size() < count && entries.hasMoreElements()) {
+            ZipArchiveEntry zipArchiveEntry = entries.nextElement();
+            if (!zipArchiveEntry.isDirectory()) {
+                InputStream inputStream = zipFile.getInputStream(zipArchiveEntry);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    bos.write(buffer, 0, bytesRead);
+                }
+                inputStream.close();
+                bos.close();
+                bytes.add(bos.toByteArray());
+            }
+        }
+        return bytes.parallelStream().map(b -> {
+            try {
+                return new FingerPrint(ImageIO.read(new ByteArrayInputStream(b)));
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }).collect(Collectors.toList());
     }
 }
 
