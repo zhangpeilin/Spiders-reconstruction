@@ -22,6 +22,9 @@
         <module>spider-on-bilibili-manga</module>
         <module>spider-unit</module>
         <module>spider-dao</module>
+        <module>spider-create-vpn-config</module>
+        <module>spider-client</module>
+        <module>pingan</module>
     </modules>
 
     <properties>
