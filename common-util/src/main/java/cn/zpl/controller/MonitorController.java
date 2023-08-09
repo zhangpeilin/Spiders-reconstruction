@@ -1,4 +1,4 @@
-package cn.zpl.spider.on.bika.controller;
+package cn.zpl.controller;
 
 import cn.zpl.util.DownloadTools;
 import org.springframework.web.bind.annotation.GetMapping;
