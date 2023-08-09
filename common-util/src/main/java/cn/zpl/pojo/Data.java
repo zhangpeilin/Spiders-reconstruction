@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@lombok.Data
 public class Data {
     private CloseableHttpClient client;
     private HttpGet get;
@@ -34,6 +35,8 @@ public class Data {
     private String baseUrl;
     private String cookie;
     private String header;
+
+    private boolean needLog = true;
 
     public Data() {
         this.doRetry = new DoRetry();
