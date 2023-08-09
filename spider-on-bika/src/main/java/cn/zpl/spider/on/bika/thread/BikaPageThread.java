@@ -6,6 +6,7 @@ import cn.zpl.spider.on.bika.common.BikaProperties;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
+import com.alibaba.fastjson.JSON;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -71,17 +72,9 @@ public class BikaPageThread extends BikaCommonThread {
 
     @NotNull
     private BikaList saveComicInfo(JsonElement jsonElement) {
-        BikaList bikaList = new BikaList();
-        bikaList.setId(CommonIOUtils.getFromJson2Str(jsonElement, "id"));
-        CommonIOUtils.getFromJson2Str(jsonElement, "id");
-        bikaList.setTitle(CommonIOUtils.getFromJson2Str(jsonElement, "title"));
-        bikaList.setAuthor(CommonIOUtils.getFromJson2Str(jsonElement, "author"));
-        bikaList.setPagesCount(CommonIOUtils.getFromJson2Integer(jsonElement, "pagesCount"));
-        bikaList.setEpsCount(CommonIOUtils.getFromJson2Integer(jsonElement, "epsCount"));
+        BikaList bikaList = JSON.parseObject(jsonElement.toString(), BikaList.class);
         bikaList.setUpdateTime(CommonIOUtils.paraseSystemTime13(System.currentTimeMillis(), "yyyy-MM-dd HH:mm:ss.SSS"));
         bikaList.setFinished(CommonIOUtils.getFromJson2Boolean(jsonElement, "finished") ? 1 : 0);
-        bikaList.setCategories(CommonIOUtils.getFromJson2(jsonElement, "categories").toString());
-        bikaList.setLikesCount(CommonIOUtils.getFromJson2Integer(jsonElement, "likesCount"));
         return bikaList;
     }
 }

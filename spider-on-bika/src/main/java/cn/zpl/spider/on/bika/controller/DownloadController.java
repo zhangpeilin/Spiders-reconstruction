@@ -102,6 +102,11 @@ public class DownloadController {
         checkZip(path);
         return RestResponse.ok("检查完毕");
     }
+    @PostMapping("/testBody")
+    public RestResponse testBody(@RequestBody String path) {
+        return RestResponse.ok(path);
+    }
+
 
     @GetMapping("/check2")
     public RestResponse check2() {

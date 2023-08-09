@@ -5,3 +5,5 @@ eureka:
     register-with-eureka: false
   instance:
     ip-address: true
+server:
+  port: 8084
