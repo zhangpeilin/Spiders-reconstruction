@@ -1,23 +1,62 @@
 package cn.zpl.spider.on.ehentai.controller;
 
+import cn.zpl.common.bean.Ehentai;
 import cn.zpl.spider.on.ehentai.config.EhentaiConfig;
 import cn.zpl.spider.on.ehentai.thread.DownLoadArchiveThread;
 import cn.zpl.spider.on.ehentai.thread.DownloadPageThread;
+import cn.zpl.spider.on.ehentai.util.EUtil;
+import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.CommonStringUtil;
+import cn.zpl.util.CrudTools;
+import cn.zpl.util.DownloadTools;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RestController
+@Slf4j
 public class DownloadController {
 
     @Resource
     EhentaiConfig config;
+
+    @Resource
+    CrudTools tools;
+
     @PostMapping("/download")
     public String downloadByUrl(@RequestParam("url") String url) {
         DownLoadArchiveThread downLoadArchiveThread = new DownLoadArchiveThread(url);
         downLoadArchiveThread.run();
+        return "下载成功";
+    }
+
+    @PostMapping("/downloadBySql")
+    public String downloadBySql(@RequestParam("sql") String sql) {
+        List<Ehentai> ehentaiList = tools.commonApiQueryBySql(sql, Ehentai.class);
+        DownloadTools tools = DownloadTools.getInstance(3);
+        for (Ehentai ehentai : ehentaiList) {
+            tools.ThreadExecutorAdd(new DownLoadArchiveThread(ehentai.getUrl()).setCost(0));
+        }
+        tools.shutdown();
         return "下载成功";
     }
 
@@ -27,5 +66,98 @@ public class DownloadController {
         downLoadArchiveThread.setUrl(url);
         downLoadArchiveThread.run();
         return "下载成功";
+    }
+
+    @PostMapping("/updateExistsFile")
+    public String updateExistsFile(@RequestParam("path") String path) {
+        Collection<File> files = FileUtils.listFiles(new File(path), new String[]{"zip"}, true);
+
+        ConcurrentHashMap<String, Ehentai> temp = new ConcurrentHashMap<>();
+        EUtil eUtil = new EUtil();
+        eUtil.getEh("1");
+        EUtil.cacheLoaded = false;
+        EUtil.exists.asMap().forEach((s, o) -> {
+            Ehentai ehentai = (Ehentai) o;
+            if (StringUtils.isEmpty(ehentai.getTitle())) {
+                return;
+            }
+            temp.put(ehentai.getTitle().toLowerCase(), ehentai);
+        });
+        for (File file : files) {
+            String lowerCase = file.getName().replace(".zip", "").toLowerCase();
+            Ehentai ehentai = temp.get(lowerCase);
+            if (ehentai != null) {
+                ehentai.setSavePath(file.getPath());
+                tools.commonApiSave(ehentai);
+            }
+        }
+        return path + "目录更新完成";
+    }
+
+    @PostMapping("/updateFile")
+    public String updateFile(@RequestParam("path") String path) {
+        Collection<File> files = FileUtils.listFiles(new File(path), new String[]{"zip"}, true);
+        ConcurrentHashMap<String, Ehentai> temp = new ConcurrentHashMap<>();
+        EUtil eUtil = new EUtil();
+        EUtil.cacheLoaded = false;
+        eUtil.getEh("1");
+        EUtil.exists.asMap().forEach((s, o) -> {
+            Ehentai ehentai = (Ehentai) o;
+            if (StringUtils.isEmpty(ehentai.getTitle()) || !StringUtils.isEmpty(ehentai.getSavePath())) {
+                return;
+            }
+            temp.put(ehentai.getTitle(), ehentai);
+        });
+        files.parallelStream().forEach(file -> temp.entrySet().parallelStream().forEach(entry -> {
+            if (CommonStringUtil.stickCheck(entry.getKey(), file.getName().replace(".zip", "")) > 0.9) {
+                Ehentai value = entry.getValue();
+                log.debug("{}在数据库中存在近似项，数据库记录id为：{}", file, value.getId());
+                value.setSavePath(file.getPath());
+                tools.commonApiSave(value);
+            }
+        }));
+        return "不存在数据库中文件输出完毕";
+    }
+
+    @PostMapping("/echoNoInDB")
+    public String echoNoInDB(@RequestParam("path") String path) {
+        Collection<File> files = FileUtils.listFiles(new File(path), new String[]{"zip"}, true);
+        ConcurrentHashMap<String, Ehentai> temp = new ConcurrentHashMap<>();
+        EUtil eUtil = new EUtil();
+        EUtil.cacheLoaded = false;
+        eUtil.getEh("1");
+        EUtil.exists.asMap().forEach((s, o) -> {
+            Ehentai ehentai = (Ehentai) o;
+            if (StringUtils.isEmpty(ehentai.getTitle()) || StringUtils.isEmpty(ehentai.getSavePath())) {
+                return;
+            }
+            temp.put(ehentai.getSavePath().toLowerCase(), ehentai);
+        });
+        DownloadTools downloadTools = DownloadTools.getInstance(1);
+        files.parallelStream().forEach(file -> {
+            if (temp.get(file.getPath().toLowerCase()) == null) {
+                log.debug("{}文件在数据库中不存在", file);
+                downloadTools.ThreadExecutorAdd(() ->{
+                    Pattern pattern = Pattern.compile("\\[(.*?)\\]");
+                    Matcher matcher = pattern.matcher(file.getName());
+                    if (matcher.find()) {
+                        HttpHeaders headers = new HttpHeaders();
+                        String content = matcher.group(1);
+                        LinkedMultiValueMap<String, Object> params= new LinkedMultiValueMap<>();
+                        try {
+                            params.add("url", "https://e-hentai.org/?f_search=" + URLEncoder.encode(content, "utf-8"));
+                        } catch (Exception ignored) {
+                        }
+                        HttpEntity<MultiValueMap<String, Object>>  request = new HttpEntity<>(params, headers);
+                        RestTemplate restTemplate = new RestTemplate();
+//                        HashMap<String, Object> params = new HashMap<>();
+//                        params.put("url", );
+                        restTemplate.postForEntity("http://localhost:8081/downloadPage", request, String.class);
+                    }
+                });
+            }
+        });
+        downloadTools.shutdown();
+        return "不存在数据库中文件输出完毕";
     }
 }

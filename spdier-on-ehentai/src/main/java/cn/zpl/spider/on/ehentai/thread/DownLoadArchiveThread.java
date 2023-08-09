@@ -46,10 +46,17 @@ public class DownLoadArchiveThread extends CommonThread {
     EhentaiConfig ehentaiConfig;
     Pattern pattern = Pattern.compile("[\\d,]+");
 
+    int cost = 10000;
+
     boolean isDownload = true;
 
     public void setDownload(boolean flag) {
         this.isDownload = flag;
+    }
+
+    public DownLoadArchiveThread setCost(int cost) {
+        this.cost = cost;
+        return this;
     }
     EUtil util;
     public DownLoadArchiveThread(String url) {
@@ -151,7 +158,7 @@ public class DownLoadArchiveThread extends CommonThread {
                             e.printStackTrace();
                         }
                         ehentai.setCost(String.valueOf(gp));
-                        if (gp > 100000) {
+                        if (gp > cost) {
                             if (ehentaiConfig.isSaveDb()) {
                                 RestResponse restResponse = tools.commonApiSave(ehentai);
                                 log.debug("保存是否成功：{}", restResponse.isSuccess());

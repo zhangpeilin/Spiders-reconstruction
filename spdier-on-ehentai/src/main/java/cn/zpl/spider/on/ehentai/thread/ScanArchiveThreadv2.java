@@ -7,7 +7,7 @@ import cn.zpl.pojo.Data;
 import cn.zpl.spider.on.ehentai.config.EhentaiConfig;
 import cn.zpl.spider.on.ehentai.util.EUtil;
 import cn.zpl.spider.on.ehentai.util.RabbitMQSender;
-import cn.zpl.thread.CommonThread;
+import cn.zpl.thread.CommonThreadv2;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import com.alibaba.fastjson.JSON;
@@ -35,13 +35,14 @@ import java.util.regex.Pattern;
  * @author zpl
  */
 @Slf4j
-public class ScanArchiveThread extends CommonThread {
+public class ScanArchiveThreadv2 extends CommonThreadv2<Boolean> {
 
+    private boolean result = false;
     EhentaiConfig ehentaiConfig;
     Pattern pattern = Pattern.compile("[\\d,]+");
 
     EUtil util;
-    public ScanArchiveThread(String url) {
+    public ScanArchiveThreadv2(String url) {
         this.setUrl(url);
         ehentaiConfig = SpringContext.getBeanWithGenerics(EhentaiConfig.class);
         util = new EUtil();
@@ -65,6 +66,7 @@ public class ScanArchiveThread extends CommonThread {
         Ehentai eh = util.getEh(EUtil.getGalleryId(getUrl()));
         if (eh != null) {
             log.debug("{}-->{}已下载，跳过", getUrl(), eh.getTitle());
+            result = true;
             return;
         }
         CrudTools tools = SpringContext.getBeanWithGenerics(CrudTools.class);
@@ -110,6 +112,7 @@ public class ScanArchiveThread extends CommonThread {
         if (viewGallery.size() != 0) {
             url = viewGallery.attr("href");
             run();
+            result = true;
             return;
         }
         Elements elements = document.select("div#gd5 p.g2");
@@ -152,8 +155,17 @@ public class ScanArchiveThread extends CommonThread {
                 if (ehentaiConfig.isSaveDb()) {
                     RestResponse restResponse = tools.commonApiSave(ehentai);
                     log.debug("保存是否成功：{}", restResponse.isSuccess());
+                    if (restResponse.isSuccess()) {
+                        result = true;
+                    }
                 }
             }
         }
+    }
+
+    @Override
+    public Boolean call() {
+        run();
+        return result;
     }
 }

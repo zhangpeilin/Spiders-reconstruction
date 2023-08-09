@@ -46,10 +46,10 @@ public class EUtil {
                 new Thread(() -> {
                     try {
                         log.debug("开始加载全量缓存");
-                        cacheLoaded = true;
                         List<String> list = new ArrayList<>();
                         list.add("ehentai:111");
                         exists.getAll(list);
+                        cacheLoaded = true;
                     } catch (Exception ignored) {
                     }
                 }).start();

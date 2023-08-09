@@ -4,3 +4,11 @@ eureka:
       defaultZone: http://192.168.139.130:32710/eureka
 server:
   port: 8081
+spider:
+  ehentai:
+    rabbitmq:
+      queue-name: ehentai
+      host: 192.168.139.130
+      port: 30762
+      user-name: admin
+      password: admin
