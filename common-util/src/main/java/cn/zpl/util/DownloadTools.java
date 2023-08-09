@@ -51,6 +51,12 @@ public class DownloadTools {
 
     private long sleepTimes = 2000;
 
+    boolean needLog = true;
+
+    public void setNeedLog(boolean needLog) {
+        this.needLog = needLog;
+    }
+
     public ThreadPoolExecutor getExecutor() {
         return executor;
     }
@@ -184,6 +190,9 @@ public class DownloadTools {
         while (!executor.isTerminated()) {
             try {
                 Thread.sleep(sleepTimes);
+                if (!needLog) {
+                    continue;
+                }
                 log.info("【" + name + "】线程池，其中核心线程数目：" + executor.getPoolSize()
                         + "，待执行任务数目：" + executor.getQueue().size()
                         + "，已完成任务数目：" + executor.getCompletedTaskCount());

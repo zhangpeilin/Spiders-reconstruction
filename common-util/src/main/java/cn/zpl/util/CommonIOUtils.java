@@ -747,7 +747,9 @@ public class CommonIOUtils {
 
         try {
             //执行HttpGet请求实例，也就是发起GET请求，响应结果保存到httpResponse变量中
-            log.debug("开始请求：" + data.getUrl());
+            if (data.isNeedLog()) {
+                log.debug("开始请求：" + data.getUrl());
+            }
 //            data.setResponse(data.getClient().execute(data.getGet()));
 //            data.setResult(EntityUtils.toString(data.getResponse().getEntity()));
 //            data.setStatusCode(data.getResponse().getStatusLine().getStatusCode());
@@ -761,7 +763,9 @@ public class CommonIOUtils {
                     data.setResult(data.getClient().execute(data.getGet(), byteHandler));
                 }
             }
-            log.debug("请求结束" + data.getUrl());
+            if (data.isNeedLog()) {
+                log.debug("请求结束" + data.getUrl());
+            }
             data.clear();
             data.setStoped(new AtomicBoolean(true));
         } catch (Exception e) {
@@ -769,7 +773,9 @@ public class CommonIOUtils {
                 data.setStatusCode(((HttpResponseException) e).getStatusCode());
                 data.setResult(((HttpResponseException) e).getReasonPhrase());
             }
-            log.error("解析出错，异常信息：\n", e);
+            if (data.isNeedLog()) {
+                log.error("解析出错，异常信息：\n", e);
+            }
             data.setStoped(new AtomicBoolean(true));
             data.clear();
         }
