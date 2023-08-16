@@ -1,9 +1,11 @@
 package cn.zpl.util;
 
-import cn.zpl.common.BaiduAIParams;
+import cn.zpl.common.BaiduAIProperties;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -14,6 +16,7 @@ import java.util.Map;
 /**
  * 获取token类
  */
+@Service
 public class AuthService {
 
     /**
@@ -24,8 +27,10 @@ public class AuthService {
      * "expires_in": 2592000
      * }
      */
-    public static String getAuth() {
-        return getAuth(BaiduAIParams.api_key, BaiduAIParams.secret_key);
+    @Resource
+    BaiduAIProperties properties;
+    public String getAuth() {
+        return getAuth(properties.getApi_key(), properties.getSecret_key());
     }
 
     /**
@@ -70,8 +75,7 @@ public class AuthService {
              */
             System.err.println("result:" + result);
             JSONObject jsonObject = JSON.parseObject(result);
-            String access_token = jsonObject.getString("access_token");
-            return access_token;
+            return jsonObject.getString("access_token");
         } catch (Exception e) {
             System.err.printf("获取token失败！");
             e.printStackTrace(System.err);
@@ -79,8 +83,4 @@ public class AuthService {
         return null;
     }
 
-    public static void main(String[] args) {
-        String auth = AuthService.getAuth();
-        System.out.println(auth);
-    }
 }
