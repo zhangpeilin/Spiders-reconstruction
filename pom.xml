@@ -25,6 +25,7 @@
         <module>spider-create-vpn-config</module>
         <module>spider-client</module>
         <module>pingan</module>
+        <module>spider-qq</module>
     </modules>
 
     <properties>
