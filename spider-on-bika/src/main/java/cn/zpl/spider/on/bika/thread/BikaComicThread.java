@@ -75,6 +75,9 @@ public class BikaComicThread extends BikaCommonThread {
                 CrudTools.commonApiDelete("", BikaDownloadFailed.class);
             }
             log.debug(comicId + "漫画已下载且上次更新日期在7天内，跳过");
+            Bika bikaExist = bikaUtils.getBikaExist(comicId);
+            bikaExist.setDownloadedAt(String.valueOf(System.currentTimeMillis()));
+            bikaCrudTools.commonApiSave(bikaExist);
             return;
         }
         JsonObject info = bikaUtils.getJsonByUrl(getComicsInfo);
