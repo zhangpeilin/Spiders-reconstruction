@@ -725,7 +725,9 @@ public class CommonIOUtils {
         }
         //执行到这，不管请求线程有没有执行完成，都要执行clear方法，清空计时器
         long end = System.currentTimeMillis();
-        log.debug("请求耗时：" + transformMills2Date2(end - begin));
+        if (data.isNeedLog()) {
+            log.debug("请求耗时：" + transformMills2Date2(end - begin));
+        }
         timer.interrupt();
         if (execute.isAlive() && data.getResult() == null) {
             log.info("线程超时，终止请求：" + data.getUrl());
