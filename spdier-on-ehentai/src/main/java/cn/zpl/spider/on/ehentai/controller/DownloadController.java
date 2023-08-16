@@ -54,7 +54,7 @@ public class DownloadController {
         List<Ehentai> ehentaiList = tools.commonApiQueryBySql(sql, Ehentai.class);
         DownloadTools tools = DownloadTools.getInstance(3);
         for (Ehentai ehentai : ehentaiList) {
-            tools.ThreadExecutorAdd(new DownLoadArchiveThread(ehentai.getUrl()).setCost(0));
+            tools.ThreadExecutorAdd(new DownLoadArchiveThread(ehentai.getUrl()).setCost(50000));
         }
         tools.shutdown();
         return "下载成功";

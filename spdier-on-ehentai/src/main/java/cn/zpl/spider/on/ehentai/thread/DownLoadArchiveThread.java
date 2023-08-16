@@ -63,6 +63,7 @@ public class DownLoadArchiveThread extends CommonThread {
         this.setUrl(url);
         ehentaiConfig = SpringContext.getBeanWithGenerics(EhentaiConfig.class);
         util = new EUtil();
+        getDoRetry().setRetryMaxCount(3);
     }
 
     @Override
@@ -88,6 +89,15 @@ public class DownLoadArchiveThread extends CommonThread {
         data.setAlwaysRetry();
         CommonIOUtils.withTimer(data);
         Document document = Jsoup.parse(data.getResult());
+        if (data.getStatusCode() == 404) {
+            if (eh == null) {
+                eh = new Ehentai();
+            }
+            eh.setSavePath("画廊已删除");
+            tools.commonApiSave(eh);
+            log.debug("404画廊不存在");
+            return;
+        }
         Element favcount = document.selectFirst("td#favcount");
         Elements tagList = document.select("div#taglist td");
         Map<String, Object> infomation = new HashMap<>();
