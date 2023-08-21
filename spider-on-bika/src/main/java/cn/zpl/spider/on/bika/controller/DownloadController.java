@@ -72,8 +72,11 @@ public class DownloadController {
         DownloadTools tool = DownloadTools.getInstance(5);
         tool.setName("漫画");
         tool.setSleepTimes(10000);
-        List<BikaList> list = tools.commonApiQueryBySql("select * from bika_list t where likes_count > " + likeCount +
-                " and local_path is null and not (categories like '%CG雜圖%' and pages_count > 100 ) and categories not like '%耽美花園%' and categories not like '%生肉%' and not exists(select 1 from bika_download_failed p where p.id = t.id)  order by likes_count desc limit " + count, BikaList.class);
+//        List<BikaList> list = tools.commonApiQueryBySql("select * from bika_list t where likes_count > " + likeCount +
+//                " and local_path is null and not (categories like '%CG雜圖%' and pages_count > 100 ) and categories not like '%耽美花園%' and categories not like '%生肉%' and not exists(select 1 from bika_download_failed p where p.id = t.id)  order by likes_count desc limit " + count, BikaList.class);
+        List<Bika> list = tools.commonApiQueryBySql("select * from bika t where likes_count > " + likeCount +
+                " and categories not like '%CG雜圖%' and categories not like '%耽美花園%' and categories not like '%生肉%' and not exists(select 1 from bika_download_failed p where p.id = t.id) and downloaded_at < 1692005906579  order by likes_count desc limit " + count, Bika.class);
+
         list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId(), true)));
         tool.shutdown();
         return RestResponse.ok().msg("更新提交成功");

@@ -13,7 +13,7 @@ import java.util.List;
 @ConfigurationProperties(prefix = "spider.bika")
 public class BikaProperties {
 
-    public static boolean isForceDownload = true;
+    public static boolean isForceDownload = false;
     private String email;
     private String password;
     private List<String> savePath;
