@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${title}"></title>
+    <style>
+        hr{
+            border: none;
+            height: 10px;
+            background-color:black;
+        }
+    </style>
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+    <script>
+
+        window.onload = function(){
+            for (const elementsByClassNameElement of document.getElementsByClassName("submit")) {
+                elementsByClassNameElement.onclick = function(){
+                    return false;
+                }
+            }
+        }
+
+    </script>
+</head>
+<body>
+<h1>生成统管配置</h1>
+<h3>
+    1、提取功能脚本
+</h3>
+<label>填入功能编码，多个编码用逗号隔开：</label>
+<form id="getMenuForm">
+    <!--    <input type="textarea" name = "menuCode" style="width: 300px;height: 100px"/>-->
+    <textarea id="menuCodes" rows="6" cols="30"></textarea></br>
+    <input class="submit" type="submit" id="submitMenuCode" value="提取脚本">
+</form>
+</body>
+
+
+<script>
+    function getMenuForm() {
+        let menuCodes = $("form#getMenuForm > textarea[id='menuCodes']:first")[0].value;
+        let fiscalYear = $("form#getMenuForm > input[name='fiscalYear']")[0].value;
+        let mofDivCode = $("form#getMenuForm > input[name='mofDivCode']")[0].value;
+        let divName = $("form#getMenuForm > input[name='divName']")[0].value;
+        return '/copyMenuView/' + divName + '/functionCodes;code=' + menuCodes + '/newCode/' + fiscalYear + '/mof_div_code;div_code=' + mofDivCode;
+        // copyMenuView/宁波市本级/functionCodes;code=00111525003,00111525006/newCode/2023/mof_div_code;div_code=330200000
+    }
+    $(".submit").click(function () {
+        let url = null;
+        console.log(this.id);
+        if (this.id === 'submitMenuCode') {
+            url = getMenuForm();
+        }
+        const form = $('<form method="GET" action="' + url + '">');
+        // $.each(function(k, v) {
+        //     form.append($('<input type="hidden" name="' + k +
+        //         '" value="' + v + '">'));
+        // });
+        $('body').append(form);
+        form.submit(); //自动提交
+    })
+</script>
+</html>

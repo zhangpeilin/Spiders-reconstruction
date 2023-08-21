@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="ThemeBucket">
+    <link rel="shortcut icon" href="#" type="image/png">
+
+    <title>Dynamic Table</title>
+
+    <!--dynamic table-->
+    <link th:href="@{/js/advanced-datatable/css/demo_page.css}" rel="stylesheet"/>
+    <link th:href="@{/js/advanced-datatable/css/demo_table.css}" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/js/data-tables/DT_bootstrap.css}"/>
+
+    <div th:include="common :: commonheader"></div>
+</head>
+
+<body class="sticky-header">
+
+<section>
+
+    <!-- main content start-->
+    <div class="main-content">
+
+
+        <!-- page heading start-->
+        <!-- page heading end-->
+        <!--body wrapper start-->
+        <div class="wrapper">
+            <div class="row">
+                <div class="col-sm-14">
+                    <section class="panel">
+                        <header class="panel-heading">
+                            Dynamic Table
+                            <span class="tools pull-right">
+                <a href="javascript:;" class="fa fa-chevron-down"></a>
+                <a href="javascript:;" class="fa fa-times"></a>
+             </span>
+                        </header>
+                        <div class="panel-body">
+                            <div class="adv-table">
+                                <table class="display table table-bordered table-striped" id="dynamic-table">
+                                    <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th class="text-nowrap">标题</th>
+                                        <th class="text-nowrap">收藏数</th>
+                                        <th>简介</th>
+                                        <th>标签</th>
+                                        <th>分类</th>
+                                        <th>操作</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr class="gradeX" th:each="bika: ${list}">
+                                        <td th:text="${bika.id}"></td>
+                                        <td th:text="${bika.title}"></td>
+                                        <td th:text="${bika.getLikesCount()}"></td>
+                                        <td th:text="${bika.getDescription()}"></td>
+                                        <td th:text="${bika.getTags()}"></td>
+                                        <td th:text="${bika.getCategories()}"></td>
+                                        <td>
+                                            <a th:text="${bika.getLocalPath() == null}?'下载':'阅读'" class="text-nowrap btn btn-sm btn-primary" id="read" th:href="${bika.getLocalPath()!=null} ? @{/comic/} + ${bika.id}:@{/download/} + ${bika.id}">阅读</a>
+                                        </td>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+
+                                <div class="row-fluid">
+                                    <div class="span6">
+                                        <div class="dataTables_info" id="dynamic-table_info">
+                                            当前第[[${query.current}]]页  总计 [[${pages}]]页  共[[${total}]]条记录
+                                        </div>
+                                    </div>
+                                    <div class="span6">
+                                        <div class="dataTables_paginate paging_bootstrap pagination">
+                                            <ul>
+                                                <li class="prev disabled"><a href="#">← 前一页</a></li>
+                                                <li th:class="${num == query.current?'active':''}" th:each="num:${#numbers.sequence(1,pages)}" >
+                                                    <a th:href="@{/dynamic_table(pn=${num})}">[[${num}]]</a>
+                                                </li>
+                                                <li class="next disabled"><a href="#">下一页 → </a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!--body wrapper end-->
+
+            <!--footer section start-->
+            <footer>
+                2020 &copy; AdminEx by ThemeBucket </a>
+            </footer>
+            <!--footer section end-->
+
+
+        </div>
+        <!-- main content end-->
+</section>
+
+
+<div th:replace="common :: #commonscript"></div>
+<!--dynamic table-->
+<script type="text/javascript" language="javascript" src="js/advanced-datatable/js/jquery.dataTables.js"></script>
+<script type="text/javascript" src="js/data-tables/DT_bootstrap.js"></script>
+<!--dynamic table initialization -->
+<!--<script src="js/dynamic_table_init.js"></script>-->
+
+
+</body>
+</html>

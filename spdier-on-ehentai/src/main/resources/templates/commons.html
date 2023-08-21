@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<!--<form id="search" action="/getList" th:fragment="form" th:method="post">-->
+<!--    <div class="mb-3">-->
+<!--        <label for="title" class="form-label">漫画标题</label>-->
+<!--        <input type="text" th:value="${#session.getAttribute('title')!=null}?${#session.getAttribute('title')}" name="title" class="form-control" id="title">-->
+<!--        <label for="tags" class="form-label">标签</label>-->
+<!--        <input type="text" th:value="${#session.getAttribute('tags') != null}?${#session.getAttribute('tags')}" name="tags" class="form-control" id="tags">-->
+<!--        <label for="numLimit" class="form-lable">显示数量</label>-->
+<!--        <select class="form-select" aria-label="Default select example" id="numLimit" name="numLimit">-->
+<!--            <option th:selected="${#session.getAttribute('numLimit') != null}?${#session.getAttribute('numLimit')==20}" value="20">20</option>-->
+<!--            <option th:selected="${#session.getAttribute('numLimit') != null}?${#session.getAttribute('numLimit')==40}" value="40">40</option>-->
+<!--            <option th:selected="${#session.getAttribute('numLimit') != null}?${#session.getAttribute('numLimit')==100}" value="100">100</option>-->
+<!--            <option th:selected="${#session.getAttribute('numLimit') != null}?${#session.getAttribute('numLimit')==0}" value="0">全部</option>-->
+<!--        </select>-->
+<!--    </div>-->
+<!--    <div>-->
+<!--        <label class="form-label">查询标签条件选择</label>-->
+<!--        <div class="form-check form-check-inline">-->
+<!--            <input class="form-check-input" type="radio" th:checked="${#session.getAttribute('condition') != null}?${#session.getAttribute('condition')=='and'}" name="condition" id="flexRadioDefault1" value="and">-->
+<!--            <label class="form-check-label" for="flexRadioDefault1">-->
+<!--                和-->
+<!--            </label>-->
+<!--        </div>-->
+<!--        <div class="form-check form-check-inline">-->
+<!--            <input class="form-check-input" type="radio" th:checked="${#session.getAttribute('condition')=='or'||#session.getAttribute('condition')==null}" name="condition" id="flexRadioDefault2" checked value="or">-->
+<!--            <label class="form-check-label" for="flexRadioDefault2">-->
+<!--                或-->
+<!--            </label>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    <div>-->
+<!--        <label class="form-label">是否完结</label>-->
+<!--        <div class="form-check form-check-inline">-->
+<!--            <input class="form-check-input" type="radio" th:checked="${#session.getAttribute('complete') != null}?${#session.getAttribute('complete') == true}"-->
+<!--                   name="complete" value="true">-->
+<!--            <label class="form-check-label">-->
+<!--                是-->
+<!--            </label>-->
+<!--        </div>-->
+<!--        <div class="form-check form-check-inline">-->
+<!--            <input class="form-check-input" type="radio" th:checked="${#session.getAttribute('complete') != null}?${#session.getAttribute('complete') == false}"-->
+<!--                   name="complete" value="false">-->
+<!--            <label class="form-check-label">-->
+<!--                否-->
+<!--            </label>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    <button class="btn btn-primary" id="que1ry">查询</button>-->
+<!--</form>-->
+
+<form id="search" action="/getList" th:fragment="form" th:method="post">
+    <div class="mb-3">
+        <label for="title" class="form-label">漫画标题</label>
+        <input type="text" th:value="${#session?.getAttribute('title')!=null}?${#session.getAttribute('title')}" name="title" class="form-control" id="title">
+        <label for="female" class="form-label">标签</label>
+        <input type="text" th:value="${#session?.getAttribute('female') != null}?${#session.getAttribute('female')}" name="female" class="form-control" id="female">
+        <label for="male" class="form-label">分类</label>
+        <input type="text" th:value="${#session?.getAttribute('male') != null}?${#session.getAttribute('male')}" name="male" class="form-control" id="male">
+        <label for="numLimit" class="form-lable">显示数量</label>
+        <select class="form-select" aria-label="Default select example" id="numLimit" name="size">
+            <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='20'}" value="20">20</option>
+            <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='40'}" value="40">40</option>
+            <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='100'}" value="100">100</option>
+            <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='0'}" value="0">全部</option>
+        </select>
+    </div>
+    <div>
+        <label class="form-label">查询标签条件选择</label>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" th:checked="${#session?.getAttribute('condition') != null}?${#session.getAttribute('condition')=='and'}" name="condition" id="flexRadioDefault1" value="and">
+            <label class="form-check-label" for="flexRadioDefault1">
+                和
+            </label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" th:checked="${#session?.getAttribute('condition')=='or'||#session?.getAttribute('condition')==null}" name="condition" id="flexRadioDefault2" checked value="or">
+            <label class="form-check-label" for="flexRadioDefault2">
+                或
+            </label>
+        </div>
+    </div>
+    <div>
+        <label class="form-label">是否完结</label>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" th:checked="${#session != null}?${#session.getAttribute('complete') == 'true'}"
+                   name="complete" value="true">
+            <label class="form-check-label">
+                是
+            </label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" th:checked="${#session == null || #session.getAttribute('complete') == 'false'}? true: false"
+                   name="complete" checked value="false">
+            <label class="form-check-label">
+                否
+            </label>
+        </div>
+    </div>
+    <button class="btn btn-primary" id="que1ry">查询</button>
+</form>
+
+
+<div th:fragment="pageBar">
+    <a th:text="${previous == 0}?'返回目录':'上一章'" th:href="${previous == 0} ? @{/comic/} + ${id} : @{/chapter/(id=${id},chapter=${previous})}"
+       class="btn btn-sm btn-primary">上一章</a>
+    <a th:href="@{/comic/} + ${id}" class="btn btn-sm btn-primary">返回目录</a>
+    <a th:if="${next != null}" th:href="@{/chapter/(id=${id},chapter=${next})}" class="btn btn-sm btn-primary">下一章</a>
+</div>
+</body>
+</html>
