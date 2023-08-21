@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<a href="/clear">清空消息</a>
+<div>
+    <span th:each="word : ${context}">
+        <h4 th:text="${word}"></h4>
+    </span>
+</div>
+<br>
+<br>
+<br>
+<form action="/say" method="post">
+    <input name="word"/>
+    <input type="submit" value="发送"/>
+</form>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${fileName} + '的章节列表'"></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div th:replace="commons::form"></div>
+<br>
+<br>
+
+<a class="btn btn-sm btn-primary" id="complete" th:href="@{/update/} + ${id}">标记完结</a>
+<a class="btn btn-sm btn-primary" id="更新" th:href="@{/updatenow/} + ${id}">标记完结</a>
+
+<br>
+<br>
+<main role="main" class="pt-3 px-4">
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered table-sm">
+            <thead>
+            <tr>
+                <th class="text-nowrap">章节</th>
+                <th class="text-nowrap">阅读</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="chapter : ${chapters}">
+                <td th:text="${chapter}"></td>
+                <td>
+                    <a class="btn btn-sm btn-primary" id="read" th:href="@{/chapter(id=${id},chapter=${chapter})}">阅读</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

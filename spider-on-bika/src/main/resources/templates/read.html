@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>阅读</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script th:src="@{/js/lazyload.min.js}"></script>
+    <script>
+        // $(function () {
+        //     $('img.lazyload').lazyload();
+        // })
+        window.addEventListener("load", function(event) {
+            //     lazyload();
+            // });
+            let images = document.querySelectorAll(".lazyload");
+            images.forEach(image => {
+                let src = image.getAttribute("data-src");
+                image.setAttribute("data-src", src + "?" + Math.random());
+            });
+            lazyload(images);
+        });
+    </script>
+</head>
+<body>
+<div>
+    <img src="#" th:src="@{/pic/QQ截图20210115014027.png}" class="img-fluid" alt="...">
+    <img class="lazyload" data-src="pic/QQ图片20210123213620.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210123022022.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210122020317.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+    <img class="lazyload" data-src="pic/QQ截图20210121172951.png"  height="500">
+</div>
+</body>
+</html>

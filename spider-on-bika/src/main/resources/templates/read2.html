@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js" th:src="@{/js/jquery-3.5.1.js}"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <title th:text="'第' + ${num} + '章'">显示图片</title>
+</head>
+
+<body class="">
+<div th:replace="commons::pageBar">
+</div>
+<div th:each="img : ${imgs}">
+    <img th:src="@{/pic/loading.jpg}" th:attr="data-src=@{/read/(id=${id},chapter=${num},img=${img})}" class="img-fluid">
+</div>
+<div th:replace="commons::pageBar">
+</div>
+    <!--<img class="img-fluid" src="/read" alt='img'>-->
+</body>
+<script>
+    window.onload = function () {
+        let imgs = document.querySelectorAll('img');
+
+        function getTop(e) {
+            return e.offsetTop;
+        }
+
+        function lazyLoad(imgs) {
+            let h = window.innerHeight;
+            let s = document.documentElement.scrollTop || document.body.scrollTop;
+            for (let i = 0; i < imgs.length; i++) {
+                if ((h + s) > getTop(imgs[i])) {
+                    if (!imgs[i].getAttribute("src").endsWith("loading.jpg")) {
+                        continue;
+                    }
+                    console.log(imgs[i].getAttribute("data-src") + "进入可视化区域，数据：图片到浏览器顶部高度--->" + getTop(imgs[i]) + "||可视区域高度--->" + h + "||滚动区域高度--->" + s);
+                    (function (i) {
+                        setTimeout(function () {
+                            let temp = new Image();
+                            temp.src = imgs[i].getAttribute("data-src");
+                            temp.onload = function () {
+                                console.log(imgs[i].getAttribute('data-src') + "图片地址替换完成");
+                                imgs[i].src = imgs[i].getAttribute('data-src');
+                            };
+                        })
+                    })(i);
+                }
+            }
+        }
+
+        lazyLoad(imgs);
+        window.onscroll = function () {
+            lazyLoad(imgs);
+        };
+        $("img").error(function () {
+            $(this).attr("src", $(this).attr("src"));
+        });
+    }
+</script>
+</html>
