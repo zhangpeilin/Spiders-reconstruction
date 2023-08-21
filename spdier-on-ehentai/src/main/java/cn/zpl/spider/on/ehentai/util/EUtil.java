@@ -50,7 +50,8 @@ public class EUtil {
                         list.add("ehentai:111");
                         exists.getAll(list);
                         cacheLoaded = true;
-                    } catch (Exception ignored) {
+                    } catch (Exception exception) {
+                        cacheLoaded = true;
                     }
                 }).start();
             }
