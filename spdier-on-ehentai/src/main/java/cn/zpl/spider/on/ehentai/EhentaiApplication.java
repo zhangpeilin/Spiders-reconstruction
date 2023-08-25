@@ -16,18 +16,5 @@ public class EhentaiApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(EhentaiApplication.class);
-//        doBusiness();
-    }
-
-    public static void doBusiness(){
-
-        String url = "";
-        url = url.replaceAll("VM.+ ", "");
-        String[] urls = url.split("\n");
-        DownloadTools tools = DownloadTools.getInstance(20);
-        for (String s : urls) {
-            tools.ThreadExecutorAdd(new DownLoadArchiveThread(s));
-        }
-        tools.shutdown();
     }
 }

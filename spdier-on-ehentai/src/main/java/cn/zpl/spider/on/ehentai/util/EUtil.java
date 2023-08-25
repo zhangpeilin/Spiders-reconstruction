@@ -42,18 +42,20 @@ public class EUtil {
     private synchronized Object getExists(String cid) {
         if (exists != null) {
             log.debug("当前缓存中数据条数：{}", exists.size());
-            if (!cacheLoaded) {
-                new Thread(() -> {
-                    try {
-                        log.debug("开始加载全量缓存");
-                        List<String> list = new ArrayList<>();
-                        list.add("ehentai:111");
-                        exists.getAll(list);
-                        cacheLoaded = true;
-                    } catch (Exception exception) {
-                        cacheLoaded = true;
-                    }
-                }).start();
+            synchronized (EUtil.class) {
+                if (!cacheLoaded) {
+                    new Thread(() -> {
+                        try {
+                            log.debug("开始加载全量缓存");
+                            List<String> list = new ArrayList<>();
+                            list.add("ehentai:111");
+                            exists.getAll(list);
+                            cacheLoaded = true;
+                        } catch (Exception exception) {
+                            cacheLoaded = true;
+                        }
+                    }).start();
+                }
             }
             Object exist = exists.getIfPresent(cid);
             if (exist == null) {
@@ -70,7 +72,7 @@ public class EUtil {
             final CrudTools tools = SpringContext.getBeanWithGenerics(CrudTools.class);
             @Override
             //key格式为表名:主键
-            public Object load(@NotNull String key) {
+            public @NotNull Object load(@NotNull String key) {
                 String[] split = key.split(":");
                 String tableName = split[0];
                 String entityName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, tableName);
@@ -84,7 +86,7 @@ public class EUtil {
             }
 
             @Override
-            public Map<String, Object> loadAll(Iterable<? extends String> keys) {
+            public @NotNull Map<String, Object> loadAll(@NotNull Iterable<? extends String> keys) {
                 List<Ehentai> ehentaiList = tools.commonApiQueryBySql("select * from ehentai", Ehentai.class);
                 return ehentaiList.stream().collect(Collectors.toMap(ehentai -> "ehentai:" + ehentai.getId(), ehentai -> ehentai));
             }

@@ -1,11 +1,12 @@
 package cn.zpl.spider.on.ehentai.controller;
 
+import cn.zpl.annotation.DistributeLock;
+import cn.zpl.annotation.DistributedLockKey;
 import cn.zpl.common.bean.Ehentai;
-import cn.zpl.spider.on.ehentai.config.EhentaiConfig;
+import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.ehentai.thread.DownLoadArchiveThread;
 import cn.zpl.spider.on.ehentai.thread.DownloadPageThread;
 import cn.zpl.spider.on.ehentai.util.EUtil;
-import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CommonStringUtil;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
@@ -16,6 +17,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,12 +26,11 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,24 +39,23 @@ import java.util.regex.Pattern;
 public class DownloadController {
 
     @Resource
-    EhentaiConfig config;
-
-    @Resource
     CrudTools tools;
 
     @PostMapping("/download")
     public String downloadByUrl(@RequestParam("url") String url) {
-        DownLoadArchiveThread downLoadArchiveThread = new DownLoadArchiveThread(url);
+        DownLoadArchiveThread downLoadArchiveThread = SpringContext.getBeanWithGenerics(DownLoadArchiveThread.class);
+        downLoadArchiveThread.setUrl(url);
+        downLoadArchiveThread.setCost(-1);
         downLoadArchiveThread.run();
         return "下载成功";
     }
 
     @PostMapping("/downloadBySql")
-    public String downloadBySql(@RequestParam("sql") String sql) {
+    public String downloadBySql(@RequestParam("sql") String sql, @RequestParam(value = "cost", required = false) int cost) {
         List<Ehentai> ehentaiList = tools.commonApiQueryBySql(sql, Ehentai.class);
         DownloadTools tools = DownloadTools.getInstance(3);
         for (Ehentai ehentai : ehentaiList) {
-            tools.ThreadExecutorAdd(new DownLoadArchiveThread(ehentai.getUrl()).setCost(50000));
+            tools.ThreadExecutorAdd(new DownLoadArchiveThread(ehentai.getUrl()).setCost(cost));
         }
         tools.shutdown();
         return "下载成功";
@@ -143,15 +144,13 @@ public class DownloadController {
                     if (matcher.find()) {
                         HttpHeaders headers = new HttpHeaders();
                         String content = matcher.group(1);
-                        LinkedMultiValueMap<String, Object> params= new LinkedMultiValueMap<>();
+                        LinkedMultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
                         try {
                             params.add("url", "https://e-hentai.org/?f_search=" + URLEncoder.encode(content, "utf-8"));
                         } catch (Exception ignored) {
                         }
                         HttpEntity<MultiValueMap<String, Object>>  request = new HttpEntity<>(params, headers);
                         RestTemplate restTemplate = new RestTemplate();
-//                        HashMap<String, Object> params = new HashMap<>();
-//                        params.put("url", );
                         restTemplate.postForEntity("http://localhost:8081/downloadPage", request, String.class);
                     }
                 });
@@ -159,5 +158,27 @@ public class DownloadController {
         });
         downloadTools.shutdown();
         return "不存在数据库中文件输出完毕";
+    }
+
+    @GetMapping("/test1/{value}")
+    @DistributeLock("redissonTest:test1")
+    public void test1(@DistributedLockKey @PathVariable("value") String value1) {
+        try {
+            TimeUnit.SECONDS.sleep(2);
+            System.out.println(value1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @GetMapping("/test2")
+    @DistributeLock(value = "redissonTest:test2", waitTime = 500, holdTime = 5000)
+    public void test2(String value1) {
+        try {
+            TimeUnit.SECONDS.sleep(2);
+            System.out.println("执行完毕");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

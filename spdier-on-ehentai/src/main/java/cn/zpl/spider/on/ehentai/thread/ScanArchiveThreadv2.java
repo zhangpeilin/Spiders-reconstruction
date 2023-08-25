@@ -13,6 +13,7 @@ import cn.zpl.util.CrudTools;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -79,8 +80,11 @@ public class ScanArchiveThreadv2 extends CommonThreadv2<Boolean> {
         data.setAlwaysRetry();
         CommonIOUtils.withTimer(data);
         Document document = Jsoup.parse(data.getResult());
+        Element fileSize = document.selectFirst(":containsOwn(File Size)");
         Element favcount = document.selectFirst("td#favcount");
         Elements tagList = document.select("div#taglist td");
+        Element rating = document.selectFirst("td#rating_label");
+        Element galleryInfo = document.selectFirst("div#gdd");
         Map<String, Object> information = new HashMap<>();
         String key = null;
         for (int i = 0; i < tagList.size(); i++) {
@@ -98,7 +102,12 @@ public class ScanArchiveThreadv2 extends CommonThreadv2<Boolean> {
             }
         }
         ehentai = JSON.toJavaObject(new JSONObject(information), Ehentai.class);
-
+        if (fileSize != null) {
+            Element size = fileSize.nextElementSibling();
+            if (size != null) {
+                ehentai.setSize(CommonIOUtils.convertSizeToBytes(size.text()));
+            }
+        }
         assert favcount != null;
         Matcher faviconMatcher = pattern.matcher(favcount.text());
         if (faviconMatcher.find()) {
@@ -107,6 +116,10 @@ public class ScanArchiveThreadv2 extends CommonThreadv2<Boolean> {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
+        }
+        if (rating != null && !StringUtils.isEmpty(rating.text())) {
+            String number = rating.text().replaceAll("[^\\d.]", "");
+            ehentai.setRating(number);
         }
         Elements viewGallery = document.getElementsMatchingText("View Gallery");
         if (viewGallery.size() != 0) {

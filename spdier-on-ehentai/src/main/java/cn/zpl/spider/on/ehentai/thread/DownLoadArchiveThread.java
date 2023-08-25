@@ -1,5 +1,6 @@
 package cn.zpl.spider.on.ehentai.thread;
 
+import cn.zpl.annotation.DistributeLock;
 import cn.zpl.common.bean.Ehentai;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.SpringContext;
@@ -15,12 +16,16 @@ import cn.zpl.util.UnZipUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
@@ -41,14 +46,20 @@ import java.util.regex.Pattern;
  * @author zpl
  */
 @Slf4j
+@Scope("prototype")
+@Component
 public class DownLoadArchiveThread extends CommonThread {
 
+    @Resource
     EhentaiConfig ehentaiConfig;
     Pattern pattern = Pattern.compile("[\\d,]+");
 
     int cost = 10000;
 
     boolean isDownload = true;
+
+    @Resource
+    CrudTools tools;
 
     public void setDownload(boolean flag) {
         this.isDownload = flag;
@@ -59,10 +70,16 @@ public class DownLoadArchiveThread extends CommonThread {
         return this;
     }
     EUtil util;
+
+    public DownLoadArchiveThread() {
+        util = new EUtil();
+        getDoRetry().setRetryMaxCount(3);
+    }
     public DownLoadArchiveThread(String url) {
         this.setUrl(url);
         ehentaiConfig = SpringContext.getBeanWithGenerics(EhentaiConfig.class);
         util = new EUtil();
+        tools = SpringContext.getBeanWithGenerics(CrudTools.class);
         getDoRetry().setRetryMaxCount(3);
     }
 
@@ -79,8 +96,6 @@ public class DownLoadArchiveThread extends CommonThread {
             log.debug("{}-->{}已下载，跳过", getUrl(), eh.getTitle());
             return;
         }
-        CrudTools tools = SpringContext.getBeanWithGenerics(CrudTools.class);
-        EhentaiConfig ehentaiConfig = SpringContext.getBeanWithGenerics(EhentaiConfig.class);
         Data data = new Data();
         Ehentai ehentai;
         data.setUrl(getUrl());
@@ -89,6 +104,7 @@ public class DownLoadArchiveThread extends CommonThread {
         data.setAlwaysRetry();
         CommonIOUtils.withTimer(data);
         Document document = Jsoup.parse(data.getResult());
+        Element fileSize = document.selectFirst(":containsOwn(File Size)");
         if (data.getStatusCode() == 404) {
             if (eh == null) {
                 eh = new Ehentai();
@@ -100,6 +116,8 @@ public class DownLoadArchiveThread extends CommonThread {
         }
         Element favcount = document.selectFirst("td#favcount");
         Elements tagList = document.select("div#taglist td");
+        Element rating = document.selectFirst("td#rating_label");
+        Element galleryInfo = document.selectFirst("div#gdd");
         Map<String, Object> infomation = new HashMap<>();
         String key = null;
         for (int i = 0; i < tagList.size(); i++) {
@@ -117,7 +135,12 @@ public class DownLoadArchiveThread extends CommonThread {
             }
         }
         ehentai = JSON.toJavaObject(new JSONObject(infomation), Ehentai.class);
-
+        if (fileSize != null) {
+            Element size = fileSize.nextElementSibling();
+            if (size != null) {
+                ehentai.setSize(CommonIOUtils.convertSizeToBytes(size.text()));
+            }
+        }
         assert favcount != null;
         Matcher faviconMatcher = pattern.matcher(favcount.text());
         if (faviconMatcher.find()) {
@@ -126,6 +149,10 @@ public class DownLoadArchiveThread extends CommonThread {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
+        }
+        if (rating != null && !StringUtils.isEmpty(rating.text())) {
+            String number = rating.text().replaceAll("[^\\d.]", "");
+            ehentai.setRating(number);
         }
         Elements viewGallery = document.getElementsMatchingText("View Gallery");
         if (viewGallery.size() != 0) {
@@ -168,7 +195,7 @@ public class DownLoadArchiveThread extends CommonThread {
                             e.printStackTrace();
                         }
                         ehentai.setCost(String.valueOf(gp));
-                        if (gp > cost) {
+                        if (cost != -1 && gp > cost) {
                             if (ehentaiConfig.isSaveDb()) {
                                 RestResponse restResponse = tools.commonApiSave(ehentai);
                                 log.debug("保存是否成功：{}", restResponse.isSuccess());
