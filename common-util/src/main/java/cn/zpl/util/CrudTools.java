@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 @Data
 @Slf4j
 @Component
-@EnableConfigurationProperties(UrlConfig.class)
+@EnableConfigurationProperties({UrlConfig.class, CommonProperties.class})
 public class CrudTools {
     @Resource
     UrlConfig config;
@@ -72,9 +72,9 @@ public class CrudTools {
         HashMap<String, Object> params = new HashMap<>();
         params.put("entity", entity);
         params.put("data", bean);
-        ResponseEntity<RestResponse> restResponseResponseEntity = restTemplate.postForEntity(config.getCommonSaveUrl(), params, RestResponse.class);
-        log.debug(String.valueOf(restResponseResponseEntity));
-        return restResponseResponseEntity.getBody();
+        ResponseEntity<RestResponse> responseEntity = restTemplate.postForEntity(config.getCommonSaveUrl(), params, RestResponse.class);
+        log.debug(String.valueOf(responseEntity));
+        return responseEntity.getBody();
 
     }
 
@@ -91,7 +91,6 @@ public class CrudTools {
         requestMap.put("sql", sql);
         requestMap.put("params", params);
         ResponseEntity<RestResponse> forEntity = restTemplate.postForEntity(config.getCommonDelete(), requestMap, RestResponse.class);
-//        ResponseEntity<RestResponse> restResponseResponseEntity = restTemplate.postForEntity("http://localhost:8080/common/dao/api/save/", params, RestResponse.class);
         return forEntity.getBody();
     }
 
@@ -112,8 +111,6 @@ public class CrudTools {
         if (StringUtils.isEmpty(condition)) {
             condition = config.getNothing();
         }
-//        System.out.printf("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&page=%4$s", entity, fetchProperties, "condition", page);
-//        String url = String.format("http://localhost:8080/common/dao/api/query/", "");
         String requestUrl = formatRequestUrl(config.getCommonQueryUrl(), entity, fetchProperties, condition, page);
         log.debug("请求url：-->{}", requestUrl);
         ResponseEntity<RestResponse> forEntity = restTemplate.getForEntity(requestUrl, RestResponse.class);
@@ -132,13 +129,6 @@ public class CrudTools {
     public static <T> boolean commonApiDelete(String condition, Class<T> tClass) {
 
         return RestResponse.ok().isSuccess();
-    }
-
-    public static void main(String[] args) {
-        NasPic pic = new NasPic();
-        pic.setId("234234");
-        pic.setUnitId("asfdas");
-//        commonApiSave(pic);
     }
 
 }

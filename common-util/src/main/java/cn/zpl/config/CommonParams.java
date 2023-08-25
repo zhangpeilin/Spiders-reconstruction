@@ -9,8 +9,6 @@ public class CommonParams {
     public static int proxyPort;
     @Value("hostname")
     public static String hostName;
-    public static String webSite = "bilibili";
-
     static {
         InitConfigFactory.loadPropertyByClass(CommonParams.class,"common-config.properties");
     }

@@ -1414,4 +1414,33 @@ public class CommonIOUtils {
 //        log.debug(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, "PictureAnalyze"));
         return first.orElse(null);
     }
+
+    public static long convertSizeToBytes(String sizeString) {
+        String[] parts = sizeString.split(" ");
+        double sizeValue = Double.parseDouble(parts[0]);
+        String sizeUnit = parts[1];
+
+        long bytes = 0;
+        switch (sizeUnit) {
+            case "B":
+                bytes = (long) (sizeValue);
+                break;
+            case "KB":
+                bytes = (long) (sizeValue * 1024);
+                break;
+            case "MB":
+                bytes = (long) (sizeValue * 1024 * 1024);
+                break;
+            case "GB":
+                bytes = (long) (sizeValue * 1024 * 1024 * 1024);
+                break;
+            case "TB":
+                bytes = (long) (sizeValue * 1024 * 1024 * 1024 * 1024);
+                break;
+            default:
+                System.out.println("无效的单位：" + sizeUnit);
+        }
+
+        return bytes;
+    }
 }

@@ -1,6 +1,8 @@
 package cn.zpl.thread;
 
 
+import cn.zpl.annotation.DistributeLock;
+import cn.zpl.annotation.DistributedLockKey;
 import cn.zpl.pojo.DoRetry;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.MultiPartInfoHolder;
@@ -24,6 +26,8 @@ public abstract class CommonThread implements Runnable, Callable<MultiPartInfoHo
 
     DoRetry doRetry = new DoRetry();
     DownloadDTO dto = new DownloadDTO();
+
+    @DistributedLockKey
     public String url;
 
     public CommonThread() {
@@ -43,6 +47,7 @@ public abstract class CommonThread implements Runnable, Callable<MultiPartInfoHo
     }
 
     @Override
+    @DistributeLock(value = "redissonLock:thread", waitTime = 500, holdTime = 500)
     public void run() {
         try {
             init();
