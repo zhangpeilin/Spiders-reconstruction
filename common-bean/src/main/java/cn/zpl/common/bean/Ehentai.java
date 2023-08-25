@@ -32,6 +32,8 @@ public class Ehentai implements Serializable {
 
     private String favcount;
 
+    private String rating;
+
     private String artist;
 
     private String male;
