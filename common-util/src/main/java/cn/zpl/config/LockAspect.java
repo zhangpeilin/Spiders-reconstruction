@@ -55,11 +55,11 @@ public class LockAspect {
             }
         }
         if (ArrayUtils.isNotEmpty(fields)) {
-            for (int i = 0; i < fields.length; i++) {
-                DistributedLockKey annotation = fields[i].getAnnotation(DistributedLockKey.class);
+            for (Field field : fields) {
+                DistributedLockKey annotation = field.getAnnotation(DistributedLockKey.class);
                 if (annotation != null) {
-                    fields[i].setAccessible(true);
-                    Object filedValue = fields[i].get(target);
+                    field.setAccessible(true);
+                    Object filedValue = field.get(target);
                     if (StringUtils.isNotBlank(String.valueOf(filedValue))) {
                         lockKey.append(":").append(filedValue);
                     }
