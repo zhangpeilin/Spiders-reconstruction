@@ -55,7 +55,10 @@ public class DownloadController {
         List<Ehentai> ehentaiList = tools.commonApiQueryBySql(sql, Ehentai.class);
         DownloadTools tools = DownloadTools.getInstance(3);
         for (Ehentai ehentai : ehentaiList) {
-            tools.ThreadExecutorAdd(new DownLoadArchiveThread(ehentai.getUrl()).setCost(cost));
+            DownLoadArchiveThread downLoadArchiveThread = SpringContext.getBeanWithGenerics(DownLoadArchiveThread.class);
+            downLoadArchiveThread.setUrl(ehentai.getUrl());
+            downLoadArchiveThread.setCost(cost);
+            tools.ThreadExecutorAdd(downLoadArchiveThread);
         }
         tools.shutdown();
         return "下载成功";
