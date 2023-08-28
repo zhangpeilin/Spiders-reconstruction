@@ -265,7 +265,7 @@ public class DownloadController {
         videoInfo.setSavedLocalName(CommonIOUtils.filterFileName2(StringEscapeUtils.escapeHtml4(page + "." + part).replaceAll("(&[a-z]{3};)+", "")));
         videoInfo.setVideoName(title);
         videoInfo.setTitle(title);
-        videoInfo.setWebsite(CommonParams.webSite);
+        videoInfo.setWebsite("bilibili");
         videoInfo.setDownloadDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 
         List<String> path = new ArrayList<>();
