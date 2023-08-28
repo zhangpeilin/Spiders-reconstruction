@@ -125,6 +125,9 @@ public class ReadController {
                 if (tag.isEmpty()) {
                     continue;
                 }
+                if (query.isSearchOnline()) {
+                    utils.search(tag, false);
+                }
                 condition.append(String.format(" tags like '%%%1$s%%' %2$s ", tag, query.getCondition()));
             }
             condition.delete(condition.lastIndexOf(query.getCondition()), condition.lastIndexOf(query.getCondition()) + query.getCondition().length());
@@ -139,6 +142,9 @@ public class ReadController {
                 if (category.isEmpty()) {
                     continue;
                 }
+                if (query.isSearchOnline()) {
+                    utils.search(category, false);
+                }
                 condition.append(String.format(" categories like '%%%1$s%%' %2$s ", category, query.getCondition()));
             }
             condition.delete(condition.lastIndexOf(query.getCondition()), condition.lastIndexOf(query.getCondition()) + query.getCondition().length());
@@ -147,8 +153,25 @@ public class ReadController {
         }
 
         sql.append(" order by likes_count desc");
+        if (query.isSearchOnline()) {
+            utils.search(query.getTitle(), false);
+        }
         List<Bika> bikas = tools.commonApiQueryBySql(sql.toString(), Bika.class);
         return RestResponse.ok(bikas);
+    }
+
+    @GetMapping("/clearCache/{comicId}")
+    @ResponseBody
+    public String clearCache(@PathVariable("comicId") String comicId) {
+        if (cache != null) {
+            Bika bikaExist = utils.getBikaExist(comicId);
+            cache.invalidate(bikaExist.getLocalPath());
+        }
+        if (imageCache != null) {
+            List<String> collect = imageCache.asMap().keySet().stream().filter(bytes -> bytes.startsWith(comicId)).collect(Collectors.toList());
+            collect.forEach(s -> imageCache.invalidate(s));
+        }
+        return "success";
     }
 
     @RequestMapping("/comic/{id}")

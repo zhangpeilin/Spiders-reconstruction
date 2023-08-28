@@ -13,6 +13,7 @@ import cn.zpl.util.ZipUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 
@@ -26,10 +27,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
+@Data
 public class BikaComicThread extends BikaCommonThread {
 
     private final String comicId;
     private final boolean isNeedDownload;
+
+    private boolean forceDownload = false;
     CrudTools bikaCrudTools;
     BikaProperties bikaProperties;
 
@@ -67,13 +71,7 @@ public class BikaComicThread extends BikaCommonThread {
         Thread.currentThread().setName(comicId);
         //获取画册信息
         String getComicsInfo = "comics/" + comicId;
-        if (!bikaUtils.isNeedUpdate(comicId) && !BikaProperties.isForceDownload) {
-            //删除错误日志表的记录
-            BikaDownloadFailed failed = new BikaDownloadFailed();
-            failed.setId(comicId);
-            if (bikaProperties.isWriteDB()){
-                CrudTools.commonApiDelete("", BikaDownloadFailed.class);
-            }
+        if (!bikaUtils.isNeedUpdate(comicId) && !forceDownload) {
             log.debug(comicId + "漫画已下载且上次更新日期在7天内，跳过");
             Bika bikaExist = bikaUtils.getBikaExist(comicId);
             bikaExist.setDownloadedAt(String.valueOf(System.currentTimeMillis()));

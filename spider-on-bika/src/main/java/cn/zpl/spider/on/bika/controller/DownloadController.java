@@ -61,9 +61,9 @@ public class DownloadController {
         return RestResponse.ok("H24下载提交成功");
     }
 
-    @GetMapping("/download/id/{id}")
-    public RestResponse downloadById(@PathVariable("id") String id) {
-        bikaUtils.downloadById(id);
+    @GetMapping(value = {"/download/id/{id}/{true}", "/download/id/{id}"})
+    public RestResponse downloadById(@PathVariable("id") String id, @PathVariable(value = "true", required = false) String force) {
+        bikaUtils.downloadById(id, !StringUtils.isEmpty(force) && "force".equalsIgnoreCase(force));
         return RestResponse.ok().msg("下载提交成功");
     }
 

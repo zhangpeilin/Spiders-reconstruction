@@ -13,10 +13,22 @@
 <br>
 <br>
 
-<a class="btn btn-sm btn-primary" id="complete" th:href="@{/update/} + ${id}">标记完结</a>
-<a class="btn btn-sm btn-primary" id="更新" th:href="@{/updatenow/} + ${id}">标记完结</a>
-
+<a class="btn btn-sm btn-primary" id="complete" th:href="@{/update/{id}(id=${id})}">标记完结</a>
+<a class="btn btn-sm btn-primary" id="更新" th:href="@{/updatenow/{id}(id=${id})}">更新</a>
+<a class="btn btn-sm btn-primary" id="清除缓存" th:href="@{/clearCache/{id}(id=${id})}">清除缓存</a>
 <br>
+<!--<form id="myForm" th:action="@{/clearCache/} + ${id}" method="get">-->
+<!--@{/updatenow/{id}(id=${id})}-->
+<!--    <input type="hidden" name="param1" value="value1">-->
+<!--    <input type="hidden" name="param2" value="value2">-->
+<!--    <a href="#" onclick="submitForm()">清除缓存</a>-->
+<!--</form>-->
+
+<!--<script>-->
+<!--    function submitForm() {-->
+<!--        document.getElementById("myForm").submit();-->
+<!--    }-->
+<!--</script>-->
 <br>
 <main role="main" class="pt-3 px-4">
     <div class="table-responsive">

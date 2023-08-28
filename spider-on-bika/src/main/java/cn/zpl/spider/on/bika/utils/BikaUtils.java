@@ -104,7 +104,10 @@ public class BikaUtils {
             tool.setName("漫画");
             tool.setSleepTimes(10000);
 
+            List<Bika> searchResult = new ArrayList<>();
             for (JsonElement detail : comics.getAsJsonArray()) {
+                Bika bika = JSON.parseObject(detail.toString(), Bika.class);
+                searchResult.add(bika);
                 if (download) {
                     tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
                 } else {
@@ -112,6 +115,7 @@ public class BikaUtils {
                     log.debug(String.format("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id")));
                 }
             }
+            tools.commonApiSave(searchResult);
             tool.shutdown();
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -149,13 +153,15 @@ public class BikaUtils {
 
 
     @Async("BikaAsync")
-    public void downloadById(String id) {
+    public void downloadById(String id, boolean forceDownload) {
 
         //H24 D7 D30
         DownloadTools tool = DownloadTools.getInstance(1);
         tool.setName("漫画");
         tool.setSleepTimes(10000);
-        tool.ThreadExecutorAdd(new BikaComicThread(id, true));
+        BikaComicThread bikaComicThread = new BikaComicThread(id, true);
+        bikaComicThread.setForceDownload(forceDownload);
+        tool.ThreadExecutorAdd(bikaComicThread);
         tool.shutdown();
     }
 

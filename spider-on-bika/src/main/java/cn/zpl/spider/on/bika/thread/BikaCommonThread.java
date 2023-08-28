@@ -9,6 +9,6 @@ public abstract class BikaCommonThread extends CommonThread {
     BikaUtils bikaUtils;
     @Override
     public void init() {
-        bikaUtils = (BikaUtils) SpringContext.getBeanWithGenerics(BikaUtils.class);
+        bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
     }
 }
