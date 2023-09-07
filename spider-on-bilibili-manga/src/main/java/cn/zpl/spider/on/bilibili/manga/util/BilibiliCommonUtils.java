@@ -78,6 +78,7 @@ public class BilibiliCommonUtils {
     }
 
     public BilibiliManga getComicById(String comicId) {
+        comicId = comicId.replace("mc", "").replaceAll("[()]", "");
         List<BilibiliManga> bilibiliMangas = tools.commonApiQuery(String.format(" comic_id = %1$s", comicId), BilibiliManga.class);
         if (bilibiliMangas.isEmpty()) {
             return null;

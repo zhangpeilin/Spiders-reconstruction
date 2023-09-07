@@ -1,8 +1,11 @@
 package cn.zpl.spider.on.bilibili.manga.bs;
 
+import cn.zpl.annotation.DistributeLock;
+import cn.zpl.annotation.DistributedLockKey;
 import cn.zpl.common.bean.BilibiliManga;
 import cn.zpl.spider.on.bilibili.manga.thread.ChapterThread;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
+import cn.zpl.spider.on.bilibili.manga.util.BilibiliProperties;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
@@ -23,10 +26,11 @@ import java.util.concurrent.Future;
 @Component
 public class MangaDownloadCore {
 
-    private static MangaDownloadCore magaDownloadCore;
-
     @Resource
     BilibiliMangaProperties mangaProperties;
+
+    @Resource
+    BilibiliProperties bilibiliProperties;
     @Resource
     CrudTools crudTools;
     public void test() {
@@ -38,12 +42,13 @@ public class MangaDownloadCore {
         getComicDetail(comic_id, false);
     }
 
-    public Map<String, String> getComicDetail(String comic_id, boolean needLogin) {
+    @DistributeLock(value = "redissionLock:comic2Buy", waitTime = 500, holdTime = 500)
+    public Map<String, String> getComicDetail(@DistributedLockKey String comic_id, boolean needLogin) {
         try {
             Vector<Future<Map<String, Object>>> futureVector = new Vector<>();
             String detailStr = URLConnectionTool.postUrl(mangaProperties.getGetComicDetailUrl(),
                     "{\"comic_id\":" + comic_id +
-                            "}", needLogin ? mangaProperties.getCommonHeaders() + mangaProperties.getBilibiliCookies() :
+                            "}", needLogin ? mangaProperties.getCommonHeaders() + bilibiliProperties.getCookies() :
                             mangaProperties.getCommonHeaders());
             JsonElement detailJson = CommonIOUtils.paraseJsonFromStr(detailStr);
             if (CommonIOUtils.getFromJson2Integer(detailJson, "code") != 0) {
@@ -108,7 +113,7 @@ public class MangaDownloadCore {
         try {
             String detailStr = URLConnectionTool.postUrl(mangaProperties.getGetComicDetailUrl(),
                     "{\"comic_id\":" + comicId +
-                            "}", mangaProperties.getCommonHeaders() + mangaProperties.getBilibiliCookies());
+                            "}", mangaProperties.getCommonHeaders() + bilibiliProperties.getCookies());
             JsonElement detailJson = CommonIOUtils.paraseJsonFromStr(detailStr);
             if (CommonIOUtils.getFromJson2Integer(detailJson, "code") != 0) {
                 log.error("返回结果不符合预期，请检查" + detailStr);

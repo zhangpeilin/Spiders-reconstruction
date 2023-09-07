@@ -2,6 +2,7 @@ package cn.zpl.spider.on.bilibili.manga.thread;
 
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliCommonUtils;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
+import cn.zpl.spider.on.bilibili.manga.util.BilibiliProperties;
 import cn.zpl.util.CommonIOUtils;
 import com.google.gson.JsonElement;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,9 @@ public class BatchBuyEpisodeThread implements Callable<Map<String, Map<String, I
     BilibiliCommonUtils utils;
     @Resource
     BilibiliMangaProperties properties;
+
+    @Resource
+    BilibiliProperties bilibiliProperties;
     String epId;
 
     public void setEpId(String epId) {
@@ -38,10 +42,9 @@ public class BatchBuyEpisodeThread implements Callable<Map<String, Map<String, I
             return Collections.emptyMap();
         }
         String param = "{\"ep_id\":" + ep_id + "}";
-        String result = utils.postUrl(properties.getGetEpisodeBuyInfoUrl(), param, properties.getCommonHeaders() + properties.getBilibiliCookies());
+        String result = utils.postUrl(properties.getGetEpisodeBuyInfoUrl(), param, properties.getCommonHeaders() + bilibiliProperties.getCookies());
         JsonElement resultJson = CommonIOUtils.paraseJsonFromStr(result);
         if (CommonIOUtils.getFromJson2Str(resultJson, "code").equalsIgnoreCase("unauthenticated")) {
-            //需要登录，那么直接退出系统
             log.error("需要重新登录");
             return Collections.emptyMap();
         }
@@ -53,7 +56,7 @@ public class BatchBuyEpisodeThread implements Callable<Map<String, Map<String, I
             //满足条件，调用解锁方法BuyEpisode
             param = "{\"buy_method\":1,\"ep_id\":" + ep_id + ",\"comic_id\":" + comic_id + "}";
             String buyResult = utils.postUrl(properties.getBuyEpisodeUrl(), param,
-                    properties.getCommonHeaders() + properties.getBilibiliCookies());
+                    properties.getCommonHeaders() + bilibiliProperties.getCookies());
             log.debug(buyResult);
             if (CommonIOUtils.getIntegerFromJson(CommonIOUtils.paraseJsonFromStr(buyResult), "code") == 0) {
                 //购买完成，调用漫画下载进程

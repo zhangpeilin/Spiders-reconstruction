@@ -1,15 +1,13 @@
 package cn.zpl.spider.on.bilibili.manga.util;
 
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 
 @Data
 @ConfigurationProperties(prefix = "spider.bilibili.manga")
+@RefreshScope
 public class BilibiliMangaProperties {
-
-    @Value("${spider.bilibili.cookies}")
-    String bilibiliCookies;
 
     String commonHeaders;
 

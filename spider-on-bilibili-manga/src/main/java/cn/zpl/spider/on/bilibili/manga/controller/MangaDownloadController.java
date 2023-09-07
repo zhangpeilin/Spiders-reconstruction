@@ -76,7 +76,7 @@ public class MangaDownloadController {
                 }
             }
             tools.shutdown();
-            mangaDownloadCore.getComicDetail(comicId, true);
+            new Thread(() -> mangaDownloadCore.getComicDetail(comicId, true)).start();
         }
         return "下载成功";
     }
