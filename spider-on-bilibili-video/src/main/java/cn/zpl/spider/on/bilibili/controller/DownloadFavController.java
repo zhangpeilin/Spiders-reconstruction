@@ -69,12 +69,13 @@ public class DownloadFavController {
             BilibiliDownloadCore bdc = SpringContext.getBeanWithGenerics(BilibiliDownloadCore.class);
             for (JsonElement jsonElement : favourFolders) {
                 Map<String, List<String>> result = new HashMap<>();
-                String media_id = jsonElement.getAsJsonObject().get("id").getAsString();
-                String title = jsonElement.getAsJsonObject().get("title").getAsString();
+                CommonIOUtils.getFromJson2Str(jsonElement, "title");
+                String media_id = CommonIOUtils.getFromJson2Str(jsonElement, "id");
+                String title = CommonIOUtils.getFromJson2Str(jsonElement, "title");
                 if (gallery != null && !title.equals(gallery)) {
                     continue;
                 }
-                int media_count = jsonElement.getAsJsonObject().get("media_count").getAsInt();
+                int media_count = CommonIOUtils.getFromJson2Integer(jsonElement, "media_count");
                 int page = media_count / 20 + 1;
                 for (int i = 1; i <= page; i++) {
                     spaceDetail(result, media_id, i, uid);

@@ -120,7 +120,7 @@ public class DownloadController {
         int page = 1;
         while (page > 0) {
             try {
-                if (getPlayListByWeb(uid, String.valueOf(page)) > 0) {
+                if (getPlayListByWeb(uid, page) > 0) {
                     page++;
                     continue;
                 }
@@ -131,7 +131,7 @@ public class DownloadController {
         }
     }
 
-    private int getPlayListByWeb(String uid, String page) throws IOException {
+    private int getPlayListByWeb(String uid, int page) throws IOException {
         owner_name = BilibiliCommonUtils.getUserInfo(uid);
         Data data = new Data();
         data.setUrl("https://api.bilibili.com/x/space/wbi/arc/search?mid=" + uid + "&ps=30&tid=0&pn=" + page + "&keyword=&order=pubdate&platform=web");
@@ -170,8 +170,8 @@ public class DownloadController {
         try {
             data.setUrl("https://api.bilibili.com/x/player/pagelist?bvid=" + video_id + "&jsonp=jsonp");
             if (match) {
-                log.error("出大问题");
-                System.exit(0);
+                log.error("视频id解析失败，请检查");
+                return RestResponse.fail("视频id解析失败，请检查");
             }
             CommonIOUtils.withTimer(data);
             if (data.getResult() == null && data.getStatusCode() == 403) {
@@ -374,13 +374,13 @@ public class DownloadController {
         JsonElement audioElement = CommonIOUtils.getFromJson2(json, "data-dash-audio");
         if (!videoElement.isJsonArray() || !audioElement.isJsonArray()) {
             log.error(avid + "解析出错");
-            System.exit(1);
+            throw new RuntimeException(avid + "解析出错");
         }
         JsonElement videoM4s = videoElement.getAsJsonArray().get(0);
         JsonElement audioM4s = audioElement.getAsJsonArray().get(0);
         if (!CommonIOUtils.getFromJson2Str(videoM4s, "id").equalsIgnoreCase(current_quality)) {
             log.error(avid + "解析出错");
-            System.exit(1);
+            throw new RuntimeException(avid + "解析出错");
         }
         List<String> pathMake = new ArrayList<>();
         // 下载每个分p的分段，最后合并
@@ -402,7 +402,6 @@ public class DownloadController {
         // 存储的是视频大小（字节）
         dto.setFileLength(URLConnectionTool.getDataLength(dto));
         audio.setFileLength(URLConnectionTool.getDataLength(audio));
-        //如果有指定保存路径，则使用指定的路径，否则从config.properties中读取
         pathMake.add(properties.getTmpSavePath());
         pathMake.add(avid);
         dto.setSavePath(CommonIOUtils.makeFilePath(pathMake, dto.getUrl().substring(dto.getUrl().lastIndexOf("/") + 1, dto.getUrl().indexOf("?"))));
