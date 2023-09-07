@@ -17,7 +17,7 @@ public class BikaProperties {
     private String email;
     private String password;
     private List<String> savePath;
-    private boolean writeDB = true;
+    private boolean writeDb;
     private String keywords;
     private String tempPath;
 }

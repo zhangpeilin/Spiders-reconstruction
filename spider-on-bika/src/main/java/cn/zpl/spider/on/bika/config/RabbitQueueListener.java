@@ -20,7 +20,7 @@ public class RabbitQueueListener {
             tool.setName("漫画");
             tool.setSleepTimes(10000);
             for (String id : ids) {
-                tool.ThreadExecutorAdd(new BikaComicThread(id.replaceAll("\\s", ""), true));
+                tool.ThreadExecutorAdd(new BikaComicThread(id.replaceAll("\\s", "")));
             }
             tool.shutdown();
         }

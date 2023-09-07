@@ -77,7 +77,7 @@ public class DownloadController {
         List<Bika> list = tools.commonApiQueryBySql("select * from bika t where likes_count > " + likeCount +
                 " and categories not like '%CG雜圖%' and categories not like '%耽美花園%' and categories not like '%生肉%' and not exists(select 1 from bika_download_failed p where p.id = t.id) and downloaded_at < 1692005906579  order by likes_count desc limit " + count, Bika.class);
 
-        list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId(), true)));
+        list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId())));
         tool.shutdown();
         return RestResponse.ok().msg("更新提交成功");
     }

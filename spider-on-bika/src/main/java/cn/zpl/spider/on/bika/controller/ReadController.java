@@ -161,7 +161,6 @@ public class ReadController {
     }
 
     @GetMapping("/clearCache/{comicId}")
-    @ResponseBody
     public String clearCache(@PathVariable("comicId") String comicId) {
         if (cache != null) {
             Bika bikaExist = utils.getBikaExist(comicId);
@@ -171,7 +170,7 @@ public class ReadController {
             List<String> collect = imageCache.asMap().keySet().stream().filter(bytes -> bytes.startsWith(comicId)).collect(Collectors.toList());
             collect.forEach(s -> imageCache.invalidate(s));
         }
-        return "success";
+        return "redirect:/comic/" + comicId;
     }
 
     @RequestMapping("/comic/{id}")
@@ -244,10 +243,6 @@ public class ReadController {
                             if (parts.length == 3) {
                                 resultMap.get(folder).get(subfolder).add(fileName);
                             }
-                        }
-
-                        for (Map.Entry<String, Map<Integer, List<String>>> entry : resultMap.entrySet()) {
-                            System.out.println(entry.getKey() + ": " + entry.getValue());
                         }
                     } catch (Exception e) {
                         e.printStackTrace();

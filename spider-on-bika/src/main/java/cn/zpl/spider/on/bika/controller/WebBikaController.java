@@ -116,6 +116,7 @@ public class WebBikaController {
     @GetMapping("/updatenow/{id}")
     public String updateNow(Model model, @PathVariable("id") String comicId) {
         Bika bika = utils.getBikaExist(comicId);
+        utils.downloadById(bika.getId(), true);
 //        BikaUtils.saveBika(bika);
         return "redirect:/comic/{id}";
     }

@@ -31,17 +31,16 @@ import java.util.Map;
 public class BikaComicThread extends BikaCommonThread {
 
     private final String comicId;
-    private final boolean isNeedDownload;
+//    private final boolean isNeedDownload;
 
     private boolean forceDownload = false;
-    CrudTools bikaCrudTools;
+    CrudTools crudTools;
     BikaProperties bikaProperties;
 
 
-    public BikaComicThread(String comicId, boolean isNeedDownload) {
+    public BikaComicThread(String comicId) {
         this.comicId = comicId;
-        this.isNeedDownload = isNeedDownload;
-        this.bikaCrudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
+        this.crudTools = SpringContext.getBeanWithGenerics(CrudTools.class);
         this.bikaProperties = SpringContext.getBeanWithGenerics(BikaProperties.class);
     }
 
@@ -53,13 +52,13 @@ public class BikaComicThread extends BikaCommonThread {
         failed.setId(comicId);
         failed.setDownloadAt(String.valueOf(System.currentTimeMillis()));
         failed.setError(e.getMessage());
-        if (bikaProperties.isWriteDB()){
+        if (bikaProperties.isWriteDb()){
             Bika exists = bikaUtils.getBikaExist(comicId);
             if (exists != null) {
                 exists.setDownloadedAt(failed.getDownloadAt());
-                bikaCrudTools.commonApiSave(exists);
+                crudTools.commonApiSave(exists);
             }
-            bikaCrudTools.commonApiSave(failed);
+            crudTools.commonApiSave(failed);
         }
         if (e.getMessage().contains("错误代码：400")) {
             return false;
@@ -75,19 +74,12 @@ public class BikaComicThread extends BikaCommonThread {
             log.debug(comicId + "漫画已下载且上次更新日期在7天内，跳过");
             Bika bikaExist = bikaUtils.getBikaExist(comicId);
             bikaExist.setDownloadedAt(String.valueOf(System.currentTimeMillis()));
-            bikaCrudTools.commonApiSave(bikaExist);
+            crudTools.commonApiSave(bikaExist);
             return;
         }
         JsonObject info = bikaUtils.getJsonByUrl(getComicsInfo);
         if (!BikaProperties.isForceDownload && bikaUtils.needSkip(info)) {
             log.debug(comicId + "跳过");
-            return;
-        }
-
-        if (!isNeedDownload) {
-            if (bikaProperties.isWriteDB()) {
-                bikaUtils.dosave(comicId, info, isNeedDownload, "");
-            }
             return;
         }
 
@@ -133,7 +125,7 @@ public class BikaComicThread extends BikaCommonThread {
         }
         if (exist == null || !new File(exist.getLocalPath()).exists()) {
             //如果数据库中没有记录，或者记录位置没有文件，保存记录并且预置保存位置
-            bikaUtils.dosave(comicId, info, isNeedDownload, bikaUtils.GetAvailablePath(0, null) + File.separator + BikaUtils.getFolder(comicId, title) + ".zip");
+            bikaUtils.dosave(comicId, info, bikaUtils.GetAvailablePath(0, null) + File.separator + BikaUtils.getFolder(comicId, title) + ".zip");
             bikaUtils.invalidCache(comicId);
         }
         log.debug("当前保存目录：{}", downloadPath);
@@ -185,11 +177,11 @@ public class BikaComicThread extends BikaCommonThread {
                     ZipUtils.append2Zip(downloadDir.toString(), bika.getLocalPath(), replace);
                 } catch (Exception e) {
                     log.error("目标压缩包无法追加文件，创建增量压缩包");
-                    compressFolder2ZipAndMove(bika, downloadDir, new File(existZip.getParentFile(), "增量压缩-" + existZip.getName()));
+                    compressFolder2ZipAndMove(downloadDir, new File(existZip.getParentFile(), "增量压缩-" + existZip.getName()));
                 }
                 //如果追加文件失败，则走创建
             } else {
-                compressFolder2ZipAndMove(bika, downloadDir, existZip);
+                compressFolder2ZipAndMove(downloadDir, existZip);
             }
             //重命名压缩包
             File newZip = new File(existZip.getParent(), BikaUtils.getFolder(comicId, title) + ".zip");
@@ -206,12 +198,12 @@ public class BikaComicThread extends BikaCommonThread {
             log.error("删除下载目录失败");
             throw new RuntimeException(e);
         }
-        if (bikaProperties.isWriteDB()) {
-            bikaUtils.dosave(comicId, info, isNeedDownload, bika.getLocalPath());
+        if (bikaProperties.isWriteDb()) {
+            bikaUtils.dosave(comicId, info, bika.getLocalPath());
         }
     }
 
-    private void compressFolder2ZipAndMove(Bika bika, File downloadDir, File desFile) {
+    private void compressFolder2ZipAndMove(File downloadDir, File desFile) {
         //新创建压缩包在临时目录中
         String tempZip = Paths.get(bikaProperties.getTempPath()).resolve(CruxIdGenerator.generate() + ".zip").toString();
         ZipUtils.compressFolder2Zip(downloadDir.toString(), tempZip);

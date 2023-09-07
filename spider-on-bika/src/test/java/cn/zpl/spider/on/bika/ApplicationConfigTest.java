@@ -91,7 +91,7 @@ public class ApplicationConfigTest {
                     "5d52cf9b5422a75212c3f292,\n" +
                     "5d73b1e3140d327c4093441c,";
             for (String s : str.split(",\n")) {
-                tool.ThreadExecutorAdd(new BikaComicThread(s, true));
+                tool.ThreadExecutorAdd(new BikaComicThread(s));
             }
             tool.shutdown();
         }

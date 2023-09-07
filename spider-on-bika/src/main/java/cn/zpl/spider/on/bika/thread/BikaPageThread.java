@@ -52,13 +52,13 @@ public class BikaPageThread extends BikaCommonThread {
                 tool.setSleepTimes(2000);
                 for (JsonElement detail : comics.getAsJsonArray()) {
                     if (isNeedDownload) {
-                        tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), isNeedDownload));
+                        tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString()));
                     } else {
                         listVector.add(saveComicInfo(detail));
                     }
                 }
                 log.debug(keyword + "第" + page + "页");
-                if (bikaProperties.isWriteDB()){
+                if (bikaProperties.isWriteDb()){
                     tools.commonApiSave(listVector);
                 }
                 tool.shutdown();

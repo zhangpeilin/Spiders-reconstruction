@@ -80,7 +80,7 @@ public class BikaUtils {
 
     public static LoadingCache<String, BikaList> bika_list_exists;
     private static String currentToken = "";
-    public static String defaultSavePath = "e:\\bika";
+//    public static String defaultSavePath = "e:\\bika";
 
     public static boolean cacheLoaded = false;
     public static ThreadLocal<List<File>> result = new ThreadLocal<>();
@@ -109,7 +109,7 @@ public class BikaUtils {
                 Bika bika = JSON.parseObject(detail.toString(), Bika.class);
                 searchResult.add(bika);
                 if (download) {
-                    tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
+                    tool.ThreadExecutorAdd(new BikaComicThread(CommonIOUtils.getFromJson2Str(detail, "_id")));
                 } else {
                     stringBuilder.append(String.format("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"))).append("\n");
                     log.debug(String.format("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id")));
@@ -131,11 +131,11 @@ public class BikaUtils {
         JsonElement comics = CommonIOUtils.getFromJson2(partJson, "data-comics");
 
         DownloadTools tool = DownloadTools.getInstance(10);
-        tool.setName("漫画");
-        tool.setSleepTimes(10000);
+        tool.setName("H24漫画");
+        tool.setSleepTimes(3000);
         List<String> stringList = new ArrayList<>();
         for (JsonElement detail : comics.getAsJsonArray()) {
-            tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
+            tool.ThreadExecutorAdd(new BikaComicThread(CommonIOUtils.getFromJson2Str(detail, "_id")));
             stringList.add(CommonIOUtils.getFromJson2Str(detail, "_id"));
         }
         tool.shutdown();
@@ -159,7 +159,7 @@ public class BikaUtils {
         DownloadTools tool = DownloadTools.getInstance(1);
         tool.setName("漫画");
         tool.setSleepTimes(10000);
-        BikaComicThread bikaComicThread = new BikaComicThread(id, true);
+        BikaComicThread bikaComicThread = new BikaComicThread(id);
         bikaComicThread.setForceDownload(forceDownload);
         tool.ThreadExecutorAdd(bikaComicThread);
         tool.shutdown();
@@ -171,7 +171,7 @@ public class BikaUtils {
         DownloadTools tool = DownloadTools.getInstance(10);
         tool.setName("漫画");
         tool.setSleepTimes(10000);
-        ids.forEach(id -> tool.ThreadExecutorAdd(new BikaComicThread(id, true)));
+        ids.forEach(id -> tool.ThreadExecutorAdd(new BikaComicThread(id)));
         tool.shutdown();
     }
 
@@ -206,7 +206,7 @@ public class BikaUtils {
             tool.setName("漫画");
             tool.setSleepTimes(10000);
             for (JsonElement detail : comics.getAsJsonArray()) {
-                tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString(), true));
+                tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString()));
             }
             tool.shutdown();
             i--;
@@ -220,7 +220,7 @@ public class BikaUtils {
 
 
     public synchronized BikaList getFromBikaList(String comicId) {
-        if (!bikaProperties.isWriteDB()) {
+        if (!bikaProperties.isWriteDb()) {
             return null;
         }
         if (bika_list_exists != null) {
@@ -265,7 +265,7 @@ public class BikaUtils {
     }
     private synchronized Object getExists(String cid) {
         if (exists != null) {
-            log.debug("当前缓存中数据条数：{}", exists.size());
+//            log.debug("当前缓存中数据条数：{}", exists.size());
             if (!cacheLoaded) {
                 new Thread(() -> {
                     try {
@@ -318,11 +318,11 @@ public class BikaUtils {
         return getExists(cid);
     }
 
-    public boolean isNeedUpdate(String comicid) {
-        if (!bikaProperties.isWriteDB()) {
+    public boolean isNeedUpdate(String comicId) {
+        if (!bikaProperties.isWriteDb()) {
             return true;
         }
-        Bika already = getBikaExist(comicid);
+        Bika already = getBikaExist(comicId);
         if (already != null) {
             if (already.getIsDeleted() != null && already.getIsDeleted() == 1) {
                 return false;
@@ -452,11 +452,12 @@ public class BikaUtils {
         } else {
             method = "post";
         }
-        String signature = GetSignature.generateSignature(path, time.substring(0, time.length() - 3), uuid, method);
+        String substring = time.substring(0, time.length() - 3);
+        String signature = GetSignature.generateSignature(path, substring, uuid, method);
         String headers = "api-key: C69BAF41DA5ABD1FFEDC6D2FEA56B\n" +
                 "accept: application/vnd.picacomic.com.v1+json\n" +
                 "app-channel: 1\n" +
-                "time: " + time.substring(0, time.length() - 3) + "\n" +
+                "time: " + substring + "\n" +
                 "nonce: " + uuid + "\n" +
                 "signature: " + signature + "\n" +
                 "app-version: 2.2.1.2.3.3\n" +
@@ -510,37 +511,21 @@ public class BikaUtils {
     }
 
 
-    public void dosave(String comicid, JsonObject json, boolean isNeedDownload, String localPath) {
+    public void dosave(String comicId, JsonObject json, String localPath) {
         //判断是否需要下载，如果数据存在：downloaded_at时间在一周之内，则认为不需要继续下载返回false，否则更新下载日期并且返回true
         if (json == null) {
-            String getComicsInfo = "comics/" + comicid;
+            String getComicsInfo = "comics/" + comicId;
             json = getJsonByUrl(getComicsInfo);
         }
         Bika bika = getBika(json, localPath);
         BikaList list = getBikaList(json, localPath);
         list.setLocalPath(localPath);
-        BikaDownloadFailed failed = new BikaDownloadFailed();
-        failed.setId(comicid);
-        List<Bika> result = tools.commonApiQuery(null, null, Bika.class);
-        if (!CollectionUtils.isEmpty(result)) {
-            CrudTools.commonApiDelete(null, Bika.class);
-        }
         try {
-            if (isNeedDownload) {
-                if (!tools.commonApiSave(bika).isSuccess()) {
-                    log.error("保存失败" + bika);
-                }
+            if (!tools.commonApiSave(bika).isSuccess()) {
+                log.error("保存失败" + bika);
             }
             tools.commonApiSave(list);
         } catch (Exception e) {
-//            base64ErrorCols(((GenericJDBCException) e.getCause()).getSQLException().getMessage(), bika);
-//            base64ErrorCols(((GenericJDBCException) e.getCause()).getSQLException().getMessage(), list);
-            if (isNeedDownload) {
-//                DBManager.ForceSave(bika);
-                if (!tools.commonApiSave(bika).isSuccess()) {
-                    log.error("保存失败-->{}", bika);
-                }
-            }
             tools.commonApiSave(list);
         }
     }
@@ -640,7 +625,7 @@ public class BikaUtils {
             Bika bika = getBika(info, "");
             bika.setIsDeleted(1);
 //            DBManager.update(bika);
-            if (bikaProperties.isWriteDB() && !tools.commonApiSave(bika).isSuccess()) {
+            if (bikaProperties.isWriteDb() && !tools.commonApiSave(bika).isSuccess()) {
                 log.error("保存失败：" + bika);
             }
             return true;
@@ -652,13 +637,14 @@ public class BikaUtils {
 
         String time = String.valueOf(System.currentTimeMillis());
         String uuid = UUID.randomUUID().toString().replace("-", "");
-        String signature = GetSignature.generateSignature(result.getUrl(), time.substring(0, time.length() - 3), uuid, "get");
+        String substring = time.substring(0, time.length() - 3);
+        String signature = GetSignature.generateSignature(result.getUrl(), substring, uuid, "get");
         String authorization = getCurrentToken() + "\n";
         String headers = "authorization: " + authorization +
                 "api-key: C69BAF41DA5ABD1FFEDC6D2FEA56B\n" +
                 "accept: application/vnd.picacomic.com.v1+json\n" +
                 "app-channel: 1\n" +
-                "time: " + time.substring(0, time.length() - 3) + "\n" +
+                "time: " + substring + "\n" +
                 "nonce: " + uuid + "\n" +
                 "signature: " + signature + "\n" +
                 "app-version: 2.2.1.3.3.4\n" +
@@ -692,23 +678,20 @@ public class BikaUtils {
         return "(" + id + ")" + title;
     }
 
-    public static String getLocalPath(String comicId, String title) {
-        BikaUtils bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
-        Bika exist = bikaUtils.getBikaExist(comicId);
-        String chapterPath;
-        if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
-            return exist.getLocalPath();
-        } else {
-            chapterPath = BikaUtils.defaultSavePath + "\\(" + comicId + ")" + title;
-            return chapterPath;
-        }
-    }
+//    public static String getLocalPath(String comicId, String title) {
+//        BikaUtils bikaUtils = SpringContext.getBeanWithGenerics(BikaUtils.class);
+//        Bika exist = bikaUtils.getBikaExist(comicId);
+//        String chapterPath;
+//        if (exist != null && exist.getLocalPath() != null && !"".equals(exist.getLocalPath())) {
+//            return exist.getLocalPath();
+//        } else {
+//            chapterPath = BikaUtils.defaultSavePath + "\\(" + comicId + ")" + title;
+//            return chapterPath;
+//        }
+//    }
 
     /**
      * 获取当前目录下所有的文件夹
-     *
-     * @param path
-     * @return
      */
     public static List<File> getFolders(String path, String regex) {
         //如果表达式为空，则返回所有文件夹，否则返回符合表达式格式的文件夹
@@ -750,15 +733,11 @@ public class BikaUtils {
             ImmutableMap<String, Object> fitMap = first.get();
             return Paths.get(String.valueOf(fitMap.get("path")));
         }
-        return Paths.get("d:\\temp");
+        return Paths.get(bikaProperties.getTempPath());
     }
 
     /**
-     * m
      * 将文件移到存档点
-     *
-     * @param file
-     * @param des
      */
     @SneakyThrows
     public Path moveFile(File file, Path des) {
