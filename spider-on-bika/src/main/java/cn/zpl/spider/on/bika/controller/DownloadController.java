@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -60,6 +61,16 @@ public class DownloadController {
         bikaUtils.H24();
         return RestResponse.ok("H24下载提交成功");
     }
+    @GetMapping("/updateAllExistBika")
+    public RestResponse updateAllExistBika() {
+        List<BikaList> list = tools.commonApiQueryBySql("select * from bika where is_deleted <> 1 and local_path is not null and downloaded_at < 1697008173191  order by  likes_count desc limit 1000;", BikaList.class);
+        DownloadTools tool = DownloadTools.getInstance(5);
+        tool.setName("漫画");
+        tool.setSleepTimes(10000);
+        list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId())));
+        tool.shutdown();
+        return RestResponse.ok("开始更新现存zip文件");
+    }
 
     @GetMapping(value = {"/download/id/{id}/{true}", "/download/id/{id}"})
     public RestResponse downloadById(@PathVariable("id") String id, @PathVariable(value = "true", required = false) String force) {
@@ -68,14 +79,15 @@ public class DownloadController {
     }
 
     @GetMapping("/downloadBySql/{count}/{like}")
-    public RestResponse downloadBySql(@PathVariable("count") String count, @PathVariable("like") String likeCount) {
+    public RestResponse downloadBySql(@RequestParam(value = "sql", required = false) String sql, @PathVariable("count") String count, @PathVariable("like") String likeCount) {
         DownloadTools tool = DownloadTools.getInstance(5);
         tool.setName("漫画");
         tool.setSleepTimes(10000);
-//        List<BikaList> list = tools.commonApiQueryBySql("select * from bika_list t where likes_count > " + likeCount +
-//                " and local_path is null and not (categories like '%CG雜圖%' and pages_count > 100 ) and categories not like '%耽美花園%' and categories not like '%生肉%' and not exists(select 1 from bika_download_failed p where p.id = t.id)  order by likes_count desc limit " + count, BikaList.class);
-        List<Bika> list = tools.commonApiQueryBySql("select * from bika t where likes_count > " + likeCount +
-                " and categories not like '%CG雜圖%' and categories not like '%耽美花園%' and categories not like '%生肉%' and not exists(select 1 from bika_download_failed p where p.id = t.id) and downloaded_at < 1692005906579  order by likes_count desc limit " + count, Bika.class);
+        sql = StringUtils.isEmpty(sql) ? "select * from bika_list t where likes_count > " + likeCount +
+                " and local_path is null and not (categories like '%CG雜圖%' and pages_count > 100 ) and categories not like '%耽美花園%' and categories not like '%生肉%' and not exists(select 1 from bika_download_failed p where p.id = t.id)  order by likes_count desc limit " + count : sql;
+        List<BikaList> list = tools.commonApiQueryBySql(sql, BikaList.class);
+//        List<Bika> list = tools.commonApiQueryBySql("select * from bika t where likes_count > " + likeCount +
+//                " and categories not like '%CG雜圖%' and categories not like '%耽美花園%' and categories not like '%生肉%' and not exists(select 1 from bika_download_failed p where p.id = t.id) and downloaded_at < 1692005906579  order by likes_count desc limit " + count, Bika.class);
 
         list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId())));
         tool.shutdown();

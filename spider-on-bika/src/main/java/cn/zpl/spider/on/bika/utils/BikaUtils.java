@@ -43,6 +43,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -323,6 +324,12 @@ public class BikaUtils {
             return true;
         }
         Bika already = getBikaExist(comicId);
+        if (already == null) {
+            return true;
+        }
+        if (StringUtils.isEmpty(already.getLocalPath())) {
+            return true;
+        }
         if (already != null) {
             if (already.getIsDeleted() != null && already.getIsDeleted() == 1) {
                 return false;

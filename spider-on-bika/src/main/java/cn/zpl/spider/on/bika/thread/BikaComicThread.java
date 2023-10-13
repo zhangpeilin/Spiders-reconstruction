@@ -2,6 +2,7 @@ package cn.zpl.spider.on.bika.thread;
 
 import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaDownloadFailed;
+import cn.zpl.common.bean.BikaList;
 import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.bika.common.BikaProperties;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
@@ -73,8 +74,12 @@ public class BikaComicThread extends BikaCommonThread {
         if (!bikaUtils.isNeedUpdate(comicId) && !forceDownload) {
             log.debug(comicId + "漫画已下载且上次更新日期在7天内，跳过");
             Bika bikaExist = bikaUtils.getBikaExist(comicId);
+            BikaList bikaListExist = bikaUtils.getBikaListExist(comicId);
+            bikaListExist.setLocalPath(bikaExist.getLocalPath());
             bikaExist.setDownloadedAt(String.valueOf(System.currentTimeMillis()));
+            bikaListExist.setDownloadedAt(bikaExist.getDownloadedAt());
             crudTools.commonApiSave(bikaExist);
+            crudTools.commonApiSave(bikaListExist);
             return;
         }
         JsonObject info = bikaUtils.getJsonByUrl(getComicsInfo);

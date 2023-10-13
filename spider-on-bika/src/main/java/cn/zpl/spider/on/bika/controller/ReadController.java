@@ -200,19 +200,21 @@ public class ReadController {
                     return null;
                 }
             }
+            if (ifPresent.isEmpty()) {
+                cache.invalidate(zipPath);
+                return getChapters(zipPath);
+            }
             Set<String> strings = ifPresent.keySet();
             Optional<String> first = strings.stream().findFirst();
-            if (first.isPresent()) {
-                String folder = first.get();
-                List<String> chapters = ifPresent.get(folder).get(0);
-                chapters.sort((s1, s2) -> {
-                    // 将字符串解析为整数进行比较
-                    int num1 = Integer.parseInt(s1);
-                    int num2 = Integer.parseInt(s2);
-                    return Integer.compare(num1, num2);
-                });
-                return chapters;
-            }
+            String folder = first.get();
+            List<String> chapters = ifPresent.get(folder).get(0);
+            chapters.sort((s1, s2) -> {
+                // 将字符串解析为整数进行比较
+                int num1 = Integer.parseInt(s1);
+                int num2 = Integer.parseInt(s2);
+                return Integer.compare(num1, num2);
+            });
+            return chapters;
         } else {
             cache = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(2000, TimeUnit.HOURS).build(new CacheLoader<String, Map<String, Map<Integer, List<String>>>>() {
                 @Override
@@ -228,11 +230,11 @@ public class ReadController {
                             }
                             String[] parts = path.split("/");
                             String folder = parts[0];
+                            resultMap.putIfAbsent(folder, new HashMap<>());
                             int subfolder = parts.length >= 2 ? Integer.parseInt(parts[1]) : 0;
                             String fileName = parts[parts.length - 1];
                             //如果只有一个/表示只有根目录，如果有两个//表示带章节目录，如果有3个//表示带图片名称
                             if (parts.length == 1) {
-                                resultMap.putIfAbsent(folder, new HashMap<>());
                                 continue;
                             }
                             resultMap.get(folder).putIfAbsent(0, new ArrayList<>());
