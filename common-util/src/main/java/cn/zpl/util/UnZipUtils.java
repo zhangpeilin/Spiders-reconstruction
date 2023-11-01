@@ -10,20 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-/**
- *  * @Auther: ZLF
- *  * @Date: 2018/6/28 10:03
- *  * @Description:zip文件解压缩工具类
- *  
- */
 public class UnZipUtils {
 
-
-    public void test() throws ZipException {
-        UnZipUtils z = new UnZipUtils();
-        File zipFile = new File("G:\\exhentai\\archive\\[Yuzuki N Dash] Suki - Kirai - Daisuki. Returns (COMIC Tenma 2013-05) [Chinese] [渣渣汉化组].zip");
-        z.unZip(zipFile, zipFile.getPath().replace(".zip", ""), "");
-    }
 
     /**
      * @param zipFile  原始文件路径

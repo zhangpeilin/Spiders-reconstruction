@@ -6,11 +6,15 @@ import cn.zpl.thread.CommonThread;
 import cn.zpl.thread.DownloadWithMultipleThread;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -20,13 +24,19 @@ public class DownloadTools {
 
     public static ConcurrentHashMap<Integer, Map<String, DownloadTools>> executorCache = new ConcurrentHashMap<>();
 
+    public static ConcurrentHashMap<Integer, Vector<Future<Boolean>>> futureCache = new ConcurrentHashMap<>();
+
     public static DownloadTools getToolsByName(String name) {
         Map.Entry<Integer, Map<String, DownloadTools>> mapEntry = executorCache.entrySet().stream().filter(integerMapEntry -> integerMapEntry.getValue().get(name) != null).findFirst().orElse(null);
         if (mapEntry != null) {
             return executorCache.get(mapEntry.getKey()).get(name);
         } else {
-            return null;
+            return DownloadTools.getInstance(1, name);
         }
+    }
+
+    public Vector<Future<Boolean>> getFutureVector() {
+        return futureCache.get(this.hashCode()) == null ? new Vector<>() : futureCache.get(this.hashCode());
     }
 
     public String getName() {
@@ -63,13 +73,17 @@ public class DownloadTools {
 
     private ThreadPoolExecutor executor;
 
-    public static DownloadTools getInstance(int coreSize){
+    public static DownloadTools getInstance(int coreSize, String... toolName){
         DownloadTools downloadTools = new DownloadTools(coreSize);
+        if (toolName.length != 0 && !StringUtils.isEmpty(toolName[0])) {
+            downloadTools.setName(toolName[0]);
+        }
         executorCache.put(downloadTools.hashCode(), new HashMap<String, DownloadTools>(){
             {
                 put(downloadTools.getName(), downloadTools);
             }
         });
+        futureCache.put(downloadTools.hashCode(), new Vector<>());
         return downloadTools;
     }
 
@@ -183,6 +197,11 @@ public class DownloadTools {
             e.printStackTrace();
             MultipleThread(data);
         }
+    }
+
+    public void submitTask(Callable<Boolean> callable) {
+        futureCache.get(this.hashCode()).add(executor.submit(callable));
+
     }
 
     public void shutdown() {

@@ -52,7 +52,7 @@ public class CrudTools {
         }
     }
 
-    @Async("BikaAsync")
+    @Async("MyAsync")
     public void AsyncApiSave(Object bean){
         commonApiSave(bean);
     }
@@ -125,10 +125,4 @@ public class CrudTools {
     private String formatRequestUrl(String url, Object... args) {
         return String.format(url, args);
     }
-
-    public static <T> boolean commonApiDelete(String condition, Class<T> tClass) {
-
-        return RestResponse.ok().isSuccess();
-    }
-
 }

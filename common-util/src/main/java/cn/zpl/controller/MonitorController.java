@@ -14,14 +14,21 @@ public class MonitorController {
     @GetMapping("/getStatus/{toolName}")
     public String getTheDownloadToolsStatus(@PathVariable("toolName") String toolName) {
         DownloadTools downloadTools = DownloadTools.getToolsByName(toolName);
-        if (downloadTools != null) {
-            ThreadPoolExecutor executor = downloadTools.getExecutor();
-            return ("【" + downloadTools.getName() + "】线程池，其中核心线程数目：" + executor.getPoolSize()
-                    + "，待执行任务数目：" + executor.getQueue().size()
-                    + "，已完成任务数目：" + executor.getCompletedTaskCount());
-        } else {
-            return "当前没有执行器";
-        }
+        downloadTools.getExecutor().shutdownNow();
+        ThreadPoolExecutor executor = downloadTools.getExecutor();
+        return ("【" + downloadTools.getName() + "】线程池，其中核心线程数目：" + executor.getPoolSize()
+                + "，待执行任务数目：" + executor.getQueue().size()
+                + "，已完成任务数目：" + executor.getCompletedTaskCount());
+    }
+
+    @GetMapping("/shutdownTest/{toolName}")
+    public String shutdown(@PathVariable("toolName") String toolName) {
+        DownloadTools downloadTools = DownloadTools.getToolsByName(toolName);
+        downloadTools.getExecutor().shutdownNow();
+        ThreadPoolExecutor executor = downloadTools.getExecutor();
+        return ("【" + downloadTools.getName() + "】线程池，其中核心线程数目：" + executor.getPoolSize()
+                + "，待执行任务数目：" + executor.getQueue().size()
+                + "，已完成任务数目：" + executor.getCompletedTaskCount());
     }
 
     @GetMapping("/getAllStatus")

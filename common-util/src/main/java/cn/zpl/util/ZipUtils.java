@@ -149,6 +149,33 @@ public class ZipUtils {
         }).collect(Collectors.toList());
     }
 
+    public boolean isZero(String path) {
+        try (org.apache.commons.compress.archivers.zip.ZipFile zipFile = new org.apache.commons.compress.archivers.zip.ZipFile(path)) {
+            Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry zipArchiveEntry = entries.nextElement();
+                if (!zipArchiveEntry.isDirectory() && !zipArchiveEntry.getName().endsWith(".txt")) {
+                    InputStream inputStream = zipFile.getInputStream(zipArchiveEntry);
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        bos.write(buffer, 0, bytesRead);
+                    }
+                    inputStream.close();
+                    bos.close();
+                    long compressedSize = zipArchiveEntry.getCompressedSize();
+                    if (bos.toByteArray().length < compressedSize) {
+                        return true;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
+    }
+
     public static byte[] getArchive2Byte(ZipArchiveEntry archiveEntry, org.apache.commons.compress.archivers.zip.ZipFile zipFile) throws IOException {
         InputStream inputStream = zipFile.getInputStream(archiveEntry);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -295,6 +322,9 @@ public class ZipUtils {
 
     public static void deleteStrInFile(String filePath, String delStr) throws IOException {
         {
+            if (!new File(filePath).exists()) {
+                return;
+            }
             StringBuffer readTxt = CommonIOUtils.readTxt(filePath, null);
             List<String> list = Arrays.stream(readTxt.toString().split("\n")).collect(Collectors.toList());
             Iterator<String> iterator = list.iterator();
@@ -993,81 +1023,6 @@ class test4 {
     }
 }
 
-class test1 {
-    public static void main(String[] args) {
-        //读取压缩包中前10张图片进行比较，如果存在相似度>9的，连续3个，判定压缩包为相似
-        try (org.apache.commons.compress.archivers.zip.ZipFile zipFile1 = new org.apache.commons.compress.archivers.zip.ZipFile("G:\\ehentai\\archive\\20230515\\[Bunga] Kenshin Nadeshiko [Chinese] [无毒汉化组] [Digital].zip"); org.apache.commons.compress.archivers.zip.ZipFile zipFile2 = new org.apache.commons.compress.archivers.zip.ZipFile("G:\\ehentai\\archive\\20230611\\[dam] Watashi wa Tada Skirt o Mijikaku shita dake 我不過是把裙子往上捲短一點而已 [Chinese] [Digital].zip")) {
-            List<FingerPrint> first = new ArrayList<>(getArchive2FingerPrint(zipFile1, 5));
-            List<FingerPrint> second = new ArrayList<>(getArchive2FingerPrint(zipFile2, 5));
-            List<FingerPrint> matchList = first.stream().filter(f1 -> {
-                if (f1 == null) {
-                    return false;
-                }
-                Optional<FingerPrint> any = second.parallelStream().filter(f2 -> {
-                    if (f2 == null) {
-                        return false;
-                    }
-                    return f1.compare(f2) > 0.8;
-                }).findAny();
-                return any.isPresent();
-            }).collect(Collectors.toList());
-            System.out.println(matchList.size());
-            System.out.println(matchList.size() > first.size() * 0.6);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static List<byte[]> getArchive2Byte(org.apache.commons.compress.archivers.zip.ZipFile zipFile , Integer count) throws IOException {
-        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
-        List<byte[]> result = new ArrayList<>();
-        while (result.size() < count && entries.hasMoreElements()) {
-                ZipArchiveEntry zipArchiveEntry = entries.nextElement();
-                if (!zipArchiveEntry.isDirectory()) {
-                    InputStream inputStream = zipFile.getInputStream(zipArchiveEntry);
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    byte[] buffer = new byte[1024];
-                    int bytesRead;
-                    while ((bytesRead = inputStream.read(buffer)) != -1) {
-                        bos.write(buffer, 0, bytesRead);
-                    }
-                    inputStream.close();
-                    bos.close();
-                    result.add(bos.toByteArray());
-                }
-        }
-        return result;
-    }
-
-    public static List<FingerPrint> getArchive2FingerPrint(org.apache.commons.compress.archivers.zip.ZipFile zipFile , Integer count) throws IOException {
-        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
-        List<byte[]> bytes = new ArrayList<>();
-        while (bytes.size() < count && entries.hasMoreElements()) {
-            ZipArchiveEntry zipArchiveEntry = entries.nextElement();
-            if (!zipArchiveEntry.isDirectory()) {
-                InputStream inputStream = zipFile.getInputStream(zipArchiveEntry);
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    bos.write(buffer, 0, bytesRead);
-                }
-                inputStream.close();
-                bos.close();
-                bytes.add(bos.toByteArray());
-            }
-        }
-        return bytes.parallelStream().map(b -> {
-            try {
-                return new FingerPrint(ImageIO.read(new ByteArrayInputStream(b)));
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }).collect(Collectors.toList());
-    }
-}
-
 class test2 {
     public static void main(String[] args) {
         //耗时：1261
@@ -1103,51 +1058,6 @@ class test2 {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-}
-
-class test3 {
-    public static void main(String[] args) {
-//    耗时：17415
-        long start = System.currentTimeMillis();
-        String zipPath = "c:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）.zip";
-        try (ZipFile zipFile = new ZipFile(zipPath)) {
-            zipFile.setCharset(Charset.forName("gbk"));
-            zipFile.extractAll("c:\\test");
-
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-
-        try {
-            FileUtils.delete(new File(zipPath));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        try (ZipFile zipFile = new ZipFile(zipPath)) {
-            zipFile.setCharset(Charset.forName("gbk"));
-            zipFile.addFolder(new File("c:\\test\\(627ca33a75ab703dacb84cc1)疫情期間的家教生活（更新至30话）"));
-            long end = System.currentTimeMillis();
-            System.out.println("耗时：" + (end - start));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-}
-
-
-@Slf4j
-class test12 {
-    public static void main(String[] args) throws IOException {
-        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) log;
-        logger.setLevel(ch.qos.logback.classic.Level.OFF);
-//        ZipUtils.unzipFile2Dir("E:\\bika\\增量压缩-(58218fc75f6b9a4f93e341b9)愛されすぎて困るの.zip", "D:\\bika_temp", "list.txt");
-        Collection<File> zips = FileUtils.listFiles(new File("D:\\ehentai\\archive"), new String[]{"zip", "rar", "7z"}, true);
-        zips.parallelStream().forEach(file -> {
-            if (!ZipUtils.checkZipStatus(file.getPath())) {
-                System.out.println("压缩包存在问题：" + file);
-            }
-        });
     }
 }
 
