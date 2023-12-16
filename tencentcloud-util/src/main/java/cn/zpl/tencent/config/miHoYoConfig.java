@@ -21,9 +21,9 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableConfigurationProperties(TencentParams.class)
 @EnableScheduling
-public class TencentConfig {
+public class miHoYoConfig {
 
-    public static LoadingCache<String, Boolean> cache = CacheBuilder.newBuilder().maximumSize(1).expireAfterWrite(2, TimeUnit.HOURS).build(new CacheLoader<String, Boolean>() {
+    public static LoadingCache<String, Boolean> cache = CacheBuilder.newBuilder().maximumSize(1).expireAfterWrite(24, TimeUnit.HOURS).build(new CacheLoader<String, Boolean>() {
         @Override
         public @NotNull Boolean load(@NotNull String key) {
             return false;
@@ -32,8 +32,7 @@ public class TencentConfig {
 
     //每天8:30开始每5分钟执行一次
     @SneakyThrows
-    @Scheduled(cron = "0 35 8 * * *")
-//    @Scheduled(cron = "0/5 * 9 * * *")
+    @Scheduled(cron = "0 * 14 * * *")
     private void configureTask(){
         if (cache.get("isNotice")) {
             return;
