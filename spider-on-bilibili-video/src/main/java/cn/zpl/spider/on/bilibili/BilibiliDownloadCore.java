@@ -142,9 +142,9 @@ public class BilibiliDownloadCore {
     }
 
     private boolean isDownloaded(final String cid, final String avid) {
-        if (isException(avid)) {
-            return true;
-        }
+//        if (isException(avid)) {
+//            return true;
+//        }
         VideoInfo exist = bilibiliCommonUtils.getVideoInfo(cid);
         if (exist == null) {
             return false;
@@ -209,15 +209,15 @@ public class BilibiliDownloadCore {
             int code = CommonIOUtils.getFromJson2Integer(result, "code");
 
             JsonElement temp = CommonIOUtils.getFromJson2(result, "data");
-            boolean isDownloaded = false;
-            if (temp.isJsonArray()) {
-                for (JsonElement part : temp.getAsJsonArray()) {
-                    isDownloaded = isDownloaded(CommonIOUtils.getFromJson2Str(part, "cid"), avid);
-                }
-            }
-            if (isDownloaded) {
-                return;
-            }
+//            boolean isDownloaded = false;
+//            if (temp.isJsonArray()) {
+//                for (JsonElement part : temp.getAsJsonArray()) {
+//                    isDownloaded = isDownloaded(CommonIOUtils.getFromJson2Str(part, "cid"), avid);
+//                }
+//            }
+//            if (isDownloaded) {
+//                return;
+//            }
             if (code != 0) {
                 log.error(CommonIOUtils.getFromJson2Str(result, "message"));
             }
