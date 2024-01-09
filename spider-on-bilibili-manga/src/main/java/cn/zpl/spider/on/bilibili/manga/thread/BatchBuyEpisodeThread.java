@@ -48,11 +48,10 @@ public class BatchBuyEpisodeThread implements Callable<Map<String, Map<String, I
             log.error("需要重新登录");
             return Collections.emptyMap();
         }
-        int remainSilver = CommonIOUtils.getFromJson2Integer(resultJson, "data-remain_silver");
         boolean is_locked = CommonIOUtils.getFromJson2Boolean(resultJson, "data-is_locked");
         String comic_id = CommonIOUtils.getFromJson2Str(resultJson, "data-comic_id");
         //需要解锁的解锁，已经解锁的跳过
-        if (is_locked && remainSilver > 0) {
+        if (is_locked) {
             //满足条件，调用解锁方法BuyEpisode
             param = "{\"buy_method\":1,\"ep_id\":" + ep_id + ",\"comic_id\":" + comic_id + "}";
             String buyResult = utils.postUrl(properties.getBuyEpisodeUrl(), param,
@@ -72,7 +71,7 @@ public class BatchBuyEpisodeThread implements Callable<Map<String, Map<String, I
             log.error("需要重新登录");
             return Collections.emptyMap();
         }
-        remainSilver = CommonIOUtils.getFromJson2Integer(resultJson, "data-remain_silver");
+        int remainSilver = CommonIOUtils.getFromJson2Integer(resultJson, "data-remain_silver");
         return Collections.singletonMap(ep_id, remainSilver);
     }
 

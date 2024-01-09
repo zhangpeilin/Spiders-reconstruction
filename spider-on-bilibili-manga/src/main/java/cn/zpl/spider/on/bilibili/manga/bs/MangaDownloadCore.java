@@ -3,6 +3,7 @@ package cn.zpl.spider.on.bilibili.manga.bs;
 import cn.zpl.annotation.DistributeLock;
 import cn.zpl.annotation.DistributedLockKey;
 import cn.zpl.common.bean.BilibiliManga;
+import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.bilibili.manga.thread.ChapterThread;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliProperties;
@@ -13,6 +14,7 @@ import cn.zpl.util.URLConnectionTool;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -40,6 +42,21 @@ public class MangaDownloadCore {
 
     void getComicDetailForFree(String comic_id) {
         getComicDetail(comic_id, false);
+    }
+
+    @Async("MyAsync")
+    public void downloadAllBoughtManga(int page) {
+        String boughtMangaJson = URLConnectionTool.postUrl(mangaProperties.getGetAutoBuyComics(),
+                "{\"page_num\": " + page + ", \"page_size\": 50}", mangaProperties.getCommonHeaders() + bilibiliProperties.getCookies());
+        JsonElement json = CommonIOUtils.paraseJsonFromStr(boughtMangaJson);
+        JsonElement data = CommonIOUtils.getFromJson2(json, "data");
+        MangaDownloadCore downloadCore = SpringContext.getBeanWithGenerics(MangaDownloadCore.class);
+        if (data.isJsonArray() && data.getAsJsonArray().size() > 1) {
+            for (JsonElement jsonElement : data.getAsJsonArray()) {
+                downloadCore.getComicDetail(CommonIOUtils.getFromJson2Str(jsonElement, "comic_id"), true);
+            }
+            downloadAllBoughtManga(++page);
+        }
     }
 
     @DistributeLock(value = "redissionLock:comic2Buy", waitTime = 500, holdTime = 500)

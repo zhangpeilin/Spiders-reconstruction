@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -53,18 +52,26 @@ public class MangaDownloadController {
         return "success";
     }
 
+    @GetMapping("/downloadAllBoughtManga")
+    public String downloadAllBoughtManga() {
+        mangaDownloadCore.downloadAllBoughtManga(1);
+        return "更新完成";
+    }
+
     @GetMapping("/getMangaSavePath")
     public String test(){
         return properties.getMangaSavePath();
     }
 
     @PostMapping("/batchBuy")
-    public String batchBuyEp(@RequestParam("comicIds") List<String> comicList, @RequestParam("buyTime") Integer buyTime) {
+    public String batchBuyEp(@RequestParam("comicIds") List<String> comicList, @RequestParam("buyTime") Integer buyTime, @RequestParam(value = "fromEpId", required = false) Integer fromEpId) {
+        fromEpId = fromEpId == null ? 0 : fromEpId;
         DownloadTools tools = DownloadTools.getInstance(2);
         for (String comicId : comicList) {
             JsonArray epIds = mangaDownloadCore.getEpIds(comicId);
             List<EpEntity> objects = JSON.parseArray(epIds.toString(), EpEntity.class);
-            List<EpEntity> sortedList = objects.stream().filter(EpEntity::is_locked).sorted(Comparator.comparingInt(EpEntity::getOrd)).collect(Collectors.toList());
+            Integer finalFromEpId = fromEpId;
+            List<EpEntity> sortedList = objects.stream().filter(EpEntity::is_locked).filter(eps -> Integer.parseInt(eps.getId()) > finalFromEpId).sorted(Comparator.comparingInt(EpEntity::getOrd)).collect(Collectors.toList());
             for (EpEntity ep : sortedList) {
                 if (buyTime-- > 0) {
                     System.out.println("当前下载章节：" + ep.getOrd());
