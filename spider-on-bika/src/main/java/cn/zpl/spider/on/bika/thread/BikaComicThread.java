@@ -17,6 +17,7 @@ import com.google.gson.JsonObject;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -128,7 +129,7 @@ public class BikaComicThread extends BikaCommonThread {
                 }
             }
         }
-        if (exist == null || !new File(exist.getLocalPath()).exists()) {
+        if (exist == null || StringUtils.isEmpty(exist.getLocalPath()) || !new File(exist.getLocalPath()).exists()) {
             //如果数据库中没有记录，或者记录位置没有文件，保存记录并且预置保存位置
             bikaUtils.dosave(comicId, info, bikaUtils.GetAvailablePath(0, null) + File.separator + BikaUtils.getFolder(comicId, title) + ".zip");
             bikaUtils.invalidCache(comicId);
@@ -156,6 +157,11 @@ public class BikaComicThread extends BikaCommonThread {
                 tool.shutdown();
             }
         }
+//        BikaDownloadFailed bikaDownloadFailed = bikaUtils.getBikaDownloadFailed(comicId);
+//        if (bikaDownloadFailed != null && !StringUtils.isEmpty(bikaDownloadFailed.getError())) {
+//            log.error("下载任务失败，记录日志{}", bikaDownloadFailed);
+//            return;
+//        }
         //将新下载的内容写入压缩包中
         Bika bika = bikaUtils.getBikaExist(comicId);
         File existZip = new File(bika.getLocalPath());

@@ -291,7 +291,31 @@ public class ReadController {
         }
     }
 
+    @ResponseBody
+    @GetMapping("/loadCoverImg")
+    public void loadCoverImg(@RequestParam("id") String id, HttpServletResponse response) {
+        OutputStream outputStream;
+        byte[] image = new byte[0];
+        List<String> imagesInChapter = getImagesInChapter(id, "1");
+        if (imagesInChapter != null && !imagesInChapter.isEmpty()) {
+            image = getImage(id, "1", imagesInChapter.get(0));
+        }
+        if (image != null && image.length != 0) {
+            try {
+                response.setContentType("image/png");
+                outputStream = response.getOutputStream();
+                outputStream.write(image);
+                outputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private Map<String, Map<Integer, List<String>>> getZipInfo(String zipPath) {
+        if (cache == null) {
+            getChapters(zipPath);
+        }
         Map<String, Map<Integer, List<String>>> ifPresent = cache.getIfPresent(zipPath);
         if (ifPresent == null || ifPresent.isEmpty()) {
             try {
@@ -304,14 +328,6 @@ public class ReadController {
         } else {
             return ifPresent;
         }
-    }
-
-    @RequestMapping("/test")
-    public String test(Model model) {
-        File base = new File("C:\\Users\\zpl\\Pictures");
-        String[] names = base.list((dir, name) -> name.contains("png"));
-        model.addAttribute("names", names);
-        return "test";
     }
 
     private File getFile(String id, String child) {
@@ -352,7 +368,7 @@ public class ReadController {
                     ifPresent = imageCache.get(myKey);
                     return ifPresent;
                 } catch (Exception e) {
-                    log.error("压缩包读取失败", e);
+                    log.error("压缩包id:{}读取失败", comicId, e);
                     return null;
                 }
             } else {

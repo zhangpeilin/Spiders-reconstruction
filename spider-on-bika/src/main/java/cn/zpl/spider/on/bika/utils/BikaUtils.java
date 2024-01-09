@@ -93,7 +93,6 @@ public class BikaUtils {
 
     public static final Map<String, AtomicInteger> progress = new HashMap<>();
 
-//    @Async("BikaAsync")
     public String search(String key, boolean download) {
         StringBuilder stringBuilder = new StringBuilder();
         try {
@@ -124,7 +123,7 @@ public class BikaUtils {
         return stringBuilder.toString();
     }
 
-    @Async("BikaAsync")
+    @Async("MyAsync")
     public void H24() {
         //H24 D7 D30
         String url = "comics/leaderboard?tt=H24&ct=VC";
@@ -153,7 +152,7 @@ public class BikaUtils {
     }
 
 
-    @Async("BikaAsync")
+    @Async("MyAsync")
     public void downloadById(String id, boolean forceDownload) {
 
         //H24 D7 D30
@@ -216,7 +215,8 @@ public class BikaUtils {
     }
 
     public void invalidCache(String comicId) {
-        exists.invalidate(comicId);
+        exists.invalidate("bika:" + comicId);
+        exists.invalidate("bika_list:" + comicId);
     }
 
 
@@ -264,6 +264,10 @@ public class BikaUtils {
     public BikaList getBikaListExist(String id) {
         return (BikaList) getExists( "bika_list" + ":" + id);
     }
+
+    public BikaDownloadFailed getBikaDownloadFailed(String id) {
+        return (BikaDownloadFailed) getExists( "bika_download_failed" + ":" + id);
+    }
     private synchronized Object getExists(String cid) {
         if (exists != null) {
 //            log.debug("当前缓存中数据条数：{}", exists.size());
@@ -310,9 +314,12 @@ public class BikaUtils {
             public Map<String, Object> loadAll(Iterable<? extends String> keys) {
                 List<Bika> bikas = tools.commonApiQueryBySql("select * from bika", Bika.class);
                 List<BikaList> bikaList = tools.commonApiQueryBySql("select * from bika_list", BikaList.class);
+                List<BikaDownloadFailed> bikaDownloadFaileds = tools.commonApiQueryBySql("select * from bika_download_failed", BikaDownloadFailed.class);
                 Map<String, Object> videoInfoMap = bikas.stream().collect(Collectors.toMap(bika -> "bika:" + bika.getId(), bika -> bika));
                 Map<String, Object> ListMap = bikaList.stream().collect(Collectors.toMap(list -> "bika_list:" + list.getId(), list -> list));
+                Map<String, Object> failed = bikaDownloadFaileds.stream().collect(Collectors.toMap(list -> "bika_download_failed:" + list.getId(), list -> list));
                 videoInfoMap.putAll(ListMap);
+                videoInfoMap.putAll(failed);
                 return videoInfoMap;
             }
         });
@@ -764,7 +771,7 @@ public class BikaUtils {
     }
 
     @SneakyThrows
-    @Async("BikaAsync")
+    @Async("MyAsync")
     public void bus(String type, File file, BikaUtils bikaUtils, Function<File, List<String>> callback, BiFunction<File, Path, Path> after) {
         if (callback == null) {
             throw new RuntimeException("没有传入正确的处理函数");
@@ -836,7 +843,7 @@ public class BikaUtils {
 //            }
     }
 
-    @Async("BikaAsync")
+    @Async("MyAsync")
     public void updateAllKinds(){
 
         String keyword = bikaProperties.getKeywords();

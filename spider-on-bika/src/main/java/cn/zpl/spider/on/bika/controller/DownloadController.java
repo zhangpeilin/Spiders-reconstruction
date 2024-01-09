@@ -4,6 +4,7 @@ import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.BikaList;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.SpringContext;
+import cn.zpl.spider.on.bika.bs.BikaBusiness;
 import cn.zpl.spider.on.bika.common.BikaProperties;
 import cn.zpl.spider.on.bika.thread.BikaComicThread;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
@@ -50,6 +51,9 @@ public class DownloadController {
     @Resource
     CrudTools tools;
 
+    @Resource
+    BikaBusiness bikaBusiness;
+
     @GetMapping("/download/key/{key}")
     public RestResponse downloadByKey(@PathVariable("key") String key) {
         bikaUtils.search(key, true);
@@ -63,19 +67,28 @@ public class DownloadController {
     }
     @GetMapping("/updateAllExistBika")
     public RestResponse updateAllExistBika() {
-        List<BikaList> list = tools.commonApiQueryBySql("select * from bika where is_deleted <> 1 and local_path is not null and downloaded_at < 1697008173191  order by  likes_count desc limit 1000;", BikaList.class);
-        DownloadTools tool = DownloadTools.getInstance(5);
-        tool.setName("漫画");
-        tool.setSleepTimes(10000);
-        list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId())));
-        tool.shutdown();
-        return RestResponse.ok("开始更新现存zip文件");
+        bikaBusiness.updateAllExistBika();
+        return RestResponse.ok("更新现存zip文件任务已提交");
     }
 
     @GetMapping(value = {"/download/id/{id}/{true}", "/download/id/{id}"})
     public RestResponse downloadById(@PathVariable("id") String id, @PathVariable(value = "true", required = false) String force) {
         bikaUtils.downloadById(id, !StringUtils.isEmpty(force) && "force".equalsIgnoreCase(force));
         return RestResponse.ok().msg("下载提交成功");
+    }
+
+    @GetMapping("/cleanTemp")
+    public RestResponse cleanTemp() {
+        {
+            File base = new File("D:\\bika_temp");
+            for (File file : base.listFiles()) {
+                String fileId = CommonIOUtils.getFileId(file.getName());
+                if (!StringUtils.isEmpty(fileId)) {
+                    bikaUtils.downloadById(fileId, true);
+                }
+            }
+        }
+        return RestResponse.ok().msg("批量提交成功");
     }
 
     @GetMapping("/downloadBySql/{count}/{like}")
@@ -135,7 +148,7 @@ public class DownloadController {
      */
     @GetMapping("/updateSavePath")
     public RestResponse updateSavePath() {
-        List<String> savePath = Collections.singletonList("F:\\bika");
+        List<String> savePath = Collections.singletonList("g:\\bika");
         int batchSize = 200;
         for (String pathStr : savePath) {
             File path = new File(pathStr);

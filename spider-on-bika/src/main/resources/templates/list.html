@@ -53,6 +53,7 @@
                     <thead>
                     <tr>
                         <th class="text-nowrap">标题</th>
+                        <th class="text-nowrap">封面</th>
                         <th class="text-nowrap">收藏数</th>
                         <th>简介</th>
                         <th>标签</th>
@@ -63,6 +64,14 @@
                     <tbody>
                     <tr th:each="bika : ${list}">
                         <td th:text="${bika.title}"></td>
+<!--                        <td width="304" height="236"><img th:src="@{/read/(id=${bika.getId()},chapter=${num},img=${img})}" class="img-thumbnail" width="304" height="236"></td>-->
+<!--                        <td id="mask" th:src="@{/read/(id=${bika.getId()},chapter=${num},img=${img})}" class="hidden"></td>-->
+<!--                        <td id="loading" th:src="@{/pic/loading.jpg}" class="hidden"></td>-->
+<!--                        <td width="304" height="236"><img th:src="" class="img-thumbnail" width="304" height="236"></td>-->
+                        <td>
+                            <img th:if="${bika.getLocalPath()!=null}" th:src="@{/loadCoverImg/(id=${bika.getId()})}" width="200">
+                            <img th:if="${bika.getLocalPath()==null}" th:src="@{/pic/loading.jpg}" class="img-thumbnail">
+                        </td>
                         <td th:text="${bika.getLikesCount()}"></td>
                         <td th:text="${bika.getDescription()}"></td>
                         <td th:text="${bika.getTags()}"></td>
