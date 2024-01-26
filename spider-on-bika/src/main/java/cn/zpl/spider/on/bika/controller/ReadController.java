@@ -1,9 +1,9 @@
 package cn.zpl.spider.on.bika.controller;
 
 import cn.zpl.common.bean.Bika;
-import cn.zpl.common.bean.RestResponse;
 import cn.zpl.common.bean.ImageComparator;
 import cn.zpl.common.bean.QueryDTO;
+import cn.zpl.common.bean.RestResponse;
 import cn.zpl.spider.on.bika.utils.BikaUtils;
 import cn.zpl.util.CrudTools;
 import com.google.common.cache.CacheBuilder;
@@ -35,6 +35,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -118,6 +122,7 @@ public class ReadController {
     public RestResponse getList(@RequestBody QueryDTO query) {
         StringBuilder sql = new StringBuilder();
         sql.append("select *from bika where lower(title) like '%").append(query.getTitle()).append("%' and is_deleted = 0 ");
+        sql.append(StringUtils.isEmpty(query.getAuthor()) ? "" : String.format(" and author like '%%%1$s%%'", query.getAuthor()));
         String[] tagsList = query.getTags().isEmpty() ? null : query.getTags().split(",");
         StringBuilder condition = new StringBuilder(" and (");
         if (tagsList != null) {
@@ -294,11 +299,30 @@ public class ReadController {
     @ResponseBody
     @GetMapping("/loadCoverImg")
     public void loadCoverImg(@RequestParam("id") String id, HttpServletResponse response) {
-        OutputStream outputStream;
+        //加载封面，先从压缩包路径根目录读取cover文件夹，如果cover文件夹中能找到封面，则返回该封面；如果不能找到，则从压缩包中读取图片存放到cover文件夹中后再返回
+        Bika bikaExist = utils.getBikaExist(id);
         byte[] image = new byte[0];
-        List<String> imagesInChapter = getImagesInChapter(id, "1");
-        if (imagesInChapter != null && !imagesInChapter.isEmpty()) {
-            image = getImage(id, "1", imagesInChapter.get(0));
+        OutputStream outputStream;
+        Path cover = Paths.get(new File(bikaExist.getLocalPath()).getParent(), "cover", id);
+        if (cover.toFile().isFile() && cover.toFile().exists()) {
+            try {
+                image = Files.readAllBytes(cover);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            List<String> imagesInChapter = getImagesInChapter(id, "1");
+            if (imagesInChapter != null && !imagesInChapter.isEmpty()) {
+                image = getImage(id, "1", imagesInChapter.get(0));
+                try {
+                    if (image != null) {
+                        Files.createDirectories(cover.getParent());
+                        Files.write(cover, image, StandardOpenOption.CREATE);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
         if (image != null && image.length != 0) {
             try {

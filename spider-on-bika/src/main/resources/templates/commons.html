@@ -58,6 +58,8 @@
     <div class="mb-3">
         <label for="title" class="form-label">漫画标题</label>
         <input type="text" th:value="${#session?.getAttribute('title')!=null}?${#session.getAttribute('title')}" name="title" class="form-control" id="title">
+        <label for="author" class="form-label">作者</label>
+        <input type="text" th:value="${#session?.getAttribute('author')!=null}?${#session.getAttribute('author')}" name="author" class="form-control" id="author">
         <label for="tags" class="form-label">标签</label>
         <input type="text" th:value="${#session?.getAttribute('tags') != null}?${#session.getAttribute('tags')}" name="tags" class="form-control" id="tags">
         <label for="categories" class="form-label">分类</label>
