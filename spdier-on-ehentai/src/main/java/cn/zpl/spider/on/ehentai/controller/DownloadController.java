@@ -4,6 +4,7 @@ import cn.zpl.annotation.DistributeLock;
 import cn.zpl.annotation.DistributedLockKey;
 import cn.zpl.common.bean.Ehentai;
 import cn.zpl.config.SpringContext;
+import cn.zpl.spider.on.ehentai.bs.DownloadService;
 import cn.zpl.spider.on.ehentai.thread.DownLoadArchiveThread;
 import cn.zpl.spider.on.ehentai.thread.DownloadPageThread;
 import cn.zpl.spider.on.ehentai.util.EUtil;
@@ -41,12 +42,12 @@ public class DownloadController {
     @Resource
     CrudTools tools;
 
+    @Resource
+    DownloadService service;
+
     @PostMapping("/download")
     public String downloadByUrl(@RequestParam("url") String url) {
-        DownLoadArchiveThread downLoadArchiveThread = SpringContext.getBeanWithGenerics(DownLoadArchiveThread.class);
-        downLoadArchiveThread.setUrl(url);
-        downLoadArchiveThread.setCost(-1);
-        downLoadArchiveThread.run();
+        service.downTheOne(url, -1);
         return "下载成功";
     }
 
@@ -65,8 +66,9 @@ public class DownloadController {
     }
 
     @PostMapping("/downloadPage")
-    public String downloadPage(@RequestParam("url") String url) {
+    public String downloadPage(@RequestParam("url") String url, @RequestParam("flag") Boolean flag) {
         DownloadPageThread downLoadArchiveThread = new DownloadPageThread();
+        downLoadArchiveThread.setDownload(flag);
         downLoadArchiveThread.setUrl(url);
         downLoadArchiveThread.run();
         return "下载成功";
