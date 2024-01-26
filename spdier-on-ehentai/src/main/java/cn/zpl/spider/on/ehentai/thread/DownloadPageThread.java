@@ -26,6 +26,12 @@ import java.util.regex.Pattern;
 @Slf4j
 public class DownloadPageThread  extends CommonThread {
 
+    private boolean download = false;
+
+    public void setDownload(boolean download) {
+        this.download = download;
+    }
+
     @Override
     public void domain() throws Exception {
         EhentaiConfig ehentaiConfig = SpringContext.getBeanWithGenerics(EhentaiConfig.class);
@@ -50,8 +56,15 @@ public class DownloadPageThread  extends CommonThread {
         ConcurrentHashMap<String, Future<Boolean>> result = new ConcurrentHashMap<>();
         for (Element element : urlList) {
             String url = element.attr("href");
-            ScanArchiveThreadv2 scanArchiveThread = new ScanArchiveThreadv2(url);
-            result.put(url, downloadTools.getExecutor().submit((Callable<Boolean>) scanArchiveThread));
+            if (download) {
+                DownLoadArchiveThread downLoadArchiveThread = SpringContext.getBeanWithGenerics(DownLoadArchiveThread.class);
+                downLoadArchiveThread.setUrl(url);
+                downLoadArchiveThread.setCost(-1);
+                downloadTools.ThreadExecutorAdd(downLoadArchiveThread);
+            } else {
+                ScanArchiveThreadv2 scanArchiveThread = new ScanArchiveThreadv2(url);
+                result.put(url, downloadTools.getExecutor().submit((Callable<Boolean>) scanArchiveThread));
+            }
         }
         downloadTools.shutdown();
         Optional<Future<Boolean>> any = result.values().parallelStream().filter(booleanFuture -> {
@@ -63,7 +76,7 @@ public class DownloadPageThread  extends CommonThread {
         }).findAny();
         //如果存在下载失败的记录，则表明代理可能出现异常，则将其发送到异常队列并退出
         if (any.isPresent()) {
-            log.error("该页存在失败明细，判断代理隐藏，停止遍历并记录异常页面url");
+            log.error("该页存在失败明细，判断代理异常，停止遍历并记录异常页面url");
             RabbitMQSender msgSender = SpringContext.getBeanWithGenerics(RabbitMQSender.class);
             msgSender.sendMsg(getUrl(), "failedPage");
             return;

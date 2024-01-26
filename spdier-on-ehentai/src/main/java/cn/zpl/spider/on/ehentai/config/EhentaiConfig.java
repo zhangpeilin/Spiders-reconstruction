@@ -12,4 +12,5 @@ public class EhentaiConfig {
     String savePath;
     boolean unzip;
     boolean saveDb;
+    String manhuaguiCookies;
 }

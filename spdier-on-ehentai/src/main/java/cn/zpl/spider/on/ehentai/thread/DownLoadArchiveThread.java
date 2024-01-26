@@ -1,6 +1,5 @@
 package cn.zpl.spider.on.ehentai.thread;
 
-import cn.zpl.annotation.DistributeLock;
 import cn.zpl.common.bean.Ehentai;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.SpringContext;
