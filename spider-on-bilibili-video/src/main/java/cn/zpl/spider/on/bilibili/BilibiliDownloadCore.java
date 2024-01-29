@@ -3,13 +3,13 @@ package cn.zpl.spider.on.bilibili;
 import cn.zpl.common.bean.ExceptionList;
 import cn.zpl.common.bean.RestResponse;
 import cn.zpl.common.bean.VideoInfo;
-import cn.zpl.config.CommonParams;
 import cn.zpl.pojo.Data;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.pojo.VideoData;
 import cn.zpl.spider.on.bilibili.common.BilibiliCommonUtils;
 import cn.zpl.spider.on.bilibili.common.BilibiliProperties;
 import cn.zpl.spider.on.bilibili.common.TransformVideId;
+import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
 import cn.zpl.util.DownloadTools;
@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -251,10 +252,18 @@ public class BilibiliDownloadCore {
             }
             JsonElement parts = CommonIOUtils.getFromJson2(result, "data");
             if (parts.isJsonArray()) {
+                int count = 0;
                 result.getAsJsonObject().addProperty("videos", parts.getAsJsonArray().size());
                 for (JsonElement part : parts.getAsJsonArray()) {
                     Data download = new Data();
-                    downLoadByAPI(download, "", CommonIOUtils.getFromJson2Str(part, "cid"), result, part);
+                    if (count > 25) {
+                        count = 0;
+                        TimeUnit.MINUTES.sleep(20);
+                    }
+                    boolean success = downLoadByAPI(download, "", CommonIOUtils.getFromJson2Str(part, "cid"), result, part);
+                    if (success) {
+                        count++;
+                    }
                 }
             }
             avid = CommonIOUtils.getFromJson2Str(result, "aid");
@@ -271,9 +280,9 @@ public class BilibiliDownloadCore {
 
     }
 
-    private void downLoadByAPI(Data data, @NotNull String qualityLevel, String cid, JsonElement mainJson, JsonElement partJson) {
+    private boolean downLoadByAPI(Data data, @NotNull String qualityLevel, String cid, JsonElement mainJson, JsonElement partJson) {
         if (isDownloaded(cid, avid)) {
-            return;
+            return false;
         }
         String avid = CommonIOUtils.getFromJson2Str(mainJson, "aid");
         String bvid = CommonIOUtils.getFromJson2Str(mainJson, "bvid");
@@ -290,7 +299,7 @@ public class BilibiliDownloadCore {
         int code = CommonIOUtils.getFromJson2Integer(json, "code");
         if (code == -404) {
             log.error("视频不存在！");
-            return;
+            return false;
         }
         title = CommonIOUtils.filterFileName2(title);
         VideoData videoData = new VideoData();
@@ -327,14 +336,14 @@ public class BilibiliDownloadCore {
             if (!restResponse.isSuccess()) {
                 throw new RuntimeException("保存记录失败");
             }
-            return;
+            return false;
         }
         if (filter && isDownloaded(cid, avid)) {
             already.set(already.get() == null ? 0 : already.get() + 1);
             VideoInfo exist = getVideoInfoByCid(cid);
             assert exist != null;
             if (exist.getLocalPath().equalsIgnoreCase(videoInfo.getLocalPath())) {
-                return;
+                return false;
             }
             try {
                 FileUtils.moveFile(new File(exist.getLocalPath()), new File(videoInfo.getLocalPath()));
@@ -343,14 +352,14 @@ public class BilibiliDownloadCore {
                 log.error("错误原因：", e);
             }
             log.debug(title);
-            return;
+            return false;
         }
         if (FFMEPGToolsPatch.isExists(videoData)) {
             RestResponse restResponse = crudTools.commonApiSave(videoInfo);
             if (!restResponse.isSuccess()) {
                 throw new RuntimeException("保存记录失败");
             }
-            return;
+            return false;
         }
         JsonArray acceptQuality =
                 CommonIOUtils.getFromJson2(json, "data-accept_quality").getAsJsonArray();
@@ -363,16 +372,16 @@ public class BilibiliDownloadCore {
         if (!currentQuality.equals(String.valueOf(quality.get(0)))) {
             log.error("画质重定位");
             if (data.doRetry()) {
-                downLoadByAPI(data, String.valueOf(quality.get(0)), cid, mainJson, partJson);
+                return downLoadByAPI(data, String.valueOf(quality.get(0)), cid, mainJson, partJson);
             }
-            return;
+            return false;
         }
         //判断是否为1p多段，如果是，那么json中是flv的下载地址，否则是m4s的地址
         if (CommonIOUtils.getFromJson2(json, "data-dash-video").isJsonNull()) {
             //1p多段下载
             dealMultiplePart(json, avid, videoData, page, videoInfo);
             if (!properties.merge) {
-                return;
+                return true;
             }
             if (!FFMEPGToolsPatch.mergeBilibiliVideo(videoData)) {
                 log.error("不应该出现在这，video_id：" + avid);
@@ -382,7 +391,7 @@ public class BilibiliDownloadCore {
         if (!CommonIOUtils.getFromJson2(json, "data-dash-video").isJsonNull()) {
             doM4s(json, avid, bvid, currentQuality, videoInfo, videoData);
             if (!properties.merge) {
-                return;
+                return true;
             }
             if (!ffmepgToolsPatch.mergeBilibiliVideo2(videoData)) {
                 log.error("不应该出现在这，video_id：" + avid);
@@ -393,6 +402,7 @@ public class BilibiliDownloadCore {
         if (!restResponse.isSuccess()) {
             throw new RuntimeException("保存下载记录失败");
         }
+        return restResponse.isSuccess();
     }
 
     private void dealMultiplePart(JsonElement json, String video_id, VideoData videoData, int page, VideoInfo video) {
@@ -520,6 +530,10 @@ public class BilibiliDownloadCore {
     }
 
     private void addDownload(DownloadTools tools, DownloadDTO dto){
+        if (dto.getFileLength() == 0) {
+            tools.ThreadExecutorAdd(new OneFileOneThread(dto));
+            return;
+        }
         if (!new File(dto.getSavePath()).exists() || !SaveLog.isCompeleteMultiple(dto)) {
             tools.MultipleThreadWithLog(dto);
         } else {

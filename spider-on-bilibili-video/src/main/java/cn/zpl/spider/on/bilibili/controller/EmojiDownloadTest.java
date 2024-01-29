@@ -7,7 +7,6 @@ import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.DownloadTools;
 import cn.zpl.util.URLConnectionTool;
 import com.google.gson.JsonElement;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +16,6 @@ import java.util.List;
  */
 public class EmojiDownloadTest {
 
-    @Test
     public void domain() {
         List<DownloadDTO> dtoList = new ArrayList<>();
         String emojiJson = URLConnectionTool.getMethod2Str("https://api.bilibili.com/x/emote/user/panel/web?business=reply", "Cookie:SESSDATA=4bd4ab82%2C1694352930%2Cedf05%2A31;");

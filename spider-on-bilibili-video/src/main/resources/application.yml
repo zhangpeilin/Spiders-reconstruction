@@ -3,7 +3,9 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://192.168.139.130:32710/eureka
+      defaultZone: http://10.8.0.1:32710/eureka
     register-with-eureka: false
   instance:
     ip-address: true
+#logging:
+#  config: classpath:logback-spring.xml

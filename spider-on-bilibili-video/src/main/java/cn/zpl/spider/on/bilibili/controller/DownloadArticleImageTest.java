@@ -9,7 +9,6 @@ import com.google.gson.JsonElement;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +61,6 @@ public class DownloadArticleImageTest {
 
     }
 
-    @Test
     public void test() {
 //        https://api.bilibili.com/x/space/wbi/article?mid=6751172&pn=1&ps=12&sort=publish_time&platform=web
         analysisArticle("6751172");

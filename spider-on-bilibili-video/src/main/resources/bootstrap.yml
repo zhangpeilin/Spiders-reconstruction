@@ -4,4 +4,4 @@ spring:
       label: dev
       name: common,bilibili
       profile: online
-      uri: http://192.168.139.130:32710/config
+      uri: http://10.8.0.1:32710/config
