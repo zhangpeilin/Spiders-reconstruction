@@ -70,13 +70,19 @@ public class BuyWaitFreeEpisodeThread implements Callable<Map<String, Map<String
         String wait_free_at = CommonIOUtils.getFromJson2Str(resultJson, "data-wait_free_at");
         String comic_id = CommonIOUtils.getFromJson2Str(resultJson, "data-comic_id");
         //需要解锁的解锁，已经解锁的跳过
+        BilibiliManga manga = utils.getComicById(comic_id);
         if (allow_wait_free && "0000-00-00 00:00:00".equalsIgnoreCase(wait_free_at)) {
             //满足条件，调用解锁方法BuyEpisode
             param = "{\"buy_method\":4,\"ep_id\":" + ep_id + ",\"comic_id\":" + comic_id + "}";
             String buyResult = utils.postUrl(properties.getBuyEpisodeUrl(), param,
                     properties.getCommonHeaders() + bilibiliProperties.getCookies());
             log.debug(buyResult);
-            if (CommonIOUtils.getIntegerFromJson(CommonIOUtils.paraseJsonFromStr(buyResult), "code") == 0) {
+            int code = CommonIOUtils.getIntegerFromJson(CommonIOUtils.paraseJsonFromStr(buyResult), "code");
+            //漫画已下线，停止监听
+            if (code == 18) {
+                manga.setAllowWaitFree(2);
+            }
+            if (code == 0) {
                 //购买完成，调用漫画下载进程
                 return magaDownloadCore.getComicDetail(comic_id, true);
             }
@@ -85,7 +91,7 @@ public class BuyWaitFreeEpisodeThread implements Callable<Map<String, Map<String
             return magaDownloadCore.getComicDetail(comic_id, true);
         }
         log.warn("章节" + ep_id + "需要" + wait_free_at + "后才能解锁");
-        BilibiliManga manga = utils.getComicById(comic_id);
+//        BilibiliManga manga = utils.getComicById(comic_id);
         manga.setChapterWaitBuy(ep_id);
         //如果allow_wait_free = false，is_locked = true并且wait_free_at = 0000-00-00
         // 00:00:00，说明等免章节已经解锁完，剩下的是收费章节，暂时将此类漫画标志位记为2
