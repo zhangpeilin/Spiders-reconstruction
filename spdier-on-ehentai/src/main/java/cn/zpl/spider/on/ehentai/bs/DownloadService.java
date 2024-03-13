@@ -11,9 +11,10 @@ public class DownloadService {
 
 
     @Async("MyAsync")
-    public void downTheOne(String url, int cost){
+    public void downTheOne(String url, int cost, boolean isDownload){
         DownLoadArchiveThread downLoadArchiveThread = SpringContext.getBeanWithGenerics(DownLoadArchiveThread.class);
         downLoadArchiveThread.setUrl(url);
+        downLoadArchiveThread.setDownload(isDownload);
         downLoadArchiveThread.setCost(cost);
         downLoadArchiveThread.run();
     }
