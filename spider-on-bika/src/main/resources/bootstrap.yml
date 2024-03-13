@@ -9,6 +9,6 @@ eureka:
   instance:
     hostname: http://192.168.139.130:32710
 
-management:
-  server:
-    port: 32710
+#management:
+#  server:
+#    port: 32710

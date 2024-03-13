@@ -301,6 +301,10 @@ public class ReadController {
     public void loadCoverImg(@RequestParam("id") String id, HttpServletResponse response) {
         //加载封面，先从压缩包路径根目录读取cover文件夹，如果cover文件夹中能找到封面，则返回该封面；如果不能找到，则从压缩包中读取图片存放到cover文件夹中后再返回
         Bika bikaExist = utils.getBikaExist(id);
+        if (StringUtils.isEmpty(bikaExist.getLocalPath())) {
+            utils.invalidCache(id);
+            bikaExist = utils.getBikaExist(id);
+        }
         byte[] image = new byte[0];
         OutputStream outputStream;
         Path cover = Paths.get(new File(bikaExist.getLocalPath()).getParent(), "cover", id);

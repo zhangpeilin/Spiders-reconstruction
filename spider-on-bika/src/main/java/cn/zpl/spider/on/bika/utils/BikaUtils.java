@@ -163,6 +163,7 @@ public class BikaUtils {
         bikaComicThread.setForceDownload(forceDownload);
         tool.ThreadExecutorAdd(bikaComicThread);
         tool.shutdown();
+        invalidCache(id);
     }
 
     public void downloadByIds(List<String> ids) {
@@ -190,27 +191,41 @@ public class BikaUtils {
             System.out.printf("%1$s:%2$s%n", CommonIOUtils.getFromJson2Str(detail, "title"), CommonIOUtils.getFromJson2Str(detail, "_id"));
         }
     }
-
+    @Async("MyAsync")
     public void favourite() {
-
-        int i = 9;
-        int maxPage = 99;
-        while (!(i > maxPage)) {
+        List<String> stringList = new ArrayList<>();
+        int i = 99;
+        int maxPage;
+        while ((i > 0)) {
             String url = "users/favourite?page=" + i;
             JsonObject partJson = getJsonByUrl(url);
             JsonElement comics = CommonIOUtils.getFromJson2(partJson, "data-comics-docs");
 
             maxPage = CommonIOUtils.getFromJson2Integer(partJson, "data-comics-pages");
 
+            if (i == 99) {
+                i = maxPage + 1;
+            }
+            i--;
             DownloadTools tool = DownloadTools.getInstance(5);
             tool.setName("漫画");
             tool.setSleepTimes(10000);
             for (JsonElement detail : comics.getAsJsonArray()) {
                 tool.ThreadExecutorAdd(new BikaComicThread(detail.getAsJsonObject().get("_id").getAsString()));
+                stringList.add(CommonIOUtils.getFromJson2Str(detail, "_id"));
             }
             tool.shutdown();
-            i--;
-//            i++;
+            stringList.forEach(s -> {
+                File file = new File(getBikaExist(s).getLocalPath());
+                if (file.exists()) {
+                    try {
+                        FileUtils.copyFileToDirectory(file, new File("d:\\bikaFavorite"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            stringList.clear();
         }
     }
 

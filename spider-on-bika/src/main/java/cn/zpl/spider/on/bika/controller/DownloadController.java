@@ -77,6 +77,12 @@ public class DownloadController {
         return RestResponse.ok().msg("下载提交成功");
     }
 
+    @GetMapping("download/Fav")
+    public RestResponse Fav() {
+        bikaUtils.favourite();
+        return RestResponse.ok("H24下载提交成功");
+    }
+
     @GetMapping("/cleanTemp")
     public RestResponse cleanTemp() {
         {
