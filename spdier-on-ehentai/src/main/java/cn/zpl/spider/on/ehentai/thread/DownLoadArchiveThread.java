@@ -209,6 +209,9 @@ public class DownLoadArchiveThread extends CommonThread {
                     RestResponse restResponse = tools.commonApiSave(ehentai);
                     log.debug("保存是否成功：{}", restResponse.isSuccess());
                 }
+                if (!isDownload) {
+                    return;
+                }
                 if (form.attr("action").startsWith("http")) {
                     Data d1 = new Data();
                     d1.setUrl(form.attr("action"));

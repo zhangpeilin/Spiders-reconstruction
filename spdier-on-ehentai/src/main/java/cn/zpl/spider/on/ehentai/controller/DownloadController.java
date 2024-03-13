@@ -46,19 +46,20 @@ public class DownloadController {
     DownloadService service;
 
     @PostMapping("/download")
-    public String downloadByUrl(@RequestParam("url") String url) {
-        service.downTheOne(url, -1);
+    public String downloadByUrl(@RequestParam("url") String url, @RequestParam("isDownload") boolean isDownload) {
+        service.downTheOne(url, -1, isDownload);
         return "下载成功";
     }
 
     @PostMapping("/downloadBySql")
-    public String downloadBySql(@RequestParam("sql") String sql, @RequestParam(value = "cost", required = false) int cost) {
+    public String downloadBySql(@RequestParam("sql") String sql, @RequestParam(value = "isDownload") boolean isDownload, @RequestParam(value = "cost", required = false) int cost) {
         List<Ehentai> ehentaiList = tools.commonApiQueryBySql(sql, Ehentai.class);
         DownloadTools tools = DownloadTools.getInstance(3);
         for (Ehentai ehentai : ehentaiList) {
             DownLoadArchiveThread downLoadArchiveThread = SpringContext.getBeanWithGenerics(DownLoadArchiveThread.class);
             downLoadArchiveThread.setUrl(ehentai.getUrl());
             downLoadArchiveThread.setCost(cost);
+            downLoadArchiveThread.setDownload(isDownload);
             tools.ThreadExecutorAdd(downLoadArchiveThread);
         }
         tools.shutdown();
