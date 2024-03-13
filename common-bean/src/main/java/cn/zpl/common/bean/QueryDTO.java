@@ -15,6 +15,7 @@ public class QueryDTO {
     private String female;
     private String male;
     private String categories = "";
+    private String author = "";
 
     /**
      * tags拼接条件，true=and，false=or
