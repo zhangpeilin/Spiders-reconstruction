@@ -1428,10 +1428,10 @@ public class CommonIOUtils {
             case "KB":
                 bytes = (long) (sizeValue * 1024);
                 break;
-            case "MB":
+            case "MiB":
                 bytes = (long) (sizeValue * 1024 * 1024);
                 break;
-            case "GB":
+            case "GiB":
                 bytes = (long) (sizeValue * 1024 * 1024 * 1024);
                 break;
             case "TB":

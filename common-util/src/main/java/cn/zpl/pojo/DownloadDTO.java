@@ -248,6 +248,10 @@ public class DownloadDTO implements Serializable {
 
     }
 
+    public void resetRetry() {
+        doRetry.setRetryMaxCount(3);
+    }
+
     public MultiPartInfoHolder getInfoHolder() {
         return infoHolder;
     }
