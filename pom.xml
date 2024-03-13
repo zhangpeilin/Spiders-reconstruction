@@ -26,6 +26,8 @@
         <module>spider-client</module>
         <module>pingan</module>
         <module>spider-qq</module>
+        <module>test-config</module>
+        <module>spider-on-manhuagui</module>
     </modules>
 
     <properties>
