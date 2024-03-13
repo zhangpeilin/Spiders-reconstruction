@@ -169,7 +169,7 @@ public class URLConnectionTool {
         }
         HttpURLConnection httpconn = container.isHttps() ?
                 URLConnectionTool.getHttpsURLConnection(container) : URLConnectionTool.getHttpURLConnection(container);
-        long length;
+        long length = 0;
         try {
             if (data.getReferer() != null && !"".equals(data.getReferer())) {
                 httpconn.setRequestProperty("Referer", data.getReferer());
@@ -200,12 +200,15 @@ public class URLConnectionTool {
             }
         } catch (IOException e) {
             log.error("获取文件大小异常：", e);
-            TimeUnit.SECONDS.sleep(5);
-            return getDataLength(data);
+            if (data.doRetry()) {
+                TimeUnit.SECONDS.sleep(5);
+                return getDataLength(data);
+            }
         }
         httpconn.disconnect();
         System.out.println("文件大小：" + length);
         data.setFileLength(length);
+        data.resetRetry();
         return length;
     }
 
