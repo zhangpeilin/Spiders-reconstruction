@@ -89,10 +89,12 @@ public class ApiAnalysisController {
     @SuppressWarnings("unchecked")
     public <T> RestResponse commonEntitySave(@RequestBody JSONObject requestJson) {
         String entity = requestJson.getString("entity");
+        log.debug("api/save接口接收到请求，请求参数：entity-->{}", entity);
         Object data = requestJson.get("data");
         try {
             cache.get(entity);
         } catch (ExecutionException e) {
+            log.error("api/save接口报错，报错信息：找不到实体类", e);
             return RestResponse.fail("找不到实体类");
         }
         T serializable = null;
@@ -102,6 +104,7 @@ public class ApiAnalysisController {
             try {
                 serializable = (T) JSON.parseObject(JSON.toJSONString(data), first.get());
             } catch (Exception e) {
+                log.debug("解析为单一对象失败，尝试解析为数组");
                 //如果解析失败尝试解析为array
                 serializables = (List<T>) JSON.parseArray(JSON.toJSONString(data), first.get());
             }
@@ -142,6 +145,7 @@ public class ApiAnalysisController {
         if (page == null) {
             page = new Page<>(1, 20);
         }
+        log.debug("api/query接口接收到请求，请求参数：entity-->{}，fetchProperties-->{}, condition-->{}, size-->{}", entity, fetchProperties, condition, size);
         log.debug(entity);
         log.debug(fetchProperties);
         log.debug(condition);
@@ -156,6 +160,7 @@ public class ApiAnalysisController {
             List<Map<String, Object>> list = new ArrayList<>();
             SqlSession sqlSession = openSession();
             String sql = condition.replaceAll("\\[sql:|]", "");
+            log.debug("请求中解析到单独的sql语句，sql-->{}", sql);
             try (PreparedStatement preparedStatement = sqlSession.getConnection().prepareStatement(sql)) {
                 ResultSet resultSet = preparedStatement.executeQuery();
                 ResultSetMetaData md = resultSet.getMetaData(); //获得结果集结构信息,元数据
@@ -175,6 +180,7 @@ public class ApiAnalysisController {
             return RestResponse.ok().list(list);
         }
         if ("[*]".equals(condition)) {
+            log.debug("condition参数为空，查询未拼接条件");
             iService.page(page);
             return RestResponse.ok().list(page.getRecords());
         }
@@ -184,8 +190,7 @@ public class ApiAnalysisController {
         while (conditionMatcher.find()) {
             String key = conditionMatcher.group(1);
             String value = conditionMatcher.group(2);
-            log.debug(key);
-            log.debug(value);
+            log.debug("解析到参数key值：{}，value值：{}", key, value);
             objectQueryWrapper.and(wrapper -> wrapper.eq(key.trim(), value.trim()));
         }
         List<String> columns = new ArrayList<>();
@@ -197,6 +202,7 @@ public class ApiAnalysisController {
             objectQueryWrapper.select(columns.toArray(new String[0]));
         }
         List<T> list = iService.page(page, objectQueryWrapper).getRecords();
+        log.debug("查询结果：{}", list);
         return RestResponse.ok().list(list);
     }
 
