@@ -3,32 +3,49 @@ package cn.zpl.controller;
 import cn.zpl.util.DownloadTools;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @RestController
+@RequestMapping(value = "/common/api")
 public class MonitorController {
 
 
     @GetMapping("/getStatus/{toolName}")
     public String getTheDownloadToolsStatus(@PathVariable("toolName") String toolName) {
         DownloadTools downloadTools = DownloadTools.getToolsByName(toolName);
-        downloadTools.getExecutor().shutdownNow();
         ThreadPoolExecutor executor = downloadTools.getExecutor();
         return ("【" + downloadTools.getName() + "】线程池，其中核心线程数目：" + executor.getPoolSize()
                 + "，待执行任务数目：" + executor.getQueue().size()
                 + "，已完成任务数目：" + executor.getCompletedTaskCount());
     }
 
-    @GetMapping("/shutdownTest/{toolName}")
+    @GetMapping("/shutdown/{toolName}")
     public String shutdown(@PathVariable("toolName") String toolName) {
         DownloadTools downloadTools = DownloadTools.getToolsByName(toolName);
         downloadTools.getExecutor().shutdownNow();
         ThreadPoolExecutor executor = downloadTools.getExecutor();
-        return ("【" + downloadTools.getName() + "】线程池，其中核心线程数目：" + executor.getPoolSize()
+        return ("线程池执行结果：【" + downloadTools.getName() + "】线程池，其中核心线程数目：" + executor.getPoolSize()
                 + "，待执行任务数目：" + executor.getQueue().size()
                 + "，已完成任务数目：" + executor.getCompletedTaskCount());
+    }
+
+    @GetMapping("/start")
+    public void start(){
+        DownloadTools downloadTools = DownloadTools.getInstance(50, "测试线程池");
+        for (int i = 0; i < 100; i++) {
+            downloadTools.ThreadExecutorAdd(() -> {
+                try {
+                    TimeUnit.SECONDS.sleep(30);
+                } catch (InterruptedException e) {
+                    System.out.println("线程被终止");
+                }
+            });
+        }
+        downloadTools.shutdown();
     }
 
     @GetMapping("/getAllStatus")
