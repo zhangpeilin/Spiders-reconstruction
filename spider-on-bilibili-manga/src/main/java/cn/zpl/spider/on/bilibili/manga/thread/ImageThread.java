@@ -3,6 +3,7 @@ package cn.zpl.spider.on.bilibili.manga.thread;
 import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.spider.on.bilibili.manga.util.BilibiliMangaProperties;
+import cn.zpl.spider.on.bilibili.manga.util.BilibiliProperties;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.URLConnectionTool;
 import com.google.gson.JsonElement;
@@ -17,6 +18,8 @@ public class ImageThread implements Callable<DownloadDTO> {
 
     private JsonElement clip;
     BilibiliMangaProperties bilibiliMangaProperties;
+
+    BilibiliProperties bilibiliProperties;
     private JsonElement pic;
     private JsonElement chapter;
 
@@ -25,6 +28,7 @@ public class ImageThread implements Callable<DownloadDTO> {
         this.pic = pic;
         this.chapter = chapter;
         this.bilibiliMangaProperties = SpringContext.getBeanWithGenerics(BilibiliMangaProperties.class);
+        this.bilibiliProperties = SpringContext.getBeanWithGenerics(BilibiliProperties.class);
     }
 
     @Override
@@ -49,7 +53,7 @@ public class ImageThread implements Callable<DownloadDTO> {
         String order = CommonIOUtils.getFromJson2Str(clip, "pic");
         String response = URLConnectionTool.postUrl(bilibiliMangaProperties.ImageTokenUrl,
                 "{\"urls\":\"[\\\"" + imgUrl +
-                        "@" + width + "w" + fileType + "\\\"]\"}", bilibiliMangaProperties.getCommonHeaders());
+                        "@" + width + "w" + fileType + "\\\"]\"}", bilibiliMangaProperties.getCommonHeaders() + bilibiliProperties.getCookies());
         JsonElement token = CommonIOUtils.paraseJsonFromStr(response);
         JsonElement[] urlStr = CommonIOUtils.getFromJson3(token, "data-url");
         JsonElement[] tokenStr = CommonIOUtils.getFromJson3(token, "data-token");

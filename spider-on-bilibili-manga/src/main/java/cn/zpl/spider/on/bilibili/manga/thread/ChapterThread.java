@@ -108,6 +108,7 @@ public class ChapterThread implements Callable<Map<String, Object>> {
                 , "data-host").getAsString();
         String path = CommonIOUtils.getFromJson2(Objects.requireNonNull(CommonIOUtils.paraseJsonFromStr(IndexInfo))
                 , "data-path").getAsString();
+        JsonElement[] images = CommonIOUtils.getFromJson3(IndexInfo, "data-images-path");
         byte[] encryption = URLConnectionTool.getMethod(host + path, bilibiliMangaProperties.getCommonHeaders());
         JsonElement picsJson = BilibiliCommonUtils.decryptIndexFile(encryption, comic_id, chapter_id);
         JsonElement clips = CommonIOUtils.getFromJson2(picsJson, "clips");
@@ -119,7 +120,7 @@ public class ChapterThread implements Callable<Map<String, Object>> {
             JsonArray picsArray = pics.getAsJsonArray();
             int i = 0;
             for (JsonElement jsonElement : clipsArray) {
-                futureVector.add(tools.getExecutor().submit(new ImageThread(element, jsonElement, picsArray.get(i))));
+                futureVector.add(tools.getExecutor().submit(new ImageThread(element, jsonElement, images[i])));
                 i++;
             }
         } else {
