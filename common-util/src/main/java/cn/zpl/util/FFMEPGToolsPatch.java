@@ -205,6 +205,58 @@ public class FFMEPGToolsPatch {
         }
     }
 
+    /**
+     * 此方法用来合并m4s文件的，没有1p多段的情况
+     *
+     * @param videoData 视频信息
+     * @return 返回真假
+     */
+    public boolean transferM4s2MP3(@NotNull VideoData videoData) {
+
+        File desFile = new File(videoData.getDesSavePath());
+        File tmp_des_file = new File(videoData.GetTmpSaveDirectory(), videoData.getDesSaveName());
+        if (!desFile.getParentFile().exists()) {
+            if (!desFile.getParentFile().mkdirs()) {
+                log.error(desFile + "创建目录失败");
+            }
+        }
+        //判断保存合并文件的磁盘空间是否大于缓存的分段占用空间
+        if (FileUtils.sizeOfDirectory(tmp_des_file.getParentFile()) > new File(desFile.getParent()).getFreeSpace()) {
+            System.out.println("磁盘空间不足，无法合并，停止执行");
+            System.exit(0);
+        }
+        if (isExists(videoData)) {
+            //不在判断长度，因为这个移动到这里的一定是经过判断的，FFMEPG参数中有特殊字符的时候会报错
+            return true;
+        }
+//        ffmpeg -i input.m4s -vn -acodec libmp3lame output.mp3
+        List<String> command = new ArrayList<String>();
+        command.add(commonProperties.ffmpeg);
+        command.add("-i");
+        command.add("\"" + videoData.getAudio().getSavePath() + "\"");
+        command.add("-vn");
+        command.add("-acodec");
+        command.add("libmp3lame");
+        command.add("\"" + desFile.getPath() + "\"");
+
+        //可以去除最后有没有分隔符的干扰，getpath返回的字符串不带最后的斜杠
+        if (process(command, "")) {
+            if (checkMP4(videoData, videoData.getDesSavePath())) {
+                videoData.setLength((new File(videoData.getDesSavePath())).length());
+                try {
+                    FileUtils.deleteDirectory(videoData.GetTmpSaveDirectory());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        } else {
+            return false;
+        }
+    }
+
     private static boolean moveFile(String tmp_des_file, String des_file, VideoData videoData) {
         try {
             FileUtils.copyFile(new File(tmp_des_file), new File(des_file));

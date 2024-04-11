@@ -810,7 +810,6 @@ public class CommonIOUtils {
             headers = result.getHeader() + "\n";
         }
 
-//        CloseableHttpClient closeableHttpClient = HttpClients.custom().setRetryHandler((exception, executionCount, context) -> false).build();
         HttpGet httpGet = new HttpGet(result.getUrl());
         HttpHost proxy = result.isSpecialProxyConfig() ? new HttpHost(result.getProxyIP(), result.getProxyPort()) : new HttpHost(CommonParams.hostName, CommonParams.proxyPort);
         RequestConfig requestconfig = result.isProxy() ?
@@ -1442,5 +1441,49 @@ public class CommonIOUtils {
         }
 
         return bytes;
+    }
+
+    public static String getJsonStrWitchBegin(String jsCode, String begin){
+        int startIndex = jsCode.indexOf("{", jsCode.indexOf(begin));
+        if (startIndex != -1) {
+            int endIndex = findJsonEndIndex(jsCode, startIndex);
+            if (endIndex != -1) {
+                System.out.println("End index of JSON object: " + endIndex);
+                return jsCode.substring(startIndex, endIndex);
+            } else {
+                System.out.println("No matching end index found.");
+            }
+        } else {
+            System.out.println("No start index found.");
+        }
+        return "";
+    }
+
+
+    /**
+     * 获取{对应的结尾}，从而从字符串中截取json
+     * @param jsCode
+     * @param startIndex
+     * @return
+     */
+    public static int findJsonEndIndex(String jsCode, int startIndex) {
+        int openBraces = 1;
+        int index = startIndex + 1;
+
+        while (openBraces > 0 && index < jsCode.length()) {
+            char c = jsCode.charAt(index);
+            if (c == '{') {
+                openBraces++;
+            } else if (c == '}') {
+                openBraces--;
+            }
+            index++;
+        }
+
+        if (openBraces == 0) {
+            return index;
+        } else {
+            return -1; // 未找到匹配的结尾
+        }
     }
 }
