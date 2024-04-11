@@ -2,6 +2,7 @@ package cn.zpl.spider.on.bilibili.controller;
 
 import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.bilibili.BilibiliDownloadCore;
+import cn.zpl.spider.on.bilibili.BilibiliDownloadCorev2;
 import cn.zpl.spider.on.bilibili.common.BilibiliCommonUtils;
 import cn.zpl.spider.on.bilibili.common.BilibiliProperties;
 import cn.zpl.util.CommonIOUtils;
@@ -66,7 +67,8 @@ public class DownloadFavController {
             JsonObject json = (JsonObject) JsonParser.parseReader(new InputStreamReader(is));
             String path = "data-list";
             JsonArray favourFolders = CommonIOUtils.getFromJson2(json, path).getAsJsonArray();
-            BilibiliDownloadCore bdc = SpringContext.getBeanWithGenerics(BilibiliDownloadCore.class);
+//            BilibiliDownloadCore bdc = SpringContext.getBeanWithGenerics(BilibiliDownloadCore.class);
+            BilibiliDownloadCorev2 corev2 = SpringContext.getBeanWithGenerics(BilibiliDownloadCorev2.class);
             for (JsonElement jsonElement : favourFolders) {
                 Map<String, List<String>> result = new HashMap<>();
                 CommonIOUtils.getFromJson2Str(jsonElement, "title");
@@ -82,8 +84,8 @@ public class DownloadFavController {
                 }
                 if (result.size() == 1) {
                     Map.Entry<String, List<String>> entry = result.entrySet().iterator().next();
-                    bdc.getNewPath().set(properties.getFavouriteSavePath() + File.separator + owner_name + "\\" + entry.getKey() + "\\");
-                    bdc.downloadList(entry.getValue());
+                    corev2.getNewPath().set(properties.getFavouriteSavePath() + File.separator + owner_name + "\\" + entry.getKey() + "\\");
+                    corev2.downloadList(entry.getValue());
                 }
                 result.clear();
             }

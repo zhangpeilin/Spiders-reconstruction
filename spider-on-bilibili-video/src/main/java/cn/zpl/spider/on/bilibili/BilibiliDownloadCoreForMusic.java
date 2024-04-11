@@ -191,7 +191,6 @@ public class BilibiliDownloadCoreForMusic {
 
         Data data = new Data();
         try {
-//            data.setUrl("https://api.bilibili.com/x/player/pagelist?bvid=" + videoId + "&jsonp=jsonp");
             data.setUrl(String.format("https://api.bilibili.com/x/web-interface/view?bvid=%1$s", videoId));
             if (match) {
                 log.error("出大问题");
@@ -206,20 +205,10 @@ public class BilibiliDownloadCoreForMusic {
                     return;
                 }
             }
-//            JsonElement result = JsonParser.parseString(Objects.requireNonNull(data.getString()));
             JsonElement result = JsonUtil.parseFromStr(data.getResult());
             int code = JsonUtil.getFromJson2Integer(result, "code");
 
             JsonElement jsonData = CommonIOUtils.getFromJson2(result, "data");
-//            boolean isDownloaded = false;
-//            if (temp.isJsonArray()) {
-//                for (JsonElement part : temp.getAsJsonArray()) {
-//                    isDownloaded = isDownloaded(CommonIOUtils.getFromJson2Str(part, "cid"), avid);
-//                }
-//            }
-//            if (isDownloaded) {
-//                return;
-//            }
             if (code != 0) {
                 log.error(CommonIOUtils.getFromJson2Str(result, "message"));
             }
@@ -241,13 +230,6 @@ public class BilibiliDownloadCoreForMusic {
                     return;
                 }
             }
-//            Document document = CommonIOUtils.getDocumentFromUrl("https://www.bilibili.com/video/" + videoId);
-//            String playInfoKey = "window.__playinfo__";
-//            String initInfoKey = "window.__INITIAL_STATE__";
-//            String playInfo = CommonIOUtils.getJsonStrWitchBegin(Objects.requireNonNull(CommonIOUtils.getScriptContainTheStr(document, playInfoKey)), playInfoKey);
-//            String initInfo = CommonIOUtils.getJsonStrWitchBegin(Objects.requireNonNull(CommonIOUtils.getScriptContainTheStr(document, initInfoKey)), initInfoKey);
-            String title = JsonUtil.getFromJson2Str(jsonData, "title");
-            String owner = JsonUtil.getFromJson2Str(jsonData, "owner-name");
             JsonElement pages = JsonUtil.getFromJson(jsonData, "pages");
             if (pages.isJsonArray()) {
                 int count = 0;
@@ -315,13 +297,11 @@ public class BilibiliDownloadCoreForMusic {
 
         List<String> path = new ArrayList<>();
         path.add(newPath.get() != null && !"".equals(newPath.get()) ? newPath.get() : properties.getVideoSavePath());
-        if (newPath.get() == null) {
-            path.add(videoInfo.getOwnerName());
-        }
-        String videoName = title + "(av" + avid + ")[" + bvid + "]" + ".mp4";
+        path.add("音乐文件夹");
+        String videoName = title + "(av" + avid + ")[" + bvid + "]" + ".mp3";
         if (videos > 1) {
             path.add(title + "(av" + avid + ")");
-            videoName = videoInfo.getSavedLocalName() + ".mp4";
+            videoName = videoInfo.getSavedLocalName() + ".mp3";
         }
         videoData.setWebSite("bilibili");
         videoData.setDesSaveName(videoName);
@@ -366,45 +346,9 @@ public class BilibiliDownloadCoreForMusic {
         acceptQuality.forEach(jsonElement -> quality.add(jsonElement.getAsInt()));
         Collections.sort(quality);
         Collections.reverse(quality);
-//        String currentQuality = CommonIOUtils.getFromJson2Str(playInfo, "data-quality");
-        // 如果有高画质，则重新执行主方法，执行完后直接return
-//        if (!currentQuality.equals(String.valueOf(quality.get(0)))) {
-//            log.error("画质重定位");
-//            if (data.doRetry()) {
-//                return downLoadByAPI(data, String.valueOf(quality.get(0)), cid, mainJson, partJson);
-//            }
-//            return false;
-//        }
-        //获取最高画质
-        JsonElement videoList = JsonUtil.getFromJson(playInfo, "data-dash-video");
-        JsonElement videoCurrent = JsonNull.INSTANCE;;
-        if (videoList.isJsonArray()) {
-            for (JsonElement jsonElement : videoList.getAsJsonArray()) {
-                int id = JsonUtil.getFromJson2Integer(jsonElement, "id");
-                if (id == quality.get(0)) {
-                    videoCurrent = jsonElement;
-                }
-            }
-        }
         JsonElement audioList = JsonUtil.getFromJson(playInfo, "data-dash-audio");
-        JsonElement AudioCurrent = JsonNull.INSTANCE;;
-        if (audioList.isJsonArray()) {
-            AudioCurrent = audioList.getAsJsonArray().get(0);
-        }
-        //判断是否为1p多段，如果是，那么json中是flv的下载地址，否则是m4s的地址
-//        if (CommonIOUtils.getFromJson2(current, "data-dash-video").isJsonNull()) {
-//            //1p多段下载
-//            dealMultiplePart(json, avid, videoData, page, videoInfo);
-//            if (!properties.merge) {
-//                return true;
-//            }
-//            if (!FFMEPGToolsPatch.mergeBilibiliVideo(videoData)) {
-//                log.error("不应该出现在这，video_id：" + avid);
-//                System.exit(1);
-//            }
-//        }
-        doM4s(videoCurrent, AudioCurrent, avid, bvid, videoInfo, videoData);
-        if (!ffmepgToolsPatch.mergeBilibiliVideo2(videoData)) {
+        doM4s(audioList, avid, bvid, videoInfo, videoData);
+        if (!ffmepgToolsPatch.transferM4s2MP3(videoData)) {
             log.error("不应该出现在这，video_id：" + avid);
         }
         RestResponse restResponse = crudTools.commonApiSave(videoInfo);
@@ -414,92 +358,31 @@ public class BilibiliDownloadCoreForMusic {
         return restResponse.isSuccess();
     }
 
-    private void dealMultiplePart(JsonElement json, String video_id, VideoData videoData, int page, VideoInfo video) {
-        JsonElement durl = CommonIOUtils.getFromJson2(json, "data-durl");
-        String play_list;
-        String order;
-        if (durl.isJsonArray()) {
-            for (JsonElement jsonElement : durl.getAsJsonArray()) {
-                List<String> pathMake = new ArrayList<>();
-                // 下载每个分p的分段，最后合并
-                JsonObject obj = jsonElement.getAsJsonObject();
-                play_list = obj.get("url").getAsString();
-                order = obj.get("order").getAsString();
+    private void doM4s(JsonElement audioList, String avid, String bvid, VideoInfo videoInfo, VideoData videoData) {
 
-                DownloadDTO dto = new DownloadDTO();
-                dto.setUrl(play_list);
-                dto.setWebSite("bilibili");
-                dto.setReferer("https://www.bilibili.com/video/av" + video_id);
-                video.setUrl(dto.getReferer());
-
-                dto.setHeader(
-                        "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36\n");
-                long length = URLConnectionTool.getDataLength(dto);
-                // 存储的是视频大小（字节）
-                dto.setFileLength(length);
-                //如果有指定保存路径，则使用指定的路径，否则从config.properties中读取
-                pathMake.add(properties.getTmpSavePath());
-                pathMake.add(video_id);
-                dto.setSavePath(CommonIOUtils.makeFilePath(pathMake, "p" + page + " order" + order + ".flv"));
-                videoData.getPartList().add(dto.getSavePath());
-                if (new File(dto.getSavePath()).exists() && SaveLog.isCompeleteMultiple(dto)) {
-                    log.error("已下载，跳过");
-                    continue;
-                }
-                DownloadTools tools = DownloadTools.getInstance(30);
-                tools.setName(video.getTitle());
-                tools.MultipleThread(dto);
-                tools.shutdown();
-                if (new File(dto.getSavePath()).length() == length) {
-                    SaveLog.saveLog(dto.getSavePath());
-                    log.debug(dto.getSavePath() + "下载完毕");
-                } else {
-                    log.error("下载大小与返回头的大小不一致，重新下载");
-                    throw new RuntimeException("下载大小与返回头的大小不一致，重新下载");
-                }
-            }
+        List<DownloadDTO> audioDTO = new ArrayList<>();
+        if (audioList.isJsonArray()) {
+            audioDTO.add(buildTemplate(audioList.getAsJsonArray().get(0), bvid, avid));
         }
-    }
-
-    private void doM4s(JsonElement videoElement, JsonElement audioElement, String avid, String bvid, VideoInfo videoInfo, VideoData videoData) {
-
-//        JsonElement videoM4s = null;
-//        JsonElement audioM4s = null;
-//        if (!videoElement.isJsonNull()) {
-//            videoM4s= videoElement.getAsJsonArray().get(0);
-//        }
-//        if (!audioElement.isJsonNull()) {
-//            audioM4s = audioElement.getAsJsonArray().get(0);
-//        }
-        List<String> pathMake = new ArrayList<>();
-        // 下载每个分p的分段，最后合并
-        DownloadDTO video = buildTemplate(videoElement, bvid, avid);
-        DownloadDTO audio = buildTemplate(audioElement, bvid, avid);
-
         //如果有指定保存路径，则使用指定的路径，否则从config.properties中读取
-        videoData.setVideo(video);
-        videoData.setAudio(audio);
+        videoData.setAudio(audioDTO.get(0));
         DownloadTools tools = DownloadTools.getInstance(30);
         tools.setName(videoInfo.getTitle());
-        if (video != null) {
-            addDownload(tools, video);
-        }
-        if (audio != null) {
-            addDownload(tools, audio);
+        if (!audioDTO.isEmpty()) {
+            addDownload(tools, audioDTO);
         }
         tools.shutdown();
-        assert video != null;
-        if (new File(video.getSavePath()).length() == video.getFileLength() && (audio == null || new File(audio.getSavePath()).length() == audio.getFileLength())) {
-            SaveLog.saveLog(video.getSavePath());
-            log.debug(video.getSavePath() + "下载完毕");
-            if (audio != null) {
-                SaveLog.saveLog(audio.getSavePath());
-                log.debug(audio.getSavePath() + "下载完毕");
+        for (DownloadDTO audio : audioDTO) {
+            if (audio == null || new File(audio.getSavePath()).length() == audio.getFileLength()) {
+                if (audio != null) {
+                    SaveLog.saveLog(audio.getSavePath());
+                    log.debug(audio.getSavePath() + "下载完毕");
+                }
+            } else {
+                CommonIOUtils.waitSeconds(5);
+                log.error("下载大小与返回头的大小不一致，重新下载");
+                throw new RuntimeException("下载大小与返回头的大小不一致，重新下载");
             }
-        } else {
-            CommonIOUtils.waitSeconds(5);
-            log.error("下载大小与返回头的大小不一致，重新下载");
-            throw new RuntimeException("下载大小与返回头的大小不一致，重新下载");
         }
     }
 
@@ -525,23 +408,17 @@ public class BilibiliDownloadCoreForMusic {
         return downloadDTO;
     }
 
-    private void addDownload(DownloadTools tools, DownloadDTO dto){
-        if (dto.getFileLength() == 0) {
-            tools.ThreadExecutorAdd(new OneFileOneThread(dto));
-            return;
+    private void addDownload(DownloadTools tools, List<DownloadDTO> dtoList){
+        for (DownloadDTO dto : dtoList) {
+            if (dto.getFileLength() == 0) {
+                tools.ThreadExecutorAdd(new OneFileOneThread(dto));
+                return;
+            }
+            if (!new File(dto.getSavePath()).exists() || !SaveLog.isCompeleteMultiple(dto)) {
+                tools.MultipleThreadWithLog(dto);
+            } else {
+                log.debug(dto.getSavePath() + "已下载，跳过");
+            }
         }
-        if (!new File(dto.getSavePath()).exists() || !SaveLog.isCompeleteMultiple(dto)) {
-            tools.MultipleThreadWithLog(dto);
-        } else {
-            log.debug(dto.getSavePath() + "已下载，跳过");
-        }
-    }
-
-    String getAvid() {
-        return avid;
-    }
-
-    public void setAvid(String avid) {
-        this.avid = avid;
     }
 }

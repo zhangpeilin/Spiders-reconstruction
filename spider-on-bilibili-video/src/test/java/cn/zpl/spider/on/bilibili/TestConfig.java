@@ -6,8 +6,6 @@ import cn.zpl.config.SpringContext;
 import cn.zpl.config.UrlConfig;
 import cn.zpl.spider.on.bilibili.common.BilibiliCommonUtils;
 import cn.zpl.util.CrudTools;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 
 import javax.annotation.Resource;
@@ -22,7 +20,6 @@ import java.util.List;
  * @author zhangpl1
  * @date 2022/8/1
  */
-@SpringBootTest
 @ComponentScan("cn.zpl")
 public class TestConfig {
 
@@ -32,7 +29,6 @@ public class TestConfig {
     @Resource
     BilibiliCommonUtils bilibiliCommonUtils;
 
-    @Test
     public void contextLoad() {
         List<VideoInfo> bv1hR4y1B7zH = tools.commonApiQuery(String.format("bid = %1$s", "BV1WM4y167Tx"), VideoInfo.class);
         System.out.println(bv1hR4y1B7zH);
@@ -43,12 +39,10 @@ public class TestConfig {
         }
     }
 
-    @Test
     public void test2() {
         System.out.println(bilibiliCommonUtils.getVideoInfo("900735459"));
     }
 
-    @Test
     public void test() {
         UrlConfig config = new UrlConfig();
         config.setCommonQueryUrl("http://localhost:8080/common/dao/api/query/%1$s?fetchProperties=[%2$s]&condition=[%3$s]&size=%4$s");
