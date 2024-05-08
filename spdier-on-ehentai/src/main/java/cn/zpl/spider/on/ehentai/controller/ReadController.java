@@ -1,5 +1,6 @@
 package cn.zpl.spider.on.ehentai.controller;
 
+import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.Ehentai;
 import cn.zpl.common.bean.ImageComparator;
 import cn.zpl.common.bean.QueryDTO;
@@ -16,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,6 +37,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,22 +59,17 @@ public class ReadController {
 
     LoadingCache<String, Map<String, Map<Integer, List<String>>>> cache;
     LoadingCache<String, byte[]> imageCache;
-    EUtil eUtil = new EUtil();
+    @Resource
+    EUtil utils;
     @Resource
     CrudTools tools;
-
 
     @RequestMapping("/search")
     public String search(@CookieValue(value = "userToken", required = false) Cookie cookie, HttpServletResponse response, RedirectAttributes redirectAttributes) {
         if (cookie != null) {
             String value = cookie.getValue();
-//            if (BikaUtils.cache.get(value) instanceof QueryDTO) {
-//                redirectAttributes.addFlashAttribute(BikaUtils.cache.get(value));
-//                return "redirect:/getList";
-//            }
         }
         String uuid = UUID.randomUUID().toString();
-//        BikaUtils.cache.put(uuid, new Object());
         Cookie newCookie = new Cookie("userToken", uuid);
         newCookie.setPath("/");
         System.out.println("search设置cookie:" + uuid);
@@ -102,6 +103,7 @@ public class ReadController {
         } else {
             uuid = cookie.getValue();
         }
+        queryDTO.setTitle(queryDTO.getTitle().toLowerCase());
         RestResponse restResponse = getList(queryDTO);
         if (!restResponse.isSuccess()) {
             return "redirect:/search";
@@ -109,57 +111,73 @@ public class ReadController {
         List<Ehentai> list = restResponse.getList(Ehentai.class);
         model.addAttribute("list", list);
         model.addAttribute("query", queryDTO);
-//        model.addAttribute("pages", restResponseBean.getPages());
-//        model.addAttribute("total", restResponseBean.getTotal());
         queryDTO.toMap().forEach(session::setAttribute);
         return "list";
     }
 
     public RestResponse getList(@RequestBody QueryDTO query) {
         StringBuilder sql = new StringBuilder();
-        sql.append("select * from ehentai where lower(title) like '%").append(query.getTitle()).append("%' ");
-        String[] female = StringUtils.isEmpty(query.getFemale()) ? null : query.getFemale().split(",");
+        sql.append("select *from ehentai where lower(title) like '%").append(query.getTitle()).append("%' ");
+        sql.append(StringUtils.isEmpty(query.getAuthor()) ? "" : String.format(" and artist like '%%%1$s%%'", query.getAuthor()));
+        String[] tagsList = query.getTags().isEmpty() ? null : query.getTags().split(",");
         StringBuilder condition = new StringBuilder(" and (");
-        if (female != null) {
-            for (String tag : female) {
+        if (tagsList != null) {
+            for (String tag : tagsList) {
                 if (tag.isEmpty()) {
                     continue;
                 }
+                tag = utils.convertToTraditionalChinese(tag);
                 condition.append(String.format(" female like '%%%1$s%%' %2$s ", tag, query.getCondition()));
             }
             condition.delete(condition.lastIndexOf(query.getCondition()), condition.lastIndexOf(query.getCondition()) + query.getCondition().length());
             condition.append(")");
-            sql.append(female.length != 0 ? condition : "");
+            sql.append(tagsList.length != 0 ? condition : "");
         }
         condition.setLength(0);
         condition.append(" and (");
-        String[] male = StringUtils.isEmpty(query.getMale()) ? null : query.getMale().split(",");
-        if (male != null) {
-            for (String category : male) {
+        String[] categoriesList = query.getCategories().isEmpty() ? null : query.getCategories().split(",");
+        if (categoriesList != null) {
+            for (String category : categoriesList) {
                 if (category.isEmpty()) {
                     continue;
                 }
+                category = utils.convertToTraditionalChinese(category);
                 condition.append(String.format(" male like '%%%1$s%%' %2$s ", category, query.getCondition()));
             }
             condition.delete(condition.lastIndexOf(query.getCondition()), condition.lastIndexOf(query.getCondition()) + query.getCondition().length());
             condition.append(")");
-            sql.append(male.length != 0 ? condition : "");
+            sql.append(categoriesList.length != 0 ? condition : "");
         }
 
         sql.append(" order by favcount desc");
-        List<Ehentai> bikas = tools.commonApiQueryBySql(sql.toString(), Ehentai.class);
-        return RestResponse.ok(bikas);
+        List<Ehentai> ehentais = tools.commonApiQueryBySql(sql.toString(), Ehentai.class);
+        return RestResponse.ok(ehentais);
+    }
+
+    @GetMapping("/clearCache/{comicId}")
+    public String clearCache(@PathVariable("comicId") String comicId) {
+        if (cache != null) {
+            Ehentai ehentai = utils.getEh(comicId);
+            cache.invalidate(ehentai.getSavePath());
+        }
+        if (imageCache != null) {
+            List<String> collect = imageCache.asMap().keySet().stream().filter(bytes -> bytes.startsWith(comicId)).collect(Collectors.toList());
+            collect.forEach(s -> imageCache.invalidate(s));
+        }
+        return "redirect:/comic/" + comicId;
     }
 
     @RequestMapping("/comic/{id}")
     public String getChapters(@PathVariable("id") String id, Model model) {
 
-        Ehentai ehentai = eUtil.getEh(id);
+        Ehentai ehentai = utils.getEh(id);
         File file = new File(ehentai.getSavePath());
         if (!file.exists()) {
             return "search";
         }
         List<String> chapters = getChapters(ehentai.getSavePath());
+        //获取章节列表后，开始缓存每章节前10页图片
+        new Thread(() -> loadImageCache(id, chapters)).start();
         model.addAttribute("fileName", file.getName());
         model.addAttribute("chapters", chapters);
         model.addAttribute("id", id);
@@ -167,9 +185,20 @@ public class ReadController {
         return "chapter";
     }
 
+    private void loadImageCache(String comicId, List<String> chapters) {
+        chapters.parallelStream().forEach(chapter -> {
+            List<String> images  = getImagesInChapter(comicId, chapter);
+            if (CollectionUtils.isEmpty(images)) {
+                return;
+            }
+            images.sort(new ImageComparator());
+            List<String> subList = images.size() > 10 ? images.subList(0, 9) : images;
+            subList.parallelStream().forEach(image -> getImage(comicId, chapter, image));
+        });
+    }
+
     public List<String> getChapters(String zipPath) {
         if (cache != null) {
-            cache.invalidateAll();
             Map<String, Map<Integer, List<String>>> ifPresent = cache.getIfPresent(zipPath);
             if (ifPresent == null || ifPresent.isEmpty()) {
                 try {
@@ -179,19 +208,21 @@ public class ReadController {
                     return null;
                 }
             }
+            if (ifPresent.isEmpty()) {
+                cache.invalidate(zipPath);
+                return getChapters(zipPath);
+            }
             Set<String> strings = ifPresent.keySet();
             Optional<String> first = strings.stream().findFirst();
-            if (first.isPresent()) {
-                String folder = first.get();
-                List<String> chapters = ifPresent.get(folder).get(0);
-                chapters.sort((s1, s2) -> {
-                    // 将字符串解析为整数进行比较
-                    int num1 = Integer.parseInt(s1);
-                    int num2 = Integer.parseInt(s2);
-                    return Integer.compare(num1, num2);
-                });
-                return chapters;
-            }
+            String folder = first.get();
+            List<String> chapters = ifPresent.get(folder).get(0);
+            chapters.sort((s1, s2) -> {
+                // 将字符串解析为整数进行比较
+                int num1 = Integer.parseInt(s1);
+                int num2 = Integer.parseInt(s2);
+                return Integer.compare(num1, num2);
+            });
+            return chapters;
         } else {
             cache = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(2000, TimeUnit.HOURS).build(new CacheLoader<String, Map<String, Map<Integer, List<String>>>>() {
                 @Override
@@ -200,32 +231,41 @@ public class ReadController {
                     File zip = new File(key);
                     try (ZipFile zipFile = new ZipFile(zip)) {
                         List<ZipArchiveEntry> sortedEntries = Collections.list(zipFile.getEntries());
-                        resultMap.put(zip.getName(), new HashMap<>());
-                        resultMap.get(zip.getName()).putIfAbsent(0, new ArrayList<>());
-                        resultMap.get(zip.getName()).get(0).add(String.valueOf(1));
                         List<String> paths = sortedEntries.stream().map(ZipArchiveEntry::getName).collect(Collectors.toList());
-                        for (String path : paths) {
-                            if (path.contains("list.txt")) {
-                                continue;
+                        Optional<String> any = paths.stream().filter(s -> s.contains("/")).findAny();
+                        if (!any.isPresent()) {
+                            String folder = zip.getName();
+                            int subfolder = 1;
+                            resultMap.putIfAbsent(folder, new HashMap<>());
+                            List<String> subs = new ArrayList<>();
+                            subs.add(String.valueOf(subfolder));
+                            resultMap.get(folder).putIfAbsent(0, subs);
+                            resultMap.get(folder).putIfAbsent(subfolder, new ArrayList<>());
+                            for (String path : paths) {
+                                resultMap.get(folder).get(subfolder).add(path);
                             }
-                            path = zip.getName() + "/1/" + path;
+                            return resultMap;
+                        }
+                        for (String path : paths) {
                             String[] parts = path.split("/");
                             String folder = parts[0];
-                            int subfolder = parts.length >= 2 ? Integer.parseInt(parts[1]) : 0;
+                            if (!path.contains("/")) {
+                                folder = zip.getName();
+                            }
+                            resultMap.putIfAbsent(folder, new HashMap<>());
+                            int subfolder = 1;
                             String fileName = parts[parts.length - 1];
                             //如果只有一个/表示只有根目录，如果有两个//表示带章节目录，如果有3个//表示带图片名称
-                            resultMap.get(folder).putIfAbsent(0, new ArrayList<>());
-                            if (parts.length == 2) {
-                                resultMap.get(folder).get(0).add(String.valueOf(subfolder));
+                            if (parts.length == 1) {
+                                List<String> subs = new ArrayList<>();
+                                subs.add(String.valueOf(subfolder));
+                                resultMap.get(folder).putIfAbsent(0, subs);
+                                continue;
                             }
-                            resultMap.get(folder).putIfAbsent(subfolder, new ArrayList<>());
-                            if (parts.length == 3) {
+                            if (parts.length == 2) {
+                                resultMap.get(folder).putIfAbsent(subfolder, new ArrayList<>());
                                 resultMap.get(folder).get(subfolder).add(fileName);
                             }
-                        }
-
-                        for (Map.Entry<String, Map<Integer, List<String>>> entry : resultMap.entrySet()) {
-                            System.out.println(entry.getKey() + ": " + entry.getValue());
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -265,6 +305,49 @@ public class ReadController {
                 outputStream = response.getOutputStream();
                 outputStream.write(image);
                 outputStream.close();
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+    @ResponseBody
+    @GetMapping("/loadCoverImg")
+    public void loadCoverImg(@RequestParam("id") String id, HttpServletResponse response) {
+        //加载封面，先从压缩包路径根目录读取cover文件夹，如果cover文件夹中能找到封面，则返回该封面；如果不能找到，则从压缩包中读取图片存放到cover文件夹中后再返回
+        Ehentai ehentai = utils.getEh(id);
+        if (StringUtils.isEmpty(ehentai.getSavePath())) {
+            utils.invalidCache(id);
+            ehentai = utils.getEh(id);
+        }
+        byte[] image = new byte[0];
+        OutputStream outputStream;
+        Path cover = Paths.get(new File(ehentai.getSavePath()).getParent(), "cover", id);
+        if (cover.toFile().isFile() && cover.toFile().exists()) {
+            try {
+                image = Files.readAllBytes(cover);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            List<String> imagesInChapter = getImagesInChapter(id, "1");
+            if (imagesInChapter != null && !imagesInChapter.isEmpty()) {
+                image = getImage(id, "1", imagesInChapter.get(0));
+                try {
+                    if (image != null) {
+                        Files.createDirectories(cover.getParent());
+                        Files.write(cover, image, StandardOpenOption.CREATE);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        if (image != null && image.length != 0) {
+            try {
+                response.setContentType("image/png");
+                outputStream = response.getOutputStream();
+                outputStream.write(image);
+                outputStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -272,6 +355,9 @@ public class ReadController {
     }
 
     private Map<String, Map<Integer, List<String>>> getZipInfo(String zipPath) {
+        if (cache == null) {
+            getChapters(zipPath);
+        }
         Map<String, Map<Integer, List<String>>> ifPresent = cache.getIfPresent(zipPath);
         if (ifPresent == null || ifPresent.isEmpty()) {
             try {
@@ -286,19 +372,11 @@ public class ReadController {
         }
     }
 
-    @RequestMapping("/test")
-    public String test(Model model) {
-        File base = new File("C:\\Users\\zpl\\Pictures");
-        String[] names = base.list((dir, name) -> name.contains("png"));
-        model.addAttribute("names", names);
-        return "test";
-    }
-
     private File getFile(String id, String child) {
         if (child == null || "".equalsIgnoreCase(child)) {
             child = "";
         }
-        Ehentai ehentai = eUtil.getEh(id);
+        Ehentai ehentai = utils.getEh(id);
         List<String> chapters = getChapters(ehentai.getSavePath());
         if (chapters.contains(child)) {
             return new File(ehentai.getSavePath(), child);
@@ -308,7 +386,7 @@ public class ReadController {
     }
 
     private List<String> getImagesInChapter(String id, String chapter) {
-        Ehentai ehentai = eUtil.getEh(id);
+        Ehentai ehentai = utils.getEh(id);
         Map<String, Map<Integer, List<String>>> zipInfo = getZipInfo(ehentai.getSavePath());
         if (zipInfo == null || zipInfo.isEmpty()) {
             return null;
@@ -332,7 +410,7 @@ public class ReadController {
                     ifPresent = imageCache.get(myKey);
                     return ifPresent;
                 } catch (Exception e) {
-                    log.error("压缩包读取失败", e);
+                    log.error("压缩包id:{}读取失败", comicId, e);
                     return null;
                 }
             } else {
@@ -346,17 +424,19 @@ public class ReadController {
                     String comicId = split[0];
                     String chapter = split[1];
                     String image = split[2];
-                    Ehentai ehentai = eUtil.getEh(comicId);
+                    Ehentai ehentai = utils.getEh(comicId);
                     Map<String, Map<Integer, List<String>>> zipInfo = getZipInfo(ehentai.getSavePath());
                     if (zipInfo == null || zipInfo.isEmpty()) {
                         return null;
                     }
-                    Optional<String> folder = zipInfo.keySet().stream().findFirst();
                     try (ZipFile zipFile = new ZipFile(ehentai.getSavePath())) {
                         ZipArchiveEntry entry = zipFile.getEntry(image);
+                        if (entry == null) {
+                            entry = zipFile.getEntry(chapter + "/" + image);
+                        }
                         InputStream inputStream = zipFile.getInputStream(entry);
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        byte[] buffer = new byte[1024];
+                        byte[] buffer = new byte[20000];
                         int bytesRead;
                         while ((bytesRead = inputStream.read(buffer)) != -1) {
                             bos.write(buffer, 0, bytesRead);

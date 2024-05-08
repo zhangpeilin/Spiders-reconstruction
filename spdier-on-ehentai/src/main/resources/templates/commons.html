@@ -58,9 +58,11 @@
     <div class="mb-3">
         <label for="title" class="form-label">漫画标题</label>
         <input type="text" th:value="${#session?.getAttribute('title')!=null}?${#session.getAttribute('title')}" name="title" class="form-control" id="title">
-        <label for="female" class="form-label">标签</label>
+        <label for="author" class="form-label">作者</label>
+        <input type="text" th:value="${#session?.getAttribute('author')!=null}?${#session.getAttribute('author')}" name="author" class="form-control" id="author">
+        <label for="female" class="form-label">女</label>
         <input type="text" th:value="${#session?.getAttribute('female') != null}?${#session.getAttribute('female')}" name="female" class="form-control" id="female">
-        <label for="male" class="form-label">分类</label>
+        <label for="male" class="form-label">男</label>
         <input type="text" th:value="${#session?.getAttribute('male') != null}?${#session.getAttribute('male')}" name="male" class="form-control" id="male">
         <label for="numLimit" class="form-lable">显示数量</label>
         <select class="form-select" aria-label="Default select example" id="numLimit" name="size">
@@ -97,6 +99,25 @@
         <div class="form-check form-check-inline">
             <input class="form-check-input" type="radio" th:checked="${#session == null || #session.getAttribute('complete') == 'false'}? true: false"
                    name="complete" checked value="false">
+            <label class="form-check-label">
+                否
+            </label>
+        </div>
+    </div>
+
+
+    <div>
+        <label class="form-label">是否查询线上</label>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" th:checked="${#session != null}?${#session.getAttribute('searchOnline') == 'true'}"
+                   name="searchOnline" value="true">
+            <label class="form-check-label">
+                是
+            </label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" th:checked="${#session == null || #session.getAttribute('searchOnline') == 'false'}? true: false"
+                   name="searchOnline" checked value="false">
             <label class="form-check-label">
                 否
             </label>

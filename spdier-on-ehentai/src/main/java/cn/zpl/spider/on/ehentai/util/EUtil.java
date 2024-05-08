@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Component
 public class EUtil {
 
     public static LoadingCache<String, Object> exists;
@@ -34,14 +35,22 @@ public class EUtil {
         }
         return null;
     }
+    public String convertToTraditionalChinese(String simplifiedChinese) {
+        return simplifiedChinese;
+//        return ZhConverterUtil.toTraditional(simplifiedChinese);
+    }
 
     public Ehentai getEh(String id) {
         return (Ehentai) getExists( "ehentai" + ":" + id);
     }
 
+    public void invalidCache(String comicId) {
+        exists.invalidate("ehentai:" + comicId);
+    }
+
     private synchronized Object getExists(String cid) {
         if (exists != null) {
-            log.debug("当前缓存中数据条数：{}", exists.size());
+//            log.debug("当前缓存中数据条数：{}", exists.size());
             synchronized (EUtil.class) {
                 if (!cacheLoaded) {
                     new Thread(() -> {

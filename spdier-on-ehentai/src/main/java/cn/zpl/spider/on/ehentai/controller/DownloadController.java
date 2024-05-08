@@ -54,7 +54,7 @@ public class DownloadController {
     @PostMapping("/downloadBySql")
     public String downloadBySql(@RequestParam("sql") String sql, @RequestParam(value = "isDownload") boolean isDownload, @RequestParam(value = "cost", required = false) int cost) {
         List<Ehentai> ehentaiList = tools.commonApiQueryBySql(sql, Ehentai.class);
-        DownloadTools tools = DownloadTools.getInstance(3);
+        DownloadTools tools = DownloadTools.getInstance(3, "downloadBySql");
         for (Ehentai ehentai : ehentaiList) {
             DownLoadArchiveThread downLoadArchiveThread = SpringContext.getBeanWithGenerics(DownLoadArchiveThread.class);
             downLoadArchiveThread.setUrl(ehentai.getUrl());

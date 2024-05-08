@@ -9,8 +9,10 @@ import cn.zpl.spider.on.ehentai.config.EhentaiConfig;
 import cn.zpl.spider.on.ehentai.util.EUtil;
 import cn.zpl.thread.CommonThread;
 import cn.zpl.thread.OneFileOneThread;
+import cn.zpl.util.CheckCallBack;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.CrudTools;
+import cn.zpl.util.ProxyUtil;
 import cn.zpl.util.UnZipUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -91,7 +93,7 @@ public class DownLoadArchiveThread extends CommonThread {
         } catch (InterruptedException ignored) {
         }
         Ehentai eh = util.getEh(EUtil.getGalleryId(getUrl()));
-        if (eh != null && eh.getFinish() == 1) {
+        if (isDownload && eh != null && eh.getFinish() == 1) {
             log.debug("{}-->{}已下载，跳过", getUrl(), eh.getTitle());
             return;
         }
@@ -102,6 +104,18 @@ public class DownLoadArchiveThread extends CommonThread {
         data.setProxy(true);
         data.setAlwaysRetry();
         CommonIOUtils.withTimer(data);
+        CheckCallBack checkCallBack = new CheckCallBack() {
+            @Override
+            public boolean call(String data) {
+                Document parse = Jsoup.parse(data);
+                Elements bannedForExcessive = parse.getElementsContainingOwnText("banned for excessive pageloads");
+                return !bannedForExcessive.isEmpty();
+            }
+        };
+        if (checkCallBack.call(data.getResult())) {
+            ProxyUtil.checkProxy(url, "ehentai", ehentaiConfig.getEhentaiCookies(), checkCallBack);
+            CommonIOUtils.withTimer(data);
+        }
         Document document = Jsoup.parse(data.getResult());
         Element fileSize = document.selectFirst(":containsOwn(File Size)");
         if (data.getStatusCode() == 404) {
@@ -116,8 +130,7 @@ public class DownLoadArchiveThread extends CommonThread {
         Element favcount = document.selectFirst("td#favcount");
         Elements tagList = document.select("div#taglist td");
         Element rating = document.selectFirst("td#rating_label");
-        Element galleryInfo = document.selectFirst("div#gdd");
-        Map<String, Object> infomation = new HashMap<>();
+        Map<String, Object> information = new HashMap<>();
         String key = null;
         for (int i = 0; i < tagList.size(); i++) {
             //偶数时是大类名，奇数是具体值
@@ -130,10 +143,10 @@ public class DownLoadArchiveThread extends CommonThread {
                     values.append(child.text()).append(",");
                 }
                 values.deleteCharAt(values.length() - 1).append("]");
-                infomation.put(key, values.toString());
+                information.put(key, values.toString());
             }
         }
-        ehentai = JSON.toJavaObject(new JSONObject(infomation), Ehentai.class);
+        ehentai = JSON.toJavaObject(new JSONObject(information), Ehentai.class);
         if (fileSize != null) {
             Element size = fileSize.nextElementSibling();
             if (size != null) {

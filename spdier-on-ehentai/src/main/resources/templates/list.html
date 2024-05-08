@@ -53,18 +53,27 @@
                     <thead>
                     <tr>
                         <th class="text-nowrap">标题</th>
+                        <th class="text-nowrap">封面</th>
                         <th class="text-nowrap">收藏数</th>
-                        <th>作者</th>
-                        <th>女性标签</th>
-                        <th>男性标签</th>
+                        <th>简介</th>
+                        <th>女</th>
+                        <th>男</th>
                         <th>操作</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="ehentai : ${list}">
-                        <td th:text="${ehentai.getTitle()}"></td>
+                        <td th:text="${ehentai.title}"></td>
+<!--                        <td width="304" height="236"><img th:src="@{/read/(id=${bika.getId()},chapter=${num},img=${img})}" class="img-thumbnail" width="304" height="236"></td>-->
+<!--                        <td id="mask" th:src="@{/read/(id=${bika.getId()},chapter=${num},img=${img})}" class="hidden"></td>-->
+<!--                        <td id="loading" th:src="@{/pic/loading.jpg}" class="hidden"></td>-->
+<!--                        <td width="304" height="236"><img th:src="" class="img-thumbnail" width="304" height="236"></td>-->
+                        <td>
+                            <img th:if="${ehentai.getSavePath()!=null}" th:src="@{/loadCoverImg/(id=${ehentai.getId()})}" width="200">
+                            <img th:if="${ehentai.getSavePath()==null}" th:src="@{/pic/loading.jpg}" class="img-thumbnail">
+                        </td>
                         <td th:text="${ehentai.getFavcount()}"></td>
-                        <td th:text="${ehentai.getArtist()}"></td>
+                        <td th:text="${ehentai.title}"></td>
                         <td th:text="${ehentai.getFemale()}"></td>
                         <td th:text="${ehentai.getMale()}"></td>
                         <!--                        <td th:text="${bika.getLocalPath()}"></td>-->
@@ -72,8 +81,8 @@
                             <!--                            <button class="btn btn-sm btn-primary" id="read" th:attr="path=${bika.getLocalPath()}" th:href="@{/chapter/}">阅读</button>-->
                             <div class="form-inline">
 
-                                <a th:text="${ehentai.getSavePath() == null}?'下载':'阅读'" class="text-nowrap btn btn-sm btn-primary" id="read" th:href="${ehentai.getSavePath()!=null}? @{/comic/} + ${ehentai.id}:@{/download/} + ${ehentai.id}">阅读</a>
-                                <a th:hidden="${ehentai.getSavePath() == null}" class="text-nowrap btn btn-sm btn-primary" id="mark" th:href="${ehentai.getSavePath()!=null}? @{/update/} + ${ehentai.id}:''">完结</a>
+                                <a th:text="${ehentai.getSavePath() == null}?'下载':'阅读'" class="text-nowrap btn btn-sm btn-primary" id="read" th:href="${ehentai.getSavePath()!=null}? '/comic/' + ${ehentai.id}:'/download/id/' + ${ehentai.id}">阅读</a>
+                                <a th:hidden="${ehentai.getSavePath() == null}" class="text-nowrap btn btn-sm btn-primary" id="mark" th:href="${ehentai.getSavePath()!=null}? '/update/' + ${ehentai.id}:''">完结</a>
 <!--                                <a class="text-nowrap btn btn-sm btn-primary" id="read" th:href="@{/comic/} + ${bika.id}">删除</a>-->
                             </div>
                         </td>
