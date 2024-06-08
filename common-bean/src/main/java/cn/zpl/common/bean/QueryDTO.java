@@ -49,6 +49,11 @@ public class QueryDTO {
      */
     private Integer total;
 
+    /**
+     * 星级
+     */
+    private Integer star;
+
     public String getTitle() {
         return title;
     }
@@ -94,6 +99,9 @@ public class QueryDTO {
     }
 
     public void setCurrent(Integer current) {
+        if (current == null) {
+            return;
+        }
         this.current = current;
     }
 
