@@ -17,6 +17,7 @@ import cn.zpl.util.DownloadTools;
 import cn.zpl.util.GetSignature;
 import cn.zpl.util.ZipUtils;
 import com.alibaba.fastjson.JSON;
+import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.google.common.base.CaseFormat;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -27,7 +28,6 @@ import com.google.gson.JsonObject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -66,6 +66,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -157,7 +158,7 @@ public class BikaUtils {
 
         //H24 D7 D30
         DownloadTools tool = DownloadTools.getInstance(1);
-        tool.setName("漫画");
+        tool.setName("按ID下载线程池");
         tool.setSleepTimes(10000);
         BikaComicThread bikaComicThread = new BikaComicThread(id);
         bikaComicThread.setForceDownload(forceDownload);
@@ -280,6 +281,10 @@ public class BikaUtils {
         return (BikaList) getExists( "bika_list" + ":" + id);
     }
 
+    public String convertToTraditionalChinese(String simplifiedChinese) {
+        return ZhConverterUtil.toTraditional(simplifiedChinese);
+    }
+
     public BikaDownloadFailed getBikaDownloadFailed(String id) {
         return (BikaDownloadFailed) getExists( "bika_download_failed" + ":" + id);
     }
@@ -312,7 +317,7 @@ public class BikaUtils {
         exists = CacheBuilder.newBuilder().maximumSize(200000).expireAfterWrite(2000, TimeUnit.SECONDS).build(new CacheLoader<String, Object>() {
             @Override
             //key格式为表名:主键
-            public Object load(@NotNull String key) {
+            public @NotNull Object load(@NotNull String key) {
                 String[] split = key.split(":");
                 String tableName = split[0];
                 String entityName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, tableName);
@@ -757,7 +762,9 @@ public class BikaUtils {
                 return Paths.get(String.valueOf(fitMap.get("path")));
             }
         }
-        Optional<ImmutableMap<String, Object>> first = savePath.stream().map(path -> ImmutableMap.<String, Object>of("size", new File(path).getParentFile().getFreeSpace(), "path", path)).filter(hashMap -> ((long) Objects.requireNonNull(hashMap.get("size"))) > size).findFirst();
+        AtomicLong totalSpace = new AtomicLong();
+        savePath.forEach(path -> totalSpace.addAndGet(new File(path).getParentFile().getFreeSpace()));
+        Optional<ImmutableMap<String, Object>> first = savePath.stream().map(path -> ImmutableMap.<String, Object>of("size", new File(path).getParentFile().getFreeSpace(), "path", path)).filter(hashMap -> ((long) Objects.requireNonNull(hashMap.get("size"))) > size && (long) Objects.requireNonNull(hashMap.get("size")) > totalSpace.get() / savePath.size()).findFirst();
         if (first.isPresent()) {
             ImmutableMap<String, Object> fitMap = first.get();
             return Paths.get(String.valueOf(fitMap.get("path")));

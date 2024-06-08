@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -130,6 +131,7 @@ public class ReadController {
                 if (tag.isEmpty()) {
                     continue;
                 }
+                tag = utils.convertToTraditionalChinese(tag);
                 if (query.isSearchOnline()) {
                     utils.search(tag, false);
                 }
@@ -147,6 +149,7 @@ public class ReadController {
                 if (category.isEmpty()) {
                     continue;
                 }
+                category = utils.convertToTraditionalChinese(category);
                 if (query.isSearchOnline()) {
                     utils.search(category, false);
                 }
@@ -157,12 +160,21 @@ public class ReadController {
             sql.append(categoriesList.length != 0 ? condition : "");
         }
 
-        sql.append(" order by likes_count desc");
+        sql.append(" order by likes_count desc ").append(generatePaginationSql(query.getCurrent(), query.getSize()));
         if (query.isSearchOnline()) {
             utils.search(query.getTitle(), false);
         }
         List<Bika> bikas = tools.commonApiQueryBySql(sql.toString(), Bika.class);
         return RestResponse.ok(bikas);
+    }
+
+    public String generatePaginationSql(int currentPage, int pageSize) {
+        // 计算偏移量
+        int offset = (currentPage - 1) * pageSize;
+        // 构造分页 SQL 语句
+        String sql = " LIMIT " + pageSize + " OFFSET " + offset;
+
+        return sql;
     }
 
     @GetMapping("/clearCache/{comicId}")
@@ -294,6 +306,49 @@ public class ReadController {
                 e.printStackTrace();
             }
         }
+    }
+
+    @ResponseBody
+    @GetMapping("/refreshAllCoverImg")
+    public void refreshAllCoverImg() {
+        utils.getBikaExist("111");
+        ConcurrentMap<String, Object> map = BikaUtils.exists.asMap();
+        map.forEach((s, o) -> {
+            if (!(o instanceof Bika)) {
+                return;
+            }
+            Bika bikaExist = (Bika) o;
+            String id = bikaExist.getId();
+            //加载封面，先从压缩包路径根目录读取cover文件夹，如果cover文件夹中能找到封面，则返回该封面；如果不能找到，则从压缩包中读取图片存放到cover文件夹中后再返回
+            if (StringUtils.isEmpty(bikaExist.getLocalPath())) {
+                utils.invalidCache(id);
+                bikaExist = utils.getBikaExist(id);
+                return;
+            }
+            byte[] image = new byte[0];
+            OutputStream outputStream;
+            Path cover = Paths.get(new File(bikaExist.getLocalPath()).getParent(), "cover", id);
+            if (cover.toFile().isFile() && cover.toFile().exists()) {
+                try {
+                    image = Files.readAllBytes(cover);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                List<String> imagesInChapter = getImagesInChapter(id, "1");
+                if (imagesInChapter != null && !imagesInChapter.isEmpty()) {
+                    image = getImage(id, "1", imagesInChapter.get(0));
+                    try {
+                        if (image != null) {
+                            Files.createDirectories(cover.getParent());
+                            Files.write(cover, image, StandardOpenOption.CREATE);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
     }
 
     @ResponseBody

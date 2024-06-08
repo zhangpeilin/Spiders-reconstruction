@@ -64,7 +64,9 @@
         <input type="text" th:value="${#session?.getAttribute('tags') != null}?${#session.getAttribute('tags')}" name="tags" class="form-control" id="tags">
         <label for="categories" class="form-label">分类</label>
         <input type="text" th:value="${#session?.getAttribute('categories') != null}?${#session.getAttribute('categories')}" name="categories" class="form-control" id="categories">
-        <label for="numLimit" class="form-lable">显示数量</label>
+        <label for="categories" class="form-label">当前页数</label>
+        <input type="text" th:value="${#session?.getAttribute('current') != null}?${#session.getAttribute('current')}" name="current" class="form-control" id="current">
+        <label for="numLimit" class="form-lable">每页显示数量</label>
         <select class="form-select" aria-label="Default select example" id="numLimit" name="size">
             <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='20'}" value="20">20</option>
             <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='40'}" value="40">40</option>
