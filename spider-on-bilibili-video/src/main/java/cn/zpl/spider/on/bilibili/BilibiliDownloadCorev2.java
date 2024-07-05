@@ -118,6 +118,31 @@ public class BilibiliDownloadCorev2 {
         }
     }
 
+    public void getCollections(String bid) {
+        Data data = new Data();
+        data.setUrl("https://api.bilibili.com/x/web-interface/view?bvid=" + bid);
+        data.setHeader(properties.getCookies());
+        data.setReferer("https://www.bilibili.com/video/" + bid);
+        CommonIOUtils.withTimer(data);
+        JsonElement json = CommonIOUtils.paraseJsonFromStr(data.getResult());
+        int code = JsonUtil.getFromJson2Integer(json, "code");
+        if (code != 0) {
+            log.error("读取失败");
+            return;
+        }
+        JsonElement sections = JsonUtil.getFromJson(json, "data-ugc_season-sections");
+        if (sections.isJsonArray()) {
+            JsonElement jsonElement = sections.getAsJsonArray().get(0);
+            JsonElement episodes = JsonUtil.getFromJson(jsonElement, "episodes");
+            if (episodes.isJsonArray()) {
+                for (JsonElement episode : episodes.getAsJsonArray()) {
+                    String bvid = JsonUtil.getFromJson2Str(episode, "bvid");
+                    mainBusiness(bvid);
+                }
+            }
+        }
+    }
+
     private int getPlayListByWeb(String uid, String page) throws IOException {
         owner_name = BilibiliCommonUtils.getUserInfo(uid);
         Data data = new Data();
@@ -385,6 +410,10 @@ public class BilibiliDownloadCorev2 {
                     videoCurrent = jsonElement;
                 }
             }
+        }
+        JsonElement tmp = videoList.getAsJsonArray().get(0);
+        if (videoCurrent.isJsonNull() && JsonUtil.getFromJson2Integer(tmp, "width") >= 1920) {
+            videoCurrent = tmp;
         }
         JsonElement audioList = JsonUtil.getFromJson(playInfo, "data-dash-audio");
         JsonElement AudioCurrent = JsonNull.INSTANCE;;

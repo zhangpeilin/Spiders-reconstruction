@@ -53,4 +53,15 @@ public class DownloadController {
         }
         return RestResponse.ok();
     }
+
+    @GetMapping("/download/collection/{bid}")
+    public RestResponse collection(@PathVariable("bid") String bid) {
+        try {
+            corev2.getCollections(bid);
+        } catch (Exception e) {
+            log.error("下载错误：", e);
+            RestResponse.fail(e.getMessage());
+        }
+        return RestResponse.ok();
+    }
 }

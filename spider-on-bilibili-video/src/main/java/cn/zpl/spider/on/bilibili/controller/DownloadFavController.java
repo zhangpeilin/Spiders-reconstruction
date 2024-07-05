@@ -43,7 +43,14 @@ public class DownloadFavController {
 
     @GetMapping("/downloadFav/{uid}/{gallery}")
     public String downloadFav(@PathVariable("uid") String uid, @PathVariable(value = "gallery", required = false) String gallery) {
-        doTheOne(uid, gallery);
+        if (gallery.contains(",")) {
+            String[] split = gallery.split(",");
+            for (String s : split) {
+                doTheOne(uid, s);
+            }
+        } else {
+            doTheOne(uid, gallery);
+        }
         return "success";
     }
 
