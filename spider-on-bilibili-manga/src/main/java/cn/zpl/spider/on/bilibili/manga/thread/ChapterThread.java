@@ -117,7 +117,6 @@ public class ChapterThread implements Callable<Map<String, Object>> {
         tools.setName(title + "：" + chapter_id);
         if (clips.isJsonArray() && pics.isJsonArray() && clips.getAsJsonArray().size() == pics.getAsJsonArray().size()) {
             JsonArray clipsArray = clips.getAsJsonArray();
-            JsonArray picsArray = pics.getAsJsonArray();
             int i = 0;
             for (JsonElement jsonElement : clipsArray) {
                 futureVector.add(tools.getExecutor().submit(new ImageThread(element, jsonElement, images[i])));

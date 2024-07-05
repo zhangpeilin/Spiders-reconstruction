@@ -20,8 +20,8 @@ public class ImageThread implements Callable<DownloadDTO> {
     BilibiliMangaProperties bilibiliMangaProperties;
 
     BilibiliProperties bilibiliProperties;
-    private JsonElement pic;
-    private JsonElement chapter;
+    private final JsonElement pic;
+    private final JsonElement chapter;
 
     ImageThread(JsonElement chapter, JsonElement clip, JsonElement pic) {
         this.clip = clip;
@@ -42,8 +42,6 @@ public class ImageThread implements Callable<DownloadDTO> {
     }
 
     public DownloadDTO domain() {
-        //{"urls":"[\"/bfs/manga/a7d742cac9b73dcdd5d9e8bf4e8657f589607b56.jpg\"]"}
-        //{"urls":"[\"/bfs/manga/8dd9d08a2fdf684d0fda366c072ee93c98917d17.jpg@748w.jpg\"]"}
         List<String> pathMake = new ArrayList<>();
         //漫画保存位置
         pathMake.add(bilibiliMangaProperties.getMangaSavePath());
