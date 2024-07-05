@@ -161,7 +161,13 @@ public class ApiAnalysisController {
             SqlSession sqlSession = openSession();
             String sql = condition.replaceAll("\\[sql:|]", "");
             log.debug("请求中解析到单独的sql语句，sql-->{}", sql);
-            try (PreparedStatement preparedStatement = sqlSession.getConnection().prepareStatement(sql)) {
+            // 计算起始行号
+            long startRow = (page.getCurrent() - 1) * page.getSize();
+
+            // 包装SQL语句，添加LIMIT子句
+            String wrappedSql = sql + " LIMIT " + startRow + ", " + page.getSize();
+            log.debug("执行内容为：{}", wrappedSql);
+            try (PreparedStatement preparedStatement = sqlSession.getConnection().prepareStatement(wrappedSql)) {
                 ResultSet resultSet = preparedStatement.executeQuery();
                 ResultSetMetaData md = resultSet.getMetaData(); //获得结果集结构信息,元数据
                 int columnCount = md.getColumnCount();   //获得列数
