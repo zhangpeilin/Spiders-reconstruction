@@ -211,6 +211,7 @@ public class BikaComicThread extends BikaCommonThread {
         }
         if (bikaProperties.isWriteDb()) {
             bikaUtils.dosave(comicId, info, bika.getLocalPath());
+            bikaUtils.invalidCache(comicId);
         }
     }
 
