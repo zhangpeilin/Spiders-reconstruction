@@ -21,6 +21,7 @@ public class BilibiliMangaProperties {
 
     String GetEpisodeBuyInfoUrl;
     String BuyEpisodeUrl;
+    String rentEpisodeUrl;
 
     String getAutoBuyComics;
 
