@@ -53,7 +53,8 @@ public class BatchBuyEpisodeThread implements Callable<Map<String, Map<String, I
         //需要解锁的解锁，已经解锁的跳过
         if (is_locked) {
             //满足条件，调用解锁方法BuyEpisode
-            param = "{\"buy_method\":1,\"ep_id\":" + ep_id + ",\"comic_id\":" + comic_id + "}";
+//            param = "{\"buy_method\":1,\"ep_id\":" + ep_id + ",\"comic_id\":" + comic_id + "}";
+            param = "{\"buy_method\":1,\"ep_id\":" + ep_id + "}";
             String buyResult = utils.postUrl(properties.getBuyEpisodeUrl(), param,
                     properties.getCommonHeaders() + bilibiliProperties.getCookies());
             log.debug(buyResult);

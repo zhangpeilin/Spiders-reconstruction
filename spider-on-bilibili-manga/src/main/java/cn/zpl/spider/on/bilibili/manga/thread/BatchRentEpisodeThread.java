@@ -67,7 +67,6 @@ public class BatchRentEpisodeThread implements Callable<Map<String, Map<String, 
         }
         resultJson = CommonIOUtils.paraseJsonFromStr(result);
         if (CommonIOUtils.getFromJson2Str(resultJson, "code").equalsIgnoreCase("unauthenticated")) {
-            //需要登录，那么直接退出系统
             log.error("需要重新登录");
             return Collections.emptyMap();
         }

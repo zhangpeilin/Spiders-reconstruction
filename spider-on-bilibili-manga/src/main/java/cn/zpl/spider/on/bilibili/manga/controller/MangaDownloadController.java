@@ -1,6 +1,8 @@
 package cn.zpl.spider.on.bilibili.manga.controller;
 
 
+import cn.zpl.annotation.DistributeLock;
+import cn.zpl.annotation.DistributedLockKey;
 import cn.zpl.common.bean.BilibiliManga;
 import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.bilibili.manga.bs.MangaDownloadCore;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RestController
@@ -65,10 +68,12 @@ public class MangaDownloadController {
     }
 
     @PostMapping("/batchBuy")
-    public String batchBuyEp(@RequestParam("comicIds") List<String> comicList, @RequestParam("buyTime") Integer buyTime, @RequestParam(value = "fromEpId") Integer fromEpId) {
+    @DistributeLock(value = "redissionLock:batchBuyEp", waitTime = 500, holdTime = 500)
+    public String batchBuyEp(@RequestParam("comicIds") List<String> comicList, @RequestParam("buyTime") Integer buyTime,@DistributedLockKey @RequestParam(value = "fromEpId") Integer fromEpId) {
         fromEpId = fromEpId == null ? 0 : fromEpId;
         DownloadTools tools = DownloadTools.getInstance(2);
         for (String comicId : comicList) {
+            comicId = comicId.replace("mc", "").replaceAll("[()]", "");
             JsonArray epIds = mangaDownloadCore.getEpIds(comicId);
             List<EpEntity> objects = JSON.parseArray(epIds.toString(), EpEntity.class);
             Integer finalFromEpId = fromEpId;
@@ -84,7 +89,8 @@ public class MangaDownloadController {
                 }
             }
             tools.shutdown();
-            new Thread(() -> mangaDownloadCore.getComicDetail(comicId, true)).start();
+            String finalComicId = comicId;
+            new Thread(() -> mangaDownloadCore.getComicDetail(finalComicId, true)).start();
         }
         return "下载成功";
     }
@@ -98,7 +104,7 @@ public class MangaDownloadController {
             JsonArray epIds = mangaDownloadCore.getEpIds(comicId);
             List<EpEntity> objects = JSON.parseArray(epIds.toString(), EpEntity.class);
             Integer finalFromEpId = fromEpId;
-            List<EpEntity> sortedList = objects.stream().filter(EpEntity::is_locked).filter(eps -> Integer.parseInt(eps.getId()) > finalFromEpId).sorted(Comparator.comparingInt(EpEntity::getOrd)).collect(Collectors.toList());
+            List<EpEntity> sortedList = objects.stream().filter(EpEntity::is_locked).filter(eps -> Integer.parseInt(eps.getId()) >= finalFromEpId).sorted(Comparator.comparingInt(EpEntity::getOrd)).collect(Collectors.toList());
             for (EpEntity ep : sortedList) {
                 if (buyTime-- > 0) {
                     System.out.println("当前限免解锁章节：" + ep.getOrd());
