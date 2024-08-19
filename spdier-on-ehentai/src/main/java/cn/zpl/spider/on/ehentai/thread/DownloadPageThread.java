@@ -20,6 +20,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,9 +29,22 @@ public class DownloadPageThread  extends CommonThread {
 
     private boolean download = false;
 
+    private boolean recursive = true;
+
+    private AtomicInteger pageCount = new AtomicInteger(0);
+
     public void setDownload(boolean download) {
         this.download = download;
     }
+
+    public void setRecursive(boolean recursive) {
+        this.recursive = recursive;
+    }
+
+    public void setPageCount(int i) {
+        pageCount = new AtomicInteger(i);
+    }
+
 
     @Override
     public void domain() throws Exception {
@@ -81,10 +95,16 @@ public class DownloadPageThread  extends CommonThread {
             msgSender.sendMsg(getUrl(), "failedPage");
             return;
         }
-        if (pageInfoMap.get("nexturl") == null) {
+        if (!recursive || pageInfoMap.get("nexturl") == null) {
             return;
         }
-        setUrl(pageInfoMap.get("nexturl"));
-        domain();
+        if (pageCount.getAndDecrement() > 0) {
+            setUrl(pageInfoMap.get("nexturl"));
+            domain();
+        }
+    }
+
+    public AtomicInteger getPageCount() {
+        return pageCount;
     }
 }

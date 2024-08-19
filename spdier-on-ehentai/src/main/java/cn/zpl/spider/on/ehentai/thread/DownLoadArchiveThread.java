@@ -17,6 +17,7 @@ import cn.zpl.util.UnZipUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.jsoup.Jsoup;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -95,6 +97,14 @@ public class DownLoadArchiveThread extends CommonThread {
         Ehentai eh = util.getEh(EUtil.getGalleryId(getUrl()));
         if (isDownload && eh != null && eh.getFinish() == 1) {
             log.debug("{}-->{}已下载，跳过", getUrl(), eh.getTitle());
+            //已经下载的，复制到当前目录一份，文件名中添加（拷贝）字样
+            File path = new File(makePath(eh.getTitle()));
+            String name = new File(eh.getSavePath()).getName();
+            try {
+                FileUtils.copyFile(new File(eh.getSavePath()), new File(path.getParent(), "(拷贝)" + name));
+            } catch (IOException e) {
+                log.error("{}-->{}复制失败", getUrl(), eh.getTitle());
+            }
             return;
         }
         Data data = new Data();
@@ -282,5 +292,13 @@ public class DownLoadArchiveThread extends CommonThread {
                 }
             }
         }
+    }
+
+    public String makePath(String fileName) {
+        List<String> path = new ArrayList<>();
+        path.add(ehentaiConfig.getSavePath());
+        path.add("archive");
+        path.add(DateFormatUtils.format(new Date(), "yyyyMMdd"));
+        return CommonIOUtils.makeFilePath(path, fileName);
     }
 }

@@ -45,9 +45,19 @@ public class DownloadController {
     @Resource
     DownloadService service;
 
+    @Resource
+    EUtil utils;
+
     @PostMapping("/download")
     public String downloadByUrl(@RequestParam("url") String url, @RequestParam("isDownload") boolean isDownload) {
         service.downTheOne(url, -1, isDownload);
+        return "下载成功";
+    }
+
+    @GetMapping("/download/id/{id}")
+    public String downloadById(@PathVariable("id") String id) {
+        Ehentai eh = utils.getEh(id);
+        service.downTheOne(eh.getUrl(), -1, true);
         return "下载成功";
     }
 
@@ -67,10 +77,11 @@ public class DownloadController {
     }
 
     @PostMapping("/downloadPage")
-    public String downloadPage(@RequestParam("url") String url, @RequestParam("flag") Boolean flag) {
+    public String downloadPage(@RequestParam("url") String url, @RequestParam("flag") Boolean flag,  @RequestParam("pageCount") int pageCount) {
         DownloadPageThread downLoadArchiveThread = new DownloadPageThread();
         downLoadArchiveThread.setDownload(flag);
         downLoadArchiveThread.setUrl(url);
+        downLoadArchiveThread.setPageCount(pageCount);
         downLoadArchiveThread.run();
         return "下载成功";
     }

@@ -1,10 +1,11 @@
 package cn.zpl.spider.on.ehentai.controller;
 
-import cn.zpl.common.bean.Bika;
 import cn.zpl.common.bean.Ehentai;
 import cn.zpl.common.bean.ImageComparator;
 import cn.zpl.common.bean.QueryDTO;
 import cn.zpl.common.bean.RestResponse;
+import cn.zpl.spider.on.ehentai.thread.DownloadPageThread;
+import cn.zpl.spider.on.ehentai.thread.ScanArchiveThreadv2;
 import cn.zpl.spider.on.ehentai.util.EUtil;
 import cn.zpl.util.CrudTools;
 import com.google.common.cache.CacheBuilder;
@@ -25,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.Resource;
 import javax.servlet.http.Cookie;
@@ -33,10 +33,11 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,7 +66,7 @@ public class ReadController {
     CrudTools tools;
 
     @RequestMapping("/search")
-    public String search(@CookieValue(value = "userToken", required = false) Cookie cookie, HttpServletResponse response, RedirectAttributes redirectAttributes) {
+    public String search(@CookieValue(value = "userToken", required = false) Cookie cookie, HttpServletResponse response) {
         if (cookie != null) {
             String value = cookie.getValue();
         }
@@ -119,37 +120,61 @@ public class ReadController {
         StringBuilder sql = new StringBuilder();
         sql.append("select *from ehentai where lower(title) like '%").append(query.getTitle()).append("%' ");
         sql.append(StringUtils.isEmpty(query.getAuthor()) ? "" : String.format(" and artist like '%%%1$s%%'", query.getAuthor()));
-        String[] tagsList = query.getTags().isEmpty() ? null : query.getTags().split(",");
+        StringBuilder searchContext = new StringBuilder();
+//        https://e-hentai.org/?f_search=female:ponygirl+female:blindfold+female:bondage+female:"masked+face"+female:"pig+girl"&advsearch=1&f_srdd=4
+        String[] femaleList = StringUtils.isEmpty(query.getFemale()) ? null : query.getFemale().split(",");
         StringBuilder condition = new StringBuilder(" and (");
-        if (tagsList != null) {
-            for (String tag : tagsList) {
+        if (femaleList != null) {
+            for (String tag : femaleList) {
                 if (tag.isEmpty()) {
                     continue;
                 }
                 tag = utils.convertToTraditionalChinese(tag);
+                String con = tag.contains(" ") ? "\"" + tag.replaceAll(" ", "+") + "\"": tag;
+                searchContext.append(String.format("female:%1$s ", con));
                 condition.append(String.format(" female like '%%%1$s%%' %2$s ", tag, query.getCondition()));
             }
+
             condition.delete(condition.lastIndexOf(query.getCondition()), condition.lastIndexOf(query.getCondition()) + query.getCondition().length());
             condition.append(")");
-            sql.append(tagsList.length != 0 ? condition : "");
+            sql.append(femaleList.length != 0 ? condition : "");
         }
         condition.setLength(0);
         condition.append(" and (");
-        String[] categoriesList = query.getCategories().isEmpty() ? null : query.getCategories().split(",");
-        if (categoriesList != null) {
-            for (String category : categoriesList) {
+        String[] maleList = StringUtils.isEmpty(query.getMale()) ? null : query.getMale().split(",");
+        if (maleList != null) {
+            for (String category : maleList) {
                 if (category.isEmpty()) {
                     continue;
                 }
                 category = utils.convertToTraditionalChinese(category);
+                String con = category.contains(" ") ? "\"" + category.replaceAll(" ", "+") + "\"": category;
+                searchContext.append(String.format("male:%1$s ", con));
                 condition.append(String.format(" male like '%%%1$s%%' %2$s ", category, query.getCondition()));
             }
             condition.delete(condition.lastIndexOf(query.getCondition()), condition.lastIndexOf(query.getCondition()) + query.getCondition().length());
             condition.append(")");
-            sql.append(categoriesList.length != 0 ? condition : "");
+            sql.append(maleList.length != 0 ? condition : "");
         }
-
-        sql.append(" order by favcount desc");
+//        searchContext.delete(searchContext.lastIndexOf("+"), searchContext.length());
+        if (query.isComplete()) {
+            searchContext.append(" chinese");
+        }
+        if (query.isSearchOnline()) {
+            DownloadPageThread downLoadArchiveThread = new DownloadPageThread();
+            downLoadArchiveThread.setDownload(false);
+            downLoadArchiveThread.setRecursive(false);
+            try {
+                String url = "https://e-hentai.org/?f_search=" + URLEncoder.encode(searchContext.toString(), "utf-8");
+                if (query.getStar() != 0) {
+                    url += "&advsearch=1&f_srdd=" + query.getStar();
+                }
+                downLoadArchiveThread.setUrl(url);
+                downLoadArchiveThread.run();
+            } catch (UnsupportedEncodingException ignored) {
+            }
+        }
+        sql.append(" order by favcount desc ").append("limit ").append(query.getSize());
         List<Ehentai> ehentais = tools.commonApiQueryBySql(sql.toString(), Ehentai.class);
         return RestResponse.ok(ehentais);
     }

@@ -64,12 +64,21 @@
         <input type="text" th:value="${#session?.getAttribute('female') != null}?${#session.getAttribute('female')}" name="female" class="form-control" id="female">
         <label for="male" class="form-label">男</label>
         <input type="text" th:value="${#session?.getAttribute('male') != null}?${#session.getAttribute('male')}" name="male" class="form-control" id="male">
+        <label for="star" class="form-lable">星级</label>
+        <select class="form-select" aria-label="Default select example" id="star" name="star">
+            <option th:selected="${#session?.getAttribute('star') != null}?${#session.getAttribute('star')=='1'}" value="1">1</option>
+            <option th:selected="${#session?.getAttribute('star') != null}?${#session.getAttribute('star')=='2'}" value="2">2</option>
+            <option th:selected="${#session?.getAttribute('star') != null}?${#session.getAttribute('star')=='3'}" value="3">3</option>
+            <option th:selected="${#session?.getAttribute('star') != null}?${#session.getAttribute('star')=='4'}" value="4">4</option>
+            <option th:selected="${#session?.getAttribute('star') != null}?${#session.getAttribute('star')=='5'}" value="5">5</option>
+            <option th:selected="${#session?.getAttribute('star') != null}?${#session.getAttribute('star')=='0'}" value="0">全部</option>
+        </select>
         <label for="numLimit" class="form-lable">显示数量</label>
         <select class="form-select" aria-label="Default select example" id="numLimit" name="size">
             <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='20'}" value="20">20</option>
             <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='40'}" value="40">40</option>
             <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='100'}" value="100">100</option>
-            <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='0'}" value="0">全部</option>
+            <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='9999999'}" value="9999999">全部</option>
         </select>
     </div>
     <div>
@@ -88,7 +97,7 @@
         </div>
     </div>
     <div>
-        <label class="form-label">是否完结</label>
+        <label class="form-label">是否中文</label>
         <div class="form-check form-check-inline">
             <input class="form-check-input" type="radio" th:checked="${#session != null}?${#session.getAttribute('complete') == 'true'}"
                    name="complete" value="true">
