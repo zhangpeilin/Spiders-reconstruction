@@ -1,0 +1,7 @@
+spring:
+  cloud:
+    config:
+      label: dev
+      name: common,pixiv
+      profile: online
+      uri: http://192.168.139.130:32710/config
