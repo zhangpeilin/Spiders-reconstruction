@@ -35,7 +35,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -135,8 +134,6 @@ public class URLConnectionTool {
             for (Map.Entry<String, String> entry : property.entrySet()) {
                 urlconn.setRequestProperty(entry.getKey(), entry.getValue());
             }
-//			urlconn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-//			urlconn.setRequestProperty("connection", "Keep-Alive");
             urlconn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36");
             urlconn.setRequestMethod("POST");
             urlconn.setDoOutput(true);
