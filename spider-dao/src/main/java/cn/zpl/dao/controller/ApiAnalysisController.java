@@ -165,7 +165,12 @@ public class ApiAnalysisController {
             long startRow = (page.getCurrent() - 1) * page.getSize();
 
             // 包装SQL语句，添加LIMIT子句
-            String wrappedSql = sql + " LIMIT " + startRow + ", " + page.getSize();
+            String wrappedSql = "";
+            if (!sql.toUpperCase().contains("LIMIT")) {
+                wrappedSql = sql + " LIMIT " + startRow + ", " + page.getSize();
+            } else {
+                wrappedSql = sql;
+            }
             log.debug("执行内容为：{}", wrappedSql);
             try (PreparedStatement preparedStatement = sqlSession.getConnection().prepareStatement(wrappedSql)) {
                 ResultSet resultSet = preparedStatement.executeQuery();
