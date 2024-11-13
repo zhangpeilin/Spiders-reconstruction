@@ -23,6 +23,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -70,7 +71,7 @@ public class BilibiliDownloadCorev2 {
 
     //下载指定用户
     public void test() {
-        getVideoList("4653374");
+        getVideoList("4653374", null);
     }
 
     public static void main(String[] args) {
@@ -103,11 +104,11 @@ public class BilibiliDownloadCorev2 {
         }
     }
 
-    public void getVideoList(String uid) {
+    public void getVideoList(String uid, String json) {
         int page = 1;
         while (page > 0) {
             try {
-                if (getPlayListByWeb(uid, String.valueOf(page)) > 0) {
+                if (getPlayListByWeb(uid, String.valueOf(page) ,json) > 0) {
                     page++;
                     continue;
                 }
@@ -143,13 +144,13 @@ public class BilibiliDownloadCorev2 {
         }
     }
 
-    private int getPlayListByWeb(String uid, String page) throws IOException {
+    private int getPlayListByWeb(String uid, String page, String jsonStr) throws IOException {
         owner_name = BilibiliCommonUtils.getUserInfo(uid);
         Data data = new Data();
         data.setUrl("https://api.bilibili.com/x/space/arc/search?mid=" + uid + "&ps=100&tid=0&pn=" + page + "&keyword=&order=pubdate&jsonp=jsonp");
         data.setHeader(properties.getCookies());
         CommonIOUtils.withTimer(data);
-        JsonElement json = CommonIOUtils.paraseJsonFromStr(data.getResult());
+        JsonElement json = !StringUtils.isEmpty(jsonStr) ? CommonIOUtils.paraseJsonFromStr(jsonStr) : CommonIOUtils.paraseJsonFromStr(data.getResult());
         int videoSize = CommonIOUtils.getFromJson2(json, "data-list-vlist").isJsonArray() ? CommonIOUtils.getFromJson2(json, "data-list-vlist").getAsJsonArray().size() : 0;
         JsonElement vlist = CommonIOUtils.getFromJson2(json, "data-list-vlist");
         Vector<HashMap<String, String>> list = new Vector<>();
@@ -174,7 +175,7 @@ public class BilibiliDownloadCorev2 {
         if (exist == null) {
             return false;
         }
-        return new File(exist.getLocalPath()).exists();
+        return !StringUtils.isEmpty(exist.getLocalPath());
     }
 
     private VideoInfo getVideoInfoByCid(String cid) {
@@ -196,6 +197,17 @@ public class BilibiliDownloadCorev2 {
                 exception.add(cid);
             }
             return isException;
+        }
+    }
+
+    public void getEpList(String epId) {
+        Data data = new Data();
+        data.setUrl(String.format(BilibiliProperties.getEpListUrl, epId));
+        data.setHeader(BilibiliProperties.commonHeaders + properties.getCookies());
+        CommonIOUtils.withTimer(data);
+        JsonElement[] eps = CommonIOUtils.getFromJson3(data.getResult(), "result-episodes-bvid");
+        for (JsonElement ep : eps) {
+            mainBusiness(ep.getAsString());
         }
     }
 
@@ -292,6 +304,9 @@ public class BilibiliDownloadCorev2 {
         } catch (Exception e) {
             if (!data.doRetry()) {
                 log.error("重试次数已用完，返回");
+                return;
+            }
+            if (data != null) {
                 return;
             }
             log.error(videoId + "下载异常，重新解析\n", e);

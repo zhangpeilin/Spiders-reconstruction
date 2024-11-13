@@ -6,6 +6,8 @@ import cn.zpl.spider.on.bilibili.BilibiliDownloadCorev2;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -20,6 +22,16 @@ public class DownloadController {
     @Resource
     BilibiliDownloadCoreForMusic music;
 
+    @GetMapping("/download/ep/{epId}")
+    public RestResponse downloadByEpId(@PathVariable("epId") String epId) {
+        try {
+            corev2.getEpList(epId);
+        } catch (Exception e) {
+            log.error("下载错误：", e);
+            RestResponse.fail(e.getMessage());
+        }
+        return RestResponse.ok();
+    }
 
     @GetMapping("/download/{bid}")
     public RestResponse downloadById(@PathVariable("bid") String bid) {
@@ -43,10 +55,10 @@ public class DownloadController {
         return RestResponse.ok();
     }
 
-    @GetMapping("/download/uid/{uid}")
-    public RestResponse downloadByUid(@PathVariable("uid") String uid) {
+    @PostMapping("/download/uid/{uid}")
+    public RestResponse downloadByUid(@PathVariable("uid") String uid, @RequestBody String json) {
         try {
-            corev2.getVideoList(uid);
+            corev2.getVideoList(uid, json);
         } catch (Exception e) {
             log.error("下载错误：", e);
             RestResponse.fail(e.getMessage());

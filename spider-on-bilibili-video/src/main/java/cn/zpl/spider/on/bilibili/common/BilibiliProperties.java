@@ -33,6 +33,8 @@ public class BilibiliProperties {
             ".Comic/GetClassPageAllTabs?device=pc&platform=web";
 
     public static String playInfoUrl = "https://api.bilibili.com/x/player/wbi/playurl?avid=%1$s&bvid=%2$s&cid=%3$s&qn=0&fnver=0&fnval=4048&fourk=1&gaia_source=&from_client=BROWSER";
+
+    public static final String getEpListUrl = "https://api.bilibili.com/pgc/view/web/ep/list?season_id=%1$s";
     /**
      * 根据布局id获取限免模块的id
      */
