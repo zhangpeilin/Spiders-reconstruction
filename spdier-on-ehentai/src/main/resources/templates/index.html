@@ -24,27 +24,18 @@
     </script>
 </head>
 <body>
-<h1>生成统管配置</h1>
-<h3>
-    1、提取功能脚本
-</h3>
-<label>填入功能编码，多个编码用逗号隔开：</label>
+<h1>填入画廊地址</h1>
 <form id="getMenuForm">
     <!--    <input type="textarea" name = "menuCode" style="width: 300px;height: 100px"/>-->
     <textarea id="menuCodes" rows="6" cols="30"></textarea></br>
-    <input class="submit" type="submit" id="submitMenuCode" value="提取脚本">
+    <input class="submit" type="submit" id="submitMenuCode" value="提交下载">
 </form>
 </body>
 
 
 <script>
     function getMenuForm() {
-        let menuCodes = $("form#getMenuForm > textarea[id='menuCodes']:first")[0].value;
-        let fiscalYear = $("form#getMenuForm > input[name='fiscalYear']")[0].value;
-        let mofDivCode = $("form#getMenuForm > input[name='mofDivCode']")[0].value;
-        let divName = $("form#getMenuForm > input[name='divName']")[0].value;
-        return '/copyMenuView/' + divName + '/functionCodes;code=' + menuCodes + '/newCode/' + fiscalYear + '/mof_div_code;div_code=' + mofDivCode;
-        // copyMenuView/宁波市本级/functionCodes;code=00111525003,00111525006/newCode/2023/mof_div_code;div_code=330200000
+        return $("form#getMenuForm > textarea[id='menuCodes']:first")[0].value;
     }
     $(".submit").click(function () {
         let url = null;
@@ -52,13 +43,28 @@
         if (this.id === 'submitMenuCode') {
             url = getMenuForm();
         }
-        const form = $('<form method="GET" action="' + url + '">');
-        // $.each(function(k, v) {
-        //     form.append($('<input type="hidden" name="' + k +
-        //         '" value="' + v + '">'));
-        // });
-        $('body').append(form);
-        form.submit(); //自动提交
+        const data = new URLSearchParams();
+        data.append('url', url);
+        data.append('isDownload', true);
+        fetch('/download', {
+            method: 'POST',
+            body: data,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json(); // 如果服务器返回 JSON 数据
+            })
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
     })
 </script>
 </html>

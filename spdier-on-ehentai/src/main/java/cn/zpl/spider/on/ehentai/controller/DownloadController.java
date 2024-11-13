@@ -3,6 +3,7 @@ package cn.zpl.spider.on.ehentai.controller;
 import cn.zpl.annotation.DistributeLock;
 import cn.zpl.annotation.DistributedLockKey;
 import cn.zpl.common.bean.Ehentai;
+import cn.zpl.common.bean.RestResponse;
 import cn.zpl.config.SpringContext;
 import cn.zpl.spider.on.ehentai.bs.DownloadService;
 import cn.zpl.spider.on.ehentai.thread.DownLoadArchiveThread;
@@ -49,9 +50,18 @@ public class DownloadController {
     EUtil utils;
 
     @PostMapping("/download")
-    public String downloadByUrl(@RequestParam("url") String url, @RequestParam("isDownload") boolean isDownload) {
-        service.downTheOne(url, -1, isDownload);
-        return "下载成功";
+    public RestResponse downloadByUrl(@RequestParam("url") String url, @RequestParam("isDownload") boolean isDownload) {
+        if (!StringUtils.isEmpty(url)) {
+            if (url.contains("\n")) {
+                String[] urls = url.split("\n");
+                for (String s : urls) {
+                    service.downTheOne(s, -1, isDownload);
+                }
+            } else {
+                service.downTheOne(url, -1, isDownload);
+            }
+        }
+        return RestResponse.ok("提交成功");
     }
 
     @GetMapping("/download/id/{id}")
