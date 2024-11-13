@@ -1508,6 +1508,15 @@ public class CommonIOUtils {
         return currentDate.isAfter(targetDate);
     }
 
+    public static boolean isBefore(String date, String target) {
+        // 获取当前日期
+        LocalDate currentDate = LocalDate.parse(date);
+        // 定义要比较的日期
+        LocalDate targetDate = LocalDate.parse(target);
+
+        return currentDate.isBefore(targetDate);
+    }
+
     public static void main(String[] args) {
         System.out.println(isAfter("2023-05-03", "2023-05-02"));
     }

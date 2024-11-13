@@ -26,6 +26,16 @@ public class DownloadTools {
 
     public static ConcurrentHashMap<Integer, Vector<Future<Boolean>>> futureCache = new ConcurrentHashMap<>();
 
+    public static void shutDownAll() {
+        executorCache.forEach((key, value) -> {
+            value.forEach((s, downloadTools) -> {
+                if ("MyAsync".equalsIgnoreCase(downloadTools.getName())) {
+                    return;
+                }
+                downloadTools.getExecutor().shutdownNow();
+            });
+        });
+    }
     public static DownloadTools getToolsByName(String name) {
         Map.Entry<Integer, Map<String, DownloadTools>> mapEntry = executorCache.entrySet().stream().filter(integerMapEntry -> integerMapEntry.getValue().get(name) != null).findFirst().orElse(null);
         if (mapEntry != null) {

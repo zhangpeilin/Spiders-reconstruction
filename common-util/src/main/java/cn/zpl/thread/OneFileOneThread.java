@@ -3,8 +3,10 @@ package cn.zpl.thread;
 import cn.zpl.frame.MyJFrame;
 import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.util.CommonIOUtils;
+import cn.zpl.util.ErrorMonitor;
 import cn.zpl.util.SaveLogForImages;
 import cn.zpl.util.URLConnectionTool;
+import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -30,9 +32,18 @@ public class OneFileOneThread implements Runnable {
 
     private boolean checkExist = true;
 
+    private ErrorMonitor errorMonitor;
+
     public OneFileOneThread(@NotNull DownloadDTO data) {
         this.data = data;
         this.url = data.getUrl();
+        this.lock = data.getSynchronizeLock();
+    }
+
+    public OneFileOneThread(@NotNull DownloadDTO data, ErrorMonitor errorMonitor) {
+        this.data = data;
+        this.url = data.getUrl();
+        this.errorMonitor = errorMonitor;
         this.lock = data.getSynchronizeLock();
     }
     public OneFileOneThread(@NotNull DownloadDTO data, boolean checkExist) {
@@ -158,7 +169,12 @@ public class OneFileOneThread implements Runnable {
                 }
             }
         } catch (Exception e) {
-            log.error("数据内容：{}", data);
+            if (errorMonitor != null) {
+                if (errorMonitor.recordError(e.getMessage())) {
+                    return;
+                }
+            }
+            log.error("数据内容：{}", JSON.toJSONString(data));
             if (progressing != null) {
                 progressing.interrupt();
             }

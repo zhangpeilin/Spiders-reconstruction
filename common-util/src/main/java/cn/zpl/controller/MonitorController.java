@@ -1,5 +1,6 @@
 package cn.zpl.controller;
 
+import cn.zpl.common.bean.RestResponse;
 import cn.zpl.util.DownloadTools;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,16 +34,25 @@ public class MonitorController {
                 + "，已完成任务数目：" + executor.getCompletedTaskCount());
     }
 
+    @GetMapping("/shutdownAllPools")
+    public RestResponse shutdownAllPools() {
+        DownloadTools.shutDownAll();
+        return RestResponse.ok("线程池已全部全部关闭");
+    }
+
     @GetMapping("/start")
     public void start(){
         DownloadTools downloadTools = DownloadTools.getInstance(50, "测试线程池");
         for (int i = 0; i < 100; i++) {
             downloadTools.ThreadExecutorAdd(() -> {
-                try {
-                    TimeUnit.SECONDS.sleep(30);
-                } catch (InterruptedException e) {
-                    System.out.println("线程被终止");
+                while (true) {
+                    System.out.println("线程执行中");
                 }
+//                try {
+//                    TimeUnit.SECONDS.sleep(30);
+//                } catch (InterruptedException e) {
+//                    System.out.println("线程被终止");
+//                }
             });
         }
         downloadTools.shutdown();

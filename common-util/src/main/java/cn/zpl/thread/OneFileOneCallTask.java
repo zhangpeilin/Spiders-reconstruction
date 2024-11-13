@@ -5,6 +5,7 @@ import cn.zpl.pojo.DownloadDTO;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.SaveLogForImages;
 import cn.zpl.util.URLConnectionTool;
+import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -164,7 +165,7 @@ public class OneFileOneCallTask extends CommonThreadv2<Boolean> {
                 }
             }
         } catch (Exception e) {
-            log.error("数据内容：{}", data);
+            log.error("数据内容：{}", JSON.toJSONString(data));
             if (progressing != null) {
                 progressing.interrupt();
             }

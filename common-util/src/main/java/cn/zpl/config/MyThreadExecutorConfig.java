@@ -15,7 +15,7 @@ public class MyThreadExecutorConfig implements AsyncConfigurer {
     @Override
     @Bean("MyAsync")
     public Executor getAsyncExecutor() {
-        DownloadTools instance = DownloadTools.getInstance(5);
+        DownloadTools instance = DownloadTools.getInstance(5, "MyAsync");
         return instance.getExecutor();
     }
 }
