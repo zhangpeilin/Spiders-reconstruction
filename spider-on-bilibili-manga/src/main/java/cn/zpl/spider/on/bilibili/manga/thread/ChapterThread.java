@@ -9,6 +9,7 @@ import cn.zpl.spider.on.bilibili.manga.util.BilibiliProperties;
 import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.DownloadTools;
+import cn.zpl.util.ErrorMonitor;
 import cn.zpl.util.SaveLog;
 import cn.zpl.util.SaveLogForImages;
 import cn.zpl.util.URLConnectionTool;
@@ -130,6 +131,7 @@ public class ChapterThread implements Callable<Map<String, Object>> {
         tools.shutdown();
         List<Future<DownloadDTO>> done =
                 futureVector.stream().filter(Future::isDone).collect(Collectors.toList());
+        ErrorMonitor errorMonitor = new ErrorMonitor(10);
         if (done.size() == clips.getAsJsonArray().size()) {
             tools.restart(10);
             SynchronizeLock lock = new SynchronizeLock();
@@ -139,7 +141,7 @@ public class ChapterThread implements Callable<Map<String, Object>> {
                     downloadDTOFuture.get().setImage(true);
                     //表明下载报错时要一直重试
                     downloadDTOFuture.get().setAlwaysRetry();
-                    tools.ThreadExecutorAdd(new OneFileOneThread(downloadDTOFuture.get()));
+                    tools.ThreadExecutorAdd(new OneFileOneThread(downloadDTOFuture.get(), errorMonitor));
                 } catch (InterruptedException | ExecutionException e) {
                     log.error("获取线程池执行结果失败：\n", e);
                 }
