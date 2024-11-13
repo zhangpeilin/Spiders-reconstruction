@@ -24,10 +24,12 @@ public class RabbitMQSender {
              Channel channel = connection.createChannel()) {
 //            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
             String message = "批量消息，序号:";
-            for (int i = 0; i < 1; i++) {
-                channel.basicPublish("myExchange", "test1", null, (message + i).getBytes(StandardCharsets.UTF_8));
+            byte[] bytes = new byte[0];
+            for (int i = 0; i < 10; i++) {
+                bytes = (message + i).getBytes(StandardCharsets.UTF_8);
+                channel.basicPublish("myExchange", "test1", null, bytes);
             }
-            System.out.println("Sent message: " + message);
+            System.out.println("Sent message: " + new String(bytes));
         } catch (Exception e) {
             e.printStackTrace();
         }

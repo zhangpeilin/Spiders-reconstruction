@@ -136,7 +136,9 @@ public class BikaUtils {
         tool.setSleepTimes(3000);
         List<String> stringList = new ArrayList<>();
         for (JsonElement detail : comics.getAsJsonArray()) {
-            tool.ThreadExecutorAdd(new BikaComicThread(CommonIOUtils.getFromJson2Str(detail, "_id")));
+            BikaComicThread bikaComicThread = new BikaComicThread(CommonIOUtils.getFromJson2Str(detail, "_id"));
+            bikaComicThread.setForceDownload(true);
+            tool.ThreadExecutorAdd(bikaComicThread);
             stringList.add(CommonIOUtils.getFromJson2Str(detail, "_id"));
         }
         tool.shutdown();
@@ -764,7 +766,11 @@ public class BikaUtils {
         }
         AtomicLong totalSpace = new AtomicLong();
         savePath.forEach(path -> totalSpace.addAndGet(new File(path).getParentFile().getFreeSpace()));
-        Optional<ImmutableMap<String, Object>> first = savePath.stream().map(path -> ImmutableMap.<String, Object>of("size", new File(path).getParentFile().getFreeSpace(), "path", path)).filter(hashMap -> ((long) Objects.requireNonNull(hashMap.get("size"))) > size && (long) Objects.requireNonNull(hashMap.get("size")) > totalSpace.get() / savePath.size()).findFirst();
+        Optional<ImmutableMap<String, Object>> first = savePath.stream().map(path -> ImmutableMap.<String, Object>of("size", new File(path).getParentFile().getFreeSpace(), "path", path)).filter(hashMap -> {
+            boolean a = ((long) Objects.requireNonNull(hashMap.get("size"))) > size;
+            boolean b = (long) Objects.requireNonNull(hashMap.get("size")) > totalSpace.get() / savePath.size();
+            return a && b;
+        }).findFirst();
         if (first.isPresent()) {
             ImmutableMap<String, Object> fitMap = first.get();
             return Paths.get(String.valueOf(fitMap.get("path")));

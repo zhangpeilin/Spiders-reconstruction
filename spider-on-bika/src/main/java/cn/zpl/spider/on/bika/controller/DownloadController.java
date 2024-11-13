@@ -66,8 +66,8 @@ public class DownloadController {
         return RestResponse.ok("H24下载提交成功");
     }
     @GetMapping("/updateAllExistBika")
-    public RestResponse updateAllExistBika() {
-        bikaBusiness.updateAllExistBika();
+    public RestResponse updateAllExistBika(@RequestParam String time) {
+        bikaBusiness.updateAllExistBika(time);
         return RestResponse.ok("更新现存zip文件任务已提交");
     }
 
@@ -97,8 +97,8 @@ public class DownloadController {
         return RestResponse.ok().msg("批量提交成功");
     }
 
-    @GetMapping("/downloadBySql/{count}/{like}")
-    public RestResponse downloadBySql(@RequestParam(value = "sql", required = false) String sql, @PathVariable("count") String count, @PathVariable("like") String likeCount) {
+    @PostMapping("/downloadBySql/{count}/{like}")
+    public RestResponse downloadBySql(@RequestBody(required = false) String sql, @PathVariable("count") String count, @PathVariable("like") String likeCount) {
         DownloadTools tool = DownloadTools.getInstance(5);
         tool.setName("漫画");
         tool.setSleepTimes(10000);
@@ -108,7 +108,11 @@ public class DownloadController {
 //        List<Bika> list = tools.commonApiQueryBySql("select * from bika t where likes_count > " + likeCount +
 //                " and categories not like '%CG雜圖%' and categories not like '%耽美花園%' and categories not like '%生肉%' and not exists(select 1 from bika_download_failed p where p.id = t.id) and downloaded_at < 1692005906579  order by likes_count desc limit " + count, Bika.class);
 
-        list.forEach(bikaList -> tool.ThreadExecutorAdd(new BikaComicThread(bikaList.getId())));
+        list.forEach(bikaList -> {
+            BikaComicThread bikaComicThread = new BikaComicThread(bikaList.getId());
+            bikaComicThread.setForceDownload(true);
+            tool.ThreadExecutorAdd(bikaComicThread);
+        });
         tool.shutdown();
         return RestResponse.ok().msg("更新提交成功");
     }

@@ -10,6 +10,7 @@ import cn.zpl.spider.on.bika.utils.BikaUtils;
 import cn.zpl.thread.OneFileOneThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.DownloadTools;
+import cn.zpl.util.ErrorMonitor;
 import cn.zpl.util.SaveLog;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -96,10 +97,11 @@ public class BikaChapterThread implements Runnable {
         tools.setSleepTimes(2000);
         tools.setName(title + "的第" + chapterNum + "章");
         tools.removeFromCache();
+        ErrorMonitor errorMonitor = new ErrorMonitor(10);
         dtoVector.forEach(dto -> {
             dto.setSynchronizeLock(lock);
             dto.setProgress(BikaUtils.progress);
-            tools.ThreadExecutorAdd(new OneFileOneThread(dto));
+            tools.ThreadExecutorAdd(new OneFileOneThread(dto, errorMonitor));
         });
         //启动一个线程读取完成的次数
         tools.shutdown();

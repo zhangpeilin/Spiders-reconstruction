@@ -84,7 +84,7 @@ public class BikaComicThread extends BikaCommonThread {
             return;
         }
         JsonObject info = bikaUtils.getJsonByUrl(getComicsInfo);
-        if (!BikaProperties.isForceDownload && bikaUtils.needSkip(info)) {
+        if (!forceDownload && bikaUtils.needSkip(info)) {
             log.debug(comicId + "跳过");
             return;
         }
