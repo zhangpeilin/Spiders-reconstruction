@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif; /* 设定字体 */
+            margin: 20px; /* 增加边距 */
+        }
+        #getMenuForm {
+            display: flex; /* 使用弹性布局 */
+            flex-direction: column; /* 垂直排列 */
+            max-width: 400px; /* 最大宽度 */
+            margin: 0 auto; /* 中心对齐 */
+            padding: 20px; /* 增加内边距 */
+            border: 1px solid #ccc; /* 边框 */
+            border-radius: 8px; /* 圆角边框 */
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1); /* 阴影 */
+        }
+        label {
+            margin-bottom: 5px; /* 标签和输入框的间距 */
+        }
+        input[type="text"], textarea {
+            width: 100%; /* 输入框和文本区域宽度为100% */
+            padding: 8px; /* 内边距 */
+            margin-bottom: 15px; /* 输入框间距 */
+            border: 1px solid #ccc; /* 边框 */
+            border-radius: 4px; /* 圆角边框 */
+            font-size: 14px; /* 字体大小 */
+        }
+        input[type="submit"] {
+            background-color: #4CAF50; /* 按钮背景色 */
+            color: white; /* 按钮文字颜色 */
+            border: none; /* 按钮无边框 */
+            padding: 10px; /* 按钮内边距 */
+            border-radius: 4px; /* 圆角边框 */
+            cursor: pointer; /* 光标为手形 */
+            font-size: 16px; /* 字体大小 */
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049; /* 悬停时按钮颜色变化 */
+        }
+    </style>
+</head>
+<script src="jquery.min.js"></script>
+<script src="Go.js"></script>
+<script src="https://s1.hdslb.com/bfs/manga-static/manga-pc/static/js/vendors.9bcce10c3d.js"></script>
+<script src="bili.929f6b576d.js"></script>
+<script src="https://s1.hdslb.com/bfs/manga-static/manga-pc/static/js/detail.456f772d52.js"></script>
+<script>
+
+    window.onload = function(){
+        for (const elementsByClassNameElement of document.getElementsByClassName("submit")) {
+            elementsByClassNameElement.onclick = function(){
+                return false;
+            }
+        }
+    }
+
+</script>
+<body>
+
+<form id="getMenuForm">
+    <label for="comicIds">Comic ID:</label>
+    <input type="text" id="comicIds" name="comicIds" required/>
+
+<!--    <label for="epId">Episode ID:</label>-->
+<!--    <input type="text" id="epId" name="epId" required/>-->
+    <label for="buyTime">Buy Time:</label>
+    <input type="text" id="buyTime" name="buyTime" required/>
+    <label for="fromEpId">From Episode ID:</label>
+    <input type="text" id="fromEpId" name="fromEpId" required/>
+    <label for="ultraSign">Ultra Sign:</label> <!-- 修改标签为 Ultra Sign -->
+    <textarea id="ultraSign" name="ultraSign" rows="6" required></textarea>
+    <label for="json">JSON 数据:</label> <!-- 新增 JSON 标签 -->
+    <textarea id="json" name="json" rows="6" required></textarea>
+    <input class="submit" type="submit" id="submitMenuCode" value="提取脚本">
+</form>
+
+</body>
+
+<script>
+    $(".submit").click(function () {
+        const comicIds = $('#comicIds').val();
+        const epId = $('#epId').val();
+        const i = () => {
+                if ("undefined" != typeof globalThis)
+                    return globalThis;
+                if ("undefined" != typeof window)
+                    return window;
+                if ("undefined" != typeof global)
+                    return global;
+                if ("undefined" != typeof self)
+                    return self;
+                throw new Error("Unable to locate global object")
+            }
+        ;
+        const a = async (e, t, a) => {
+            await async function() {
+                    try {
+                        const e = new Go
+                            , t = new URL("//s1.hdslb.com/bfs/manga-static/manga-pc/6732b1bf426cfc634293.wasm","https://manga.bilibili.com/detail/mc" + comicIds +
+                            "?from=manga_homepage")
+                            , i = await fetch(t)
+                            , a = await i.arrayBuffer();
+                        o = await WebAssembly.compile(a),
+                            r = await WebAssembly.instantiate(o, e.importObject),
+                            e.run(r)
+                    } catch (e) {
+                        throw console.error("Failed to initialize WASM:", e),
+                            e
+                    }
+            }();
+            const c = i();
+            if (void 0 === c.genReqSign)
+                throw new Error("WASM function not available");
+            const u = a || Date.now();
+            if (13 !== u.toString().length)
+                throw new Error("Timestamp must be a 13-digit number");
+            const s = c.genReqSign("device=pc&platform=web&nov=25", "{\"comic_id\":" + comicIds +
+                "}", u);
+            if (s.error)
+                throw new Error(s.error);
+            return s.sign
+        }
+        async function main() {
+            try {
+                const e = "yourFirstParam";  // 替换为实际的第一个参数
+                const t = "yourSecondParam";  // 替换为实际的第二个参数
+                const timestamp = Date.now();  // 或者使用其他 13 位时间戳
+
+                const sign = await a(e, t, timestamp);
+                $("#ultraSign").text(sign);
+                $.ajax({
+                    type: 'post',
+                    url: "http://localhost:8899/batchBuy",
+                    dataType: "json",
+                    contentType: "application/x-www-form-urlencoded",
+                    data: getFormData("getMenuForm"),
+                    success: function(result) {
+                        alert("请求成功，开始跳转")
+                    },
+                    error: function (result) {
+                        alert(result)
+                    }
+                });
+                console.log("Generated Sign:", sign);
+
+            } catch (error) {
+                console.error("Error calling the function:", error);
+            }
+        }
+
+        main(); // 调用主函数
+    })
+    function getFormJson(frm) { //frm：form表单的id
+        const o = {};
+        const a = $("#" + frm).serializeArray();
+        $.each(a, function() {
+            if (o[this.name] !== undefined) {
+                if (!o[this.name].push) {
+                    o[this.name] = [ o[this.name] ];
+                }
+                o[this.name].push(this.value || '');
+            } else {
+                o[this.name] = this.value || '';
+            }
+        });
+
+        return JSON.stringify(o);
+    }
+    function getFormData(frm) { //frm：form表单的id
+        const o = {};
+        return $("#" + frm).serialize();
+    }
+</script>
+</html>
