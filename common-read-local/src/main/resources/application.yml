@@ -17,4 +17,7 @@ logging:
 
 comic:
   folder:
-    path: G:\ehentai\精品
+    path: C:\Users\zpl\Desktop\Mac电脑
+  cover:
+    cache:
+      path: ./cover-cache

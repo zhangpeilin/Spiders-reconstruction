@@ -85,7 +85,7 @@
 <!--                        <td id="loading" th:src="@{/pic/loading.jpg}" class="hidden"></td>-->
 <!--                        <td width="304" height="236"><img th:src="" class="img-thumbnail" width="304" height="236"></td>-->
                         <td>
-                            <img th:if="${ehentai.getSavePath()!=null}" th:src="@{/loadCoverImg/(id=${ehentai.getId()})}" width="200">
+                            <img th:if="${ehentai.getSavePath()!=null}" th:src="@{/getCover/(id=${ehentai.getId()})}" width="200">
                             <img th:if="${ehentai.getSavePath()==null}" th:src="@{/pic/loading.jpg}" class="img-thumbnail">
                         </td>
                         <td th:text="${ehentai.getFavcount()}"></td>

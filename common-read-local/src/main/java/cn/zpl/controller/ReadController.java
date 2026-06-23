@@ -13,6 +13,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
@@ -61,6 +62,9 @@ public class ReadController {
 
     @Resource
     private ReadLocalService readLocalService;
+
+    @Value("${comic.cover.cache.path:./cover-cache}")
+    private String coverCachePath;
 
     @GetMapping("/rescan")
     @ResponseBody
@@ -318,6 +322,49 @@ public class ReadController {
         byte[] image = new byte[0];
         OutputStream outputStream;
         Path cover = Paths.get(new File(ehentai.getSavePath()).getParent(), "cover", id);
+        if (cover.toFile().isFile() && cover.toFile().exists()) {
+            try {
+                image = Files.readAllBytes(cover);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            List<String> imagesInChapter = getImagesInChapter(id, "1");
+            if (imagesInChapter != null && !imagesInChapter.isEmpty()) {
+                image = getImage(id, "1", imagesInChapter.get(0));
+                try {
+                    if (image != null) {
+                        Files.createDirectories(cover.getParent());
+                        Files.write(cover, image, StandardOpenOption.CREATE);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        if (image != null && image.length != 0) {
+            try {
+                response.setContentType("image/png");
+                outputStream = response.getOutputStream();
+                outputStream.write(image);
+                outputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @ResponseBody
+    @GetMapping("/getCover")
+    public void getCover(@RequestParam("id") String id, HttpServletResponse response) {
+        Ehentai ehentai = readLocalService.getEh(id);
+        if (StringUtils.isEmpty(ehentai.getSavePath())) {
+            readLocalService.invalidCache(id);
+            ehentai = readLocalService.getEh(id);
+        }
+        byte[] image = new byte[0];
+        OutputStream outputStream;
+        Path cover = Paths.get(coverCachePath, id);
         if (cover.toFile().isFile() && cover.toFile().exists()) {
             try {
                 image = Files.readAllBytes(cover);
