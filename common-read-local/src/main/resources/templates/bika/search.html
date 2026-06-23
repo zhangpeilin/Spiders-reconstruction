@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js" th:src="@{/js/jquery-3.5.1.js}"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <title>搜索</title>
+</head>
+
+<body class="">
+<form action="/searchByKey">
+    <div class="mb-3">
+        <label for="title" class="form-label">漫画标题</label>
+        <input type="text" th:value="${#session.getAttribute('title')!=null}?${#session.getAttribute('title')}" name="title" class="form-control" id="title">
+        <label for="tags" class="form-label">标签</label>
+        <input type="text" th:value="${#session.getAttribute('tags') != null}?${#session.getAttribute('tags')}" name="tags" class="form-control" id="tags">
+        <label for="numLimit" class="form-lable">显示数量</label>
+        <select class="form-select" aria-label="Default select example" id="numLimit" name="numLimit">
+            <option th:selected="${#session.getAttribute('numLimit') != null}?${#session.getAttribute('numLimit')==20}" value="20">20</option>
+            <option th:selected="${#session.getAttribute('numLimit') != null}?${#session.getAttribute('numLimit')==40}" value="40">40</option>
+            <option th:selected="${#session.getAttribute('numLimit') != null}?${#session.getAttribute('numLimit')==100}" value="100">100</option>
+            <option th:selected="${#session.getAttribute('numLimit') != null}?${#session.getAttribute('numLimit')==0}" value="0">全部</option>
+        </select>
+    </div>
+    <div>
+        <label class="form-label">查询标签条件选择</label>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" th:checked="${#session.getAttribute('condition') != null}?${#session.getAttribute('condition')=='and'}" name="condition" id="flexRadioDefault1" value="and">
+            <label class="form-check-label" for="flexRadioDefault1">
+                和
+            </label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" th:checked="${#session.getAttribute('condition')=='or'||#session.getAttribute('condition')==null}" name="condition" id="flexRadioDefault2" checked value="or">
+            <label class="form-check-label" for="flexRadioDefault2">
+                或
+            </label>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">查询</button>
+</form>
+</div>
+</body>
+</html>

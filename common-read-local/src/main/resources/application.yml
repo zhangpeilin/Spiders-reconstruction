@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: common-read-local
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+
+logging:
+  level:
+    cn.zpl: DEBUG
+
+comic:
+  folder:
+    path: G:\ehentai\精品

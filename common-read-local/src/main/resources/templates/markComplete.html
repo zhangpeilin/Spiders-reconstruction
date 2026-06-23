@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<!-- saved from url=(0052)http://getbootstrap.com/docs/4.0/examples/dashboard/ -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>评级归档</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script th:src="@{/js/jquery.base64.js}"></script>
+
+    <!-- Custom styles for this template -->
+    <!--    <link href="asserts/css/dashboard.css" rel="stylesheet" th:href="@{/asserts/css/dashboard.css}">-->
+    <style type="text/css">
+        /* Chart.js */
+
+        @-webkit-keyframes chartjs-render-animation {
+            from {
+                opacity: 0.99
+            }
+            to {
+                opacity: 1
+            }
+        }
+
+        @keyframes chartjs-render-animation {
+            from {
+                opacity: 0.99
+            }
+            to {
+                opacity: 1
+            }
+        }
+
+        .chartjs-render-monitor {
+            -webkit-animation: chartjs-render-animation 0.001s;
+            animation: chartjs-render-animation 0.001s;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container-fluid">
+    <form th:action="@{/mark/} + ${comicId}" th:method="post">
+        <br>
+        <br>
+        <label>
+            <input type="checkbox" name="needDel" value=true>
+        </label>是否需要删除
+        <div>
+            <label class="form-label">是否精品</label>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="level" value="true">
+                <label class="form-check-label">
+                    是
+                </label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" checked name="level" value="false">
+                <label class="form-check-label">
+                    否
+                </label>
+            </div>
+        </div>
+        <div id="type" style="display:none;">
+            <label class="form-label">分类</label>
+            <div th:each="type : ${types}" class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" checked name="type" th:value="${type}">
+                <label class="form-check-label">
+                    [[${type}]]
+                </label>
+            </div>
+        </div>
+        <input type="submit" th:value="确定"/>
+    </form>
+</div>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<!--<script type="text/javascript" src="asserts/js/jquery-3.2.1.slim.min.js" th:src="@{/asserts/js/jquery-3.2.1.slim.min.js}"></script>-->
+<!--<script type="text/javascript" src="asserts/js/popper.min.js" th:src="@{/asserts/js/popper.min.js}"></script>-->
+<!--<script type="text/javascript" src="asserts/js/bootstrap.min.js" th:src="@{/asserts/js/bootstrap.min.js}"></script>-->
+
+<!-- Icons -->
+<!--<script type="text/javascript" src="asserts/js/feather.min.js" th:src="@{/asserts/js/feather.min.js}"></script>-->
+<script>
+    // $("#read").click(function () {
+    //     // $("#read").attr("href", $(this).attr("href") + $.base64.encode($(this).attr("path")));
+    //     console.log($(this).attr("path"));
+    //     console.log($.base64.encode($(this).attr("path")));
+    //     window.open($(this).attr("href") + $.base64.encode(encodeURI($(this).attr("path"))));
+    //     return false;
+    // })
+    $("input[name='level']").click(function () {
+        if ($(this).attr("value") == "true") {
+            $("#type").show();
+        } else {
+            $("#type").hide();
+        }
+    })
+</script>
+
+<!-- Graphs -->
+<!--<script type="text/javascript" src="asserts/js/Chart.min.js" th:src="@{/asserts/js/Chart.min.js}"></script>-->
+</body>
+
+</html>
