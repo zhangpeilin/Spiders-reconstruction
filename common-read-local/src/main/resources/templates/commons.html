@@ -63,15 +63,20 @@
                class="form-control"
                id="scanPath"
                placeholder="请输入要扫描的文件夹路径">
-        <small class="form-text text-muted">默认路径：G:\ehentai\archive</small>
+        <small class="form-text text-muted d-block mb-2">默认路径：G:\ehentai\archive</small>
+
         <label for="title" class="form-label">漫画标题</label>
         <input type="text" th:value="${#session?.getAttribute('title')!=null}?${#session.getAttribute('title')}" name="title" class="form-control" id="title">
+
         <label for="author" class="form-label">作者</label>
         <input type="text" th:value="${#session?.getAttribute('author')!=null}?${#session.getAttribute('author')}" name="author" class="form-control" id="author">
+
         <label for="female" class="form-label">女</label>
         <input type="text" th:value="${#session?.getAttribute('female') != null}?${#session.getAttribute('female')}" name="female" class="form-control" id="female">
+
         <label for="male" class="form-label">男</label>
         <input type="text" th:value="${#session?.getAttribute('male') != null}?${#session.getAttribute('male')}" name="male" class="form-control" id="male">
+
         <label for="star" class="form-lable">星级</label>
         <select class="form-select" aria-label="Default select example" id="star" name="star">
             <option th:selected="${#session?.getAttribute('star') != null}?${#session.getAttribute('star')=='1'}" value="1">1</option>
@@ -81,6 +86,7 @@
             <option th:selected="${#session?.getAttribute('star') != null}?${#session.getAttribute('star')=='5'}" value="5">5</option>
             <option th:selected="${#session?.getAttribute('star') != null}?${#session.getAttribute('star')=='0'}" value="0">全部</option>
         </select>
+
         <label for="numLimit" class="form-lable">显示数量</label>
         <select class="form-select" aria-label="Default select example" id="numLimit" name="size">
             <option th:selected="${#session?.getAttribute('size') != null}?${#session.getAttribute('size')=='20'}" value="20">20</option>

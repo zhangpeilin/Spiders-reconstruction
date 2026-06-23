@@ -119,6 +119,7 @@ public class ReadController {
         RestResponse restResponse;
         if (scanPath != null && !scanPath.trim().isEmpty()) {
             log.info("使用自定义扫描路径: {}", scanPath);
+            session.setAttribute("scanPath", scanPath);
             restResponse = getListWithCustomPath(queryDTO, scanPath);
         } else {
             restResponse = getList(queryDTO);
@@ -130,7 +131,6 @@ public class ReadController {
         List<Ehentai> list = restResponse.getList(Ehentai.class);
         model.addAttribute("list", list);
         model.addAttribute("query", queryDTO);
-        model.addAttribute("scanPath", scanPath);
         queryDTO.toMap().forEach(session::setAttribute);
         return "list";
     }
