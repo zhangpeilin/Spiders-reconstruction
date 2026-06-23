@@ -18,4 +18,6 @@ public interface ReadLocalService {
     List<Ehentai> queryBySql(String sql);
     
     List<Ehentai> searchComics(QueryDTO queryDTO);
+    
+    List<Ehentai> searchComicsWithCustomPath(QueryDTO queryDTO, String customPath);
 }

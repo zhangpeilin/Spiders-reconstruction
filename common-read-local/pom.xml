@@ -84,6 +84,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <mainClass>cn.zpl.ReadLocalApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

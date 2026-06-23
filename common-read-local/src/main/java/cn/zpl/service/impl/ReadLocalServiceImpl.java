@@ -15,8 +15,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,8 @@ public class ReadLocalServiceImpl implements ReadLocalService {
     private String comicFolderPath;
 
     private final ConcurrentHashMap<String, Ehentai> comicCache = new ConcurrentHashMap<>();
+    
+    private final Set<String> scannedPaths = ConcurrentHashMap.newKeySet();
 
     @PostConstruct
     public void init() {
@@ -45,6 +49,8 @@ public class ReadLocalServiceImpl implements ReadLocalService {
         }
 
         scanZipFiles(folder);
+        scannedPaths.add(folder.getAbsolutePath());
+        log.info("已记录扫描路径: {}", folder.getAbsolutePath());
     }
 
     private void scanZipFiles(File directory) {
@@ -119,13 +125,13 @@ public class ReadLocalServiceImpl implements ReadLocalService {
         List<Ehentai> allComics = new ArrayList<>(comicCache.values());
         
         if (queryDTO == null) {
-            return allComics;
+            return applySizeLimit(allComics, null);
         }
 
         String titleKeyword = queryDTO.getTitle();
         String authorKeyword = queryDTO.getAuthor();
 
-        return allComics.stream()
+        List<Ehentai> filteredComics = allComics.stream()
             .filter(comic -> {
                 boolean titleMatch = true;
                 boolean authorMatch = true;
@@ -141,6 +147,22 @@ public class ReadLocalServiceImpl implements ReadLocalService {
                 return titleMatch && authorMatch;
             })
             .collect(Collectors.toList());
+        
+        return applySizeLimit(filteredComics, queryDTO.getSize());
+    }
+
+    private List<Ehentai> applySizeLimit(List<Ehentai> comics, Integer size) {
+        if (size == null || size <= 0 || size >= comics.size()) {
+            return comics;
+        }
+        
+        if (size > 999999) {
+            log.debug("查询全部数据，不进行截断");
+            return comics;
+        }
+        
+        log.debug("应用大小限制: {}，原始数量: {}，截断后数量: {}", size, comics.size(), Math.min(size, comics.size()));
+        return comics.subList(0, size);
     }
 
     private boolean matchWithTraditionalSimplified(String text, String keyword) {
@@ -227,13 +249,105 @@ public class ReadLocalServiceImpl implements ReadLocalService {
     }
 
     public void rescanFolder() {
-        log.info("重新扫描漫画文件夹");
+        log.info("重新扫描所有已记录的路径");
         comicCache.clear();
-        scanComicFolder();
+        
+        Set<String> pathsToRescan = new HashSet<>(scannedPaths);
+        for (String path : pathsToRescan) {
+            File folder = new File(path);
+            if (folder.exists()) {
+                log.info("重新扫描路径: {}", path);
+                scanZipFiles(folder);
+            } else {
+                log.warn("路径不存在，跳过: {}", path);
+                scannedPaths.remove(path);
+            }
+        }
+        
         log.info("重新扫描完成，共找到 {} 个漫画文件", comicCache.size());
     }
 
     public Map<String, Ehentai> getAllComics() {
         return new ConcurrentHashMap<>(comicCache);
+    }
+
+    @Override
+    public List<Ehentai> searchComicsWithCustomPath(QueryDTO queryDTO, String customPath) {
+        if (customPath != null && !customPath.trim().isEmpty()) {
+            String trimmedPath = customPath.trim();
+            
+            if (scannedPaths.contains(trimmedPath)) {
+                log.info("路径已扫描过，直接使用缓存: {}", trimmedPath);
+            } else {
+                log.info("检测到新路径: {}，开始扫描", trimmedPath);
+                
+                File folder = new File(trimmedPath);
+                if (folder.exists()) {
+                    synchronized (comicCache) {
+                        scanZipFilesFromPath(folder, comicCache);
+                        scannedPaths.add(trimmedPath);
+                        log.info("新路径扫描完成并添加到记录，当前缓存总数: {}", comicCache.size());
+                    }
+                } else {
+                    log.warn("自定义路径不存在: {}", trimmedPath);
+                }
+            }
+        }
+        
+        return searchComics(queryDTO);
+    }
+
+    private void scanZipFilesFromPath(File directory, ConcurrentHashMap<String, Ehentai> cache) {
+        if (!directory.exists()) {
+            log.warn("路径不存在: {}", directory.getAbsolutePath());
+            return;
+        }
+        
+        File[] files = directory.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                scanZipFilesFromPath(file, cache);
+            } else if (file.isFile() && file.getName().toLowerCase().endsWith(".zip")) {
+                String id = generateUniqueIdFromFile(file);
+                
+                if (!cache.containsKey(id)) {
+                    Ehentai ehentai = createEhentaiFromFile(file, id);
+                    cache.put(id, ehentai);
+                    log.debug("加载漫画: {} -> {}", id, file.getAbsolutePath());
+                } else {
+                    log.debug("漫画已存在，跳过: {}", id);
+                }
+            }
+        }
+    }
+
+    private List<Ehentai> filterComics(List<Ehentai> comics, QueryDTO queryDTO) {
+        if (queryDTO == null) {
+            return comics;
+        }
+
+        String titleKeyword = queryDTO.getTitle();
+        String authorKeyword = queryDTO.getAuthor();
+
+        return comics.stream()
+            .filter(comic -> {
+                boolean titleMatch = true;
+                boolean authorMatch = true;
+
+                if (!StringUtils.isEmpty(titleKeyword)) {
+                    titleMatch = matchWithTraditionalSimplified(comic.getTitle(), titleKeyword);
+                }
+
+                if (!StringUtils.isEmpty(authorKeyword)) {
+                    authorMatch = matchWithTraditionalSimplified(comic.getArtist(), authorKeyword);
+                }
+
+                return titleMatch && authorMatch;
+            })
+            .collect(Collectors.toList());
     }
 }

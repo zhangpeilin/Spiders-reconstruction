@@ -93,7 +93,9 @@ public class ReadController {
 
     @RequestMapping("/getList")
     public String getList(@CookieValue(value = "userToken", required = false) Cookie cookie,
-                         HttpSession session, Model model, QueryDTO queryDTO, HttpServletResponse response) {
+                         HttpSession session, Model model, QueryDTO queryDTO, 
+                         @RequestParam(value = "scanPath", required = false) String scanPath,
+                         HttpServletResponse response) {
         if (!StringUtils.isEmpty(queryDTO.getTags())) {
             queryDTO.setTags(queryDTO.getTags().replace("，",",").replace(" ",","));
         }
@@ -113,19 +115,33 @@ public class ReadController {
         }
 
         queryDTO.setTitle(queryDTO.getTitle().toLowerCase());
-        RestResponse restResponse = getList(queryDTO);
+        
+        RestResponse restResponse;
+        if (scanPath != null && !scanPath.trim().isEmpty()) {
+            log.info("使用自定义扫描路径: {}", scanPath);
+            restResponse = getListWithCustomPath(queryDTO, scanPath);
+        } else {
+            restResponse = getList(queryDTO);
+        }
+        
         if (!restResponse.isSuccess()) {
             return "redirect:/search";
         }
         List<Ehentai> list = restResponse.getList(Ehentai.class);
         model.addAttribute("list", list);
         model.addAttribute("query", queryDTO);
+        model.addAttribute("scanPath", scanPath);
         queryDTO.toMap().forEach(session::setAttribute);
         return "list";
     }
 
     public RestResponse getList(@RequestBody QueryDTO query) {
         List<Ehentai> ehentais = readLocalService.searchComics(query);
+        return RestResponse.ok(ehentais);
+    }
+
+    public RestResponse getListWithCustomPath(@RequestBody QueryDTO query, String customPath) {
+        List<Ehentai> ehentais = readLocalService.searchComicsWithCustomPath(query, customPath);
         return RestResponse.ok(ehentais);
     }
 
@@ -375,7 +391,7 @@ public class ReadController {
         Set<Map.Entry<Integer, List<String>>> entries = zipInfo.get(folder.get()).entrySet();
         for (Map.Entry<Integer, List<String>> entry : entries) {
             if (String.valueOf(entry.getKey()).equalsIgnoreCase(chapter)) {
-                return entry.getValue();
+                return new ArrayList<>(entry.getValue());
             }
         }
         return null;
