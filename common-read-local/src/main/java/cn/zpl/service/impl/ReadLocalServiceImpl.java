@@ -10,7 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -21,6 +24,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
 @Slf4j
 @Service
@@ -354,9 +363,26 @@ public class ReadLocalServiceImpl implements ReadLocalService {
             log.warn("路径不存在: {}", directory.getAbsolutePath());
             return;
         }
-        
+
+        if (!directory.isDirectory()) {
+            log.warn("路径不是一个目录: {}", directory.getAbsolutePath());
+            return;
+        }
+
         File[] files = directory.listFiles();
         if (files == null) {
+            log.error("listFiles()返回null，尝试NIO回退，路径: {}", directory.getAbsolutePath());
+            try {
+                scanWithNio(directory.toPath(), cache, collectedIds);
+                return;
+            } catch (Exception nioEx) {
+                log.error("NIO方式失败，尝试Windows原生命令回退，路径: {}", directory.getAbsolutePath(), nioEx);
+            }
+            try {
+                scanWithNativeCommand(directory.getAbsolutePath(), cache, collectedIds);
+            } catch (Exception nativeEx) {
+                log.error("所有扫描方式均失败，路径: {}", directory.getAbsolutePath(), nativeEx);
+            }
             return;
         }
 
@@ -377,6 +403,85 @@ public class ReadLocalServiceImpl implements ReadLocalService {
                     collectedIds.add(id);
                 }
             }
+        }
+    }
+
+    private void scanWithNio(Path startPath, ConcurrentHashMap<String, Ehentai> cache, Set<String> collectedIds) throws IOException {
+        log.info("开始NIO扫描，起始路径: {}", startPath);
+        final int[] count = {0};
+        Files.walkFileTree(startPath, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                log.debug("NIO进入目录: {}", dir);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                if (file.getFileName().toString().toLowerCase().endsWith(".zip")) {
+                    File zipFile = file.toFile();
+                    String id = generateUniqueIdFromFile(zipFile);
+                    if (!cache.containsKey(id)) {
+                        Ehentai ehentai = createEhentaiFromFile(zipFile, id);
+                        cache.put(id, ehentai);
+                        log.debug("NIO加载漫画: {} -> {}", id, zipFile.getAbsolutePath());
+                    }
+                    if (collectedIds != null) {
+                        collectedIds.add(id);
+                    }
+                    count[0]++;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                log.error("NIO访问文件失败: {}, 原因: {}", file, exc.getMessage());
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        log.info("NIO扫描完成，路径: {}，找到 {} 个zip文件", startPath, count[0]);
+    }
+
+    private void scanWithNativeCommand(String directoryPath, ConcurrentHashMap<String, Ehentai> cache, Set<String> collectedIds) throws IOException {
+        log.info("使用Windows原生命令扫描，路径: {}", directoryPath);
+        String escapedPath = directoryPath.replace("\"", "\"\"");
+        ProcessBuilder pb = new ProcessBuilder("cmd", "/c", "dir", "/s", "/b", "/a-d", escapedPath);
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+
+        int count = 0;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "GBK"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+                if (trimmed.isEmpty()) {
+                    continue;
+                }
+                if (trimmed.toLowerCase().endsWith(".zip")) {
+                    File zipFile = new File(trimmed);
+                    if (zipFile.exists() && zipFile.isFile()) {
+                        String id = generateUniqueIdFromFile(zipFile);
+                        if (!cache.containsKey(id)) {
+                            Ehentai ehentai = createEhentaiFromFile(zipFile, id);
+                            cache.put(id, ehentai);
+                            log.debug("NativeCmd加载漫画: {} -> {}", id, zipFile.getAbsolutePath());
+                        }
+                        if (collectedIds != null) {
+                            collectedIds.add(id);
+                        }
+                        count++;
+                    }
+                }
+            }
+        }
+
+        try {
+            int exitCode = process.waitFor();
+            log.info("Windows原生命令扫描完成，路径: {}，exitCode: {}，找到 {} 个zip文件", directoryPath, exitCode, count);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("等待命令执行被中断", e);
         }
     }
 
