@@ -33,6 +33,8 @@ public class ReadLocalServiceImpl implements ReadLocalService {
     
     private final Set<String> scannedPaths = ConcurrentHashMap.newKeySet();
 
+    private final ConcurrentHashMap<String, Set<String>> pathToComicIds = new ConcurrentHashMap<>();
+
     @PostConstruct
     public void init() {
         log.info("开始扫描漫画文件夹: {}", comicFolderPath);
@@ -48,12 +50,18 @@ public class ReadLocalServiceImpl implements ReadLocalService {
             return;
         }
 
-        scanZipFiles(folder);
+        Set<String> ids = new HashSet<>();
+        scanZipFiles(folder, ids);
         scannedPaths.add(folder.getAbsolutePath());
+        pathToComicIds.put(folder.getAbsolutePath(), ids);
         log.info("已记录扫描路径: {}", folder.getAbsolutePath());
     }
 
     private void scanZipFiles(File directory) {
+        scanZipFiles(directory, null);
+    }
+
+    private void scanZipFiles(File directory, Set<String> collectedIds) {
         File[] files = directory.listFiles();
         if (files == null) {
             return;
@@ -61,11 +69,14 @@ public class ReadLocalServiceImpl implements ReadLocalService {
 
         for (File file : files) {
             if (file.isDirectory()) {
-                scanZipFiles(file);
+                scanZipFiles(file, collectedIds);
             } else if (file.isFile() && file.getName().toLowerCase().endsWith(".zip")) {
                 String id = generateUniqueIdFromFile(file);
                 Ehentai ehentai = createEhentaiFromFile(file, id);
                 comicCache.put(id, ehentai);
+                if (collectedIds != null) {
+                    collectedIds.add(id);
+                }
                 log.debug("加载漫画: {} -> {}", id, file.getAbsolutePath());
             }
         }
@@ -283,9 +294,11 @@ public class ReadLocalServiceImpl implements ReadLocalService {
                 
                 File folder = new File(trimmedPath);
                 if (folder.exists()) {
+                    Set<String> ids = new HashSet<>();
                     synchronized (comicCache) {
-                        scanZipFilesFromPath(folder, comicCache);
+                        scanZipFilesFromPath(folder, comicCache, ids);
                         scannedPaths.add(trimmedPath);
+                        pathToComicIds.put(trimmedPath, ids);
                         log.info("新路径扫描完成并添加到记录，当前缓存总数: {}", comicCache.size());
                     }
                 } else {
@@ -297,7 +310,46 @@ public class ReadLocalServiceImpl implements ReadLocalService {
         return searchComics(queryDTO);
     }
 
-    private void scanZipFilesFromPath(File directory, ConcurrentHashMap<String, Ehentai> cache) {
+    public List<Ehentai> searchComicsByPath(QueryDTO queryDTO, String path) {
+        Set<String> comicIds = pathToComicIds.get(path);
+        if (comicIds == null || comicIds.isEmpty()) {
+            log.info("路径 {} 下没有找到任何漫画", path);
+            return new ArrayList<>();
+        }
+        
+        List<Ehentai> pathComics = comicIds.stream()
+            .map(comicCache::get)
+            .filter(e -> e != null)
+            .collect(Collectors.toList());
+        
+        if (queryDTO == null) {
+            return applySizeLimit(pathComics, null);
+        }
+        
+        String titleKeyword = queryDTO.getTitle();
+        String authorKeyword = queryDTO.getAuthor();
+        
+        List<Ehentai> filtered = pathComics.stream()
+            .filter(comic -> {
+                boolean titleMatch = true;
+                boolean authorMatch = true;
+                
+                if (!StringUtils.isEmpty(titleKeyword)) {
+                    titleMatch = matchWithTraditionalSimplified(comic.getTitle(), titleKeyword);
+                }
+                
+                if (!StringUtils.isEmpty(authorKeyword)) {
+                    authorMatch = matchWithTraditionalSimplified(comic.getArtist(), authorKeyword);
+                }
+                
+                return titleMatch && authorMatch;
+            })
+            .collect(Collectors.toList());
+        
+        return applySizeLimit(filtered, queryDTO.getSize());
+    }
+
+    private void scanZipFilesFromPath(File directory, ConcurrentHashMap<String, Ehentai> cache, Set<String> collectedIds) {
         if (!directory.exists()) {
             log.warn("路径不存在: {}", directory.getAbsolutePath());
             return;
@@ -310,7 +362,7 @@ public class ReadLocalServiceImpl implements ReadLocalService {
 
         for (File file : files) {
             if (file.isDirectory()) {
-                scanZipFilesFromPath(file, cache);
+                scanZipFilesFromPath(file, cache, collectedIds);
             } else if (file.isFile() && file.getName().toLowerCase().endsWith(".zip")) {
                 String id = generateUniqueIdFromFile(file);
                 
@@ -321,8 +373,15 @@ public class ReadLocalServiceImpl implements ReadLocalService {
                 } else {
                     log.debug("漫画已存在，跳过: {}", id);
                 }
+                if (collectedIds != null) {
+                    collectedIds.add(id);
+                }
             }
         }
+    }
+
+    private void scanZipFilesFromPath(File directory, ConcurrentHashMap<String, Ehentai> cache) {
+        scanZipFilesFromPath(directory, cache, null);
     }
 
     private List<Ehentai> filterComics(List<Ehentai> comics, QueryDTO queryDTO) {

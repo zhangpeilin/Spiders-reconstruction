@@ -124,7 +124,11 @@ public class ReadController {
         if (scanPath != null && !scanPath.trim().isEmpty()) {
             log.info("使用自定义扫描路径: {}", scanPath);
             session.setAttribute("scanPath", scanPath);
-            restResponse = getListWithCustomPath(queryDTO, scanPath);
+            if (StringUtils.isEmpty(queryDTO.getTitle())) {
+                restResponse = getListByPath(queryDTO, scanPath);
+            } else {
+                restResponse = getListWithCustomPath(queryDTO, scanPath);
+            }
         } else {
             restResponse = getList(queryDTO);
         }
@@ -147,6 +151,16 @@ public class ReadController {
     public RestResponse getListWithCustomPath(@RequestBody QueryDTO query, String customPath) {
         List<Ehentai> ehentais = readLocalService.searchComicsWithCustomPath(query, customPath);
         return RestResponse.ok(ehentais);
+    }
+
+    public RestResponse getListByPath(@RequestBody QueryDTO query, String scanPath) {
+        if (readLocalService instanceof cn.zpl.service.impl.ReadLocalServiceImpl) {
+            cn.zpl.service.impl.ReadLocalServiceImpl impl = (cn.zpl.service.impl.ReadLocalServiceImpl) readLocalService;
+            impl.searchComicsWithCustomPath(query, scanPath);
+            List<Ehentai> ehentais = impl.searchComicsByPath(query, scanPath.trim());
+            return RestResponse.ok(ehentais);
+        }
+        return getListWithCustomPath(query, scanPath);
     }
 
     @GetMapping("/clearCache/{comicId}")
