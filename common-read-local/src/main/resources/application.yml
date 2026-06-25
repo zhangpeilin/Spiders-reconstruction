@@ -21,3 +21,14 @@ comic:
   cover:
     cache:
       path: ./cover-cache
+# ===== 图片缓存配置 =====
+  image:
+    cache:
+      enabled: false              # true=启用磁盘缓存  false=使用原始内存缓存（默认）
+      path: ./image-cache         # 磁盘缓存目录（enabled=true时生效）
+      max-disk: 5000              # 磁盘最大缓存文件数（enabled=true时生效）
+
+# ===== 磁盘保活配置（防止磁盘自动休眠） =====
+  disk:
+    keepalive:
+      enabled: true              # true=启用保活  false=关闭（默认）

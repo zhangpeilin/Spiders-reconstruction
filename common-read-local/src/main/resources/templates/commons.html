@@ -58,12 +58,12 @@
     <div class="mb-3">
         <label for="scanPath" class="form-label">扫描路径：</label>
         <input type="text"
-               th:value="${#session?.getAttribute('scanPath') != null} ? ${#session.getAttribute('scanPath')} : 'G:\ehentai\archive'"
+               th:value="${#session?.getAttribute('scanPath') != null} ? ${#session.getAttribute('scanPath')} : ${defaultScanPath}"
                name="scanPath"
                class="form-control"
                id="scanPath"
                placeholder="请输入要扫描的文件夹路径">
-        <small class="form-text text-muted d-block mb-2">默认路径：G:\ehentai\archive或/Volumes/G/ehentai/</small>
+        <small class="form-text text-muted d-block mb-2" th:text="'默认路径：' + ${defaultScanPath}">默认路径</small>
 
         <label for="title" class="form-label">漫画标题</label>
         <input type="text" th:value="${#session?.getAttribute('title')!=null}?${#session.getAttribute('title')}" name="title" class="form-control" id="title">

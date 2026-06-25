@@ -292,6 +292,11 @@ public class ReadLocalServiceImpl implements ReadLocalService {
     }
 
     @Override
+    public List<String> getAllComicIds() {
+        return new ArrayList<>(comicCache.keySet());
+    }
+
+    @Override
     public List<Ehentai> searchComicsWithCustomPath(QueryDTO queryDTO, String customPath) {
         if (customPath != null && !customPath.trim().isEmpty()) {
             String trimmedPath = customPath.trim();

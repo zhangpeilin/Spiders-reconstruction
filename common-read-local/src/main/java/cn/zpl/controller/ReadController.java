@@ -1,5 +1,6 @@
 package cn.zpl.controller;
 
+import cn.zpl.cache.DiskImageCache;
 import cn.zpl.common.bean.Ehentai;
 import cn.zpl.common.bean.ImageComparator;
 import cn.zpl.common.bean.QueryDTO;
@@ -25,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
@@ -47,9 +50,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -60,11 +66,58 @@ public class ReadController {
     public static LoadingCache<String, Map<String, Map<Integer, List<String>>>> cache;
     public static LoadingCache<String, byte[]> imageCache;
 
+    private static DiskImageCache diskImageCache;
+
     @Resource
     private ReadLocalService readLocalService;
 
     @Value("${comic.cover.cache.path:./cover-cache}")
     private String coverCachePath;
+
+    @Value("${comic.image.cache.enabled:false}")
+    private boolean useDiskCache;
+
+    @Value("${comic.image.cache.path:./image-cache}")
+    private String imageCachePath;
+
+    @Value("${comic.image.cache.max-disk:5000}")
+    private int imageCacheMaxDisk;
+
+    /** 是否启用磁盘保活功能（防止磁盘自动休眠） */
+    @Value("${comic.disk.keepalive.enabled:false}")
+    private boolean keepaliveEnabled;
+
+    private ScheduledExecutorService keepaliveScheduler;
+    private final Random random = new Random();
+
+    @PostConstruct
+    public void init() {
+        if (useDiskCache) {
+            diskImageCache = new DiskImageCache(100, imageCacheMaxDisk, imageCachePath);
+            log.info("启用磁盘图片缓存模式，路径: {}，最大文件数: {}", imageCachePath, imageCacheMaxDisk);
+        } else if (keepaliveEnabled) {
+            // 保活功能需要DiskImageCache来写入保活文件，即使图片缓存未启用也要初始化
+            diskImageCache = new DiskImageCache(10, 100, imageCachePath);
+            log.info("图片缓存未启用，但保活功能需要磁盘缓存，已初始化轻量级DiskImageCache");
+        } else {
+            log.info("使用原始内存图片缓存模式");
+        }
+
+        if (keepaliveEnabled) {
+            startKeepalive();
+        }
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (keepaliveScheduler != null && !keepaliveScheduler.isShutdown()) {
+            keepaliveScheduler.shutdownNow();
+            log.info("保活定时任务已停止");
+        }
+        if (useDiskCache && diskImageCache != null) {
+            diskImageCache.invalidateAll();
+        }
+    }
 
     @GetMapping("/rescan")
     @ResponseBody
@@ -169,7 +222,9 @@ public class ReadController {
             Ehentai ehentai = readLocalService.getEh(comicId);
             cache.invalidate(ehentai.getSavePath());
         }
-        if (imageCache != null) {
+        if (useDiskCache && diskImageCache != null) {
+            diskImageCache.invalidateByPrefix(comicId + "#");
+        } else if (imageCache != null) {
             List<String> collect = imageCache.asMap().keySet().stream()
                 .filter(bytes -> bytes.startsWith(comicId)).collect(Collectors.toList());
             collect.forEach(s -> imageCache.invalidate(s));
@@ -459,6 +514,9 @@ public class ReadController {
     }
 
     private byte[] getImage(String comicId, String chapter, String image) {
+        if (useDiskCache) {
+            return getImageFromDiskCache(comicId, chapter, image);
+        }
         String myKey = comicId + "#" + chapter + "#" + image;
         if (imageCache != null) {
             byte[] ifPresent = imageCache.getIfPresent(myKey);
@@ -541,5 +599,159 @@ public class ReadController {
             }
         }
         return getImage(comicId, chapter, image);
+    }
+
+    private byte[] getImageFromDiskCache(String comicId, String chapter, String image) {
+        String myKey = comicId + "#" + chapter + "#" + image;
+        try {
+            byte[] cached = diskImageCache.getIfPresent(myKey);
+            if (cached != null && cached.length > 0) {
+                log.debug("{}磁盘缓存命中", myKey);
+                return cached;
+            }
+
+            if ("ALL".equalsIgnoreCase(image)) {
+                return loadAllImagesDiskCache(comicId, chapter);
+            }
+
+            return diskImageCache.get(myKey, () -> loadSingleImageFromZip(comicId, chapter, image));
+        } catch (Exception e) {
+            log.error("磁盘缓存模式读取失败，comicId:{}", comicId, e);
+            return null;
+        }
+    }
+
+    private byte[] loadAllImagesDiskCache(String comicId, String chapter) {
+        List<String> imgsList = getImagesInChapter(comicId, chapter);
+        if (CollectionUtils.isEmpty(imgsList)) {
+            return null;
+        }
+        imgsList.sort(new ImageComparator());
+        byte[] lastBytes = null;
+        for (String img : imgsList) {
+            String key = comicId + "#" + chapter + "#" + img;
+            try {
+                byte[] data = diskImageCache.get(key, () -> loadSingleImageFromZip(comicId, chapter, img));
+                if (data != null) {
+                    lastBytes = data;
+                }
+            } catch (Exception e) {
+                log.error("磁盘缓存预加载图片失败: {}", key, e);
+            }
+        }
+        return lastBytes;
+    }
+
+    private byte[] loadSingleImageFromZip(String comicId, String chapter, String image) throws Exception {
+        Ehentai ehentai = readLocalService.getEh(comicId);
+        Map<String, Map<Integer, List<String>>> zipInfo = getZipInfo(ehentai.getSavePath());
+        if (zipInfo == null || zipInfo.isEmpty()) {
+            return null;
+        }
+        try (ZipFile zipFile = new ZipFile(ehentai.getSavePath())) {
+            ZipArchiveEntry entry = zipFile.getEntry(image);
+            if (entry == null) {
+                entry = zipFile.getEntry(chapter + "/" + image);
+            }
+            if (entry == null) {
+                return null;
+            }
+            InputStream inputStream = zipFile.getInputStream(entry);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[20000];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                bos.write(buffer, 0, bytesRead);
+            }
+            inputStream.close();
+            return bos.toByteArray();
+        }
+    }
+
+    /**
+     * ==================== 磁盘保活功能 ====================
+     * 目的：防止存储漫画的磁盘因长时间无I/O操作而自动进入休眠状态。
+     * 原理：
+     *   1. 每5秒从随机一个已扫描的压缩包中读取2张图片，写入缓存目录作为保活文件
+     *      —— 读取压缩包会产生真实的磁盘I/O，阻止磁盘休眠
+     *   2. 保活文件以 "keepalive_" 为前缀进行特殊标记
+     *   3. 每5分钟清理一次所有保活文件，防止磁盘空间被持续占用
+     * 配置项：comic.disk.keepalive.enabled=true 启用
+     */
+    private void startKeepalive() {
+        keepaliveScheduler = Executors.newScheduledThreadPool(2, r -> {
+            Thread t = new Thread(r, "disk-keepalive");
+            t.setDaemon(true);
+            return t;
+        });
+
+        // 任务1：每5秒读取2张随机图片写入保活文件（产生磁盘I/O）
+        keepaliveScheduler.scheduleAtFixedRate(this::keepaliveTick, 5, 5, TimeUnit.SECONDS);
+
+        // 任务2：每5分钟清理所有保活文件（释放磁盘空间）
+        keepaliveScheduler.scheduleAtFixedRate(() -> {
+            try {
+                if (diskImageCache != null) {
+                    diskImageCache.cleanKeepalive();
+                }
+            } catch (Exception e) {
+                log.warn("保活文件清理任务异常", e);
+            }
+        }, 5, 5, TimeUnit.MINUTES);
+
+        log.info("磁盘保活功能已启动：每5秒读取随机图片，每5分钟清理保活文件");
+    }
+
+    /**
+     * 单次保活操作：从随机漫画的压缩包中读取2张图片，写入保活文件。
+     * 读取压缩包中的图片会产生真实的磁盘I/O，从而阻止磁盘进入休眠。
+     */
+    private void keepaliveTick() {
+        try {
+            if (!keepaliveEnabled || diskImageCache == null) {
+                return;
+            }
+
+            List<String> comicIds = readLocalService.getAllComicIds();
+            if (comicIds.isEmpty()) {
+                log.debug("保活：无已扫描漫画，跳过");
+                return;
+            }
+
+            // 随机选取一个漫画
+            String comicId = comicIds.get(random.nextInt(comicIds.size()));
+            Ehentai ehentai = readLocalService.getEh(comicId);
+            if (ehentai == null || ehentai.getSavePath() == null) {
+                return;
+            }
+
+            File zipFile = new File(ehentai.getSavePath());
+            if (!zipFile.exists()) {
+                return;
+            }
+
+            // 获取该漫画的章节图片列表
+            List<String> images = getImagesInChapter(comicId, "1");
+            if (images == null || images.size() < 2) {
+                return;
+            }
+
+            // 随机选取2张图片
+            int idx1 = random.nextInt(images.size());
+            int idx2 = random.nextInt(images.size());
+            String img1 = images.get(idx1);
+            String img2 = images.get(idx2);
+
+            // 从压缩包中读取图片并写入保活文件
+            byte[] data1 = loadSingleImageFromZip(comicId, "1", img1);
+            diskImageCache.writeKeepalive(comicId, data1);
+
+            byte[] data2 = loadSingleImageFromZip(comicId, "1", img2);
+            diskImageCache.writeKeepalive(comicId, data2);
+
+            log.debug("保活：从漫画 {} 读取了2张随机图片", ehentai.getTitle());
+        } catch (Exception e) {
+            log.warn("保活操作异常", e);
+        }
     }
 }

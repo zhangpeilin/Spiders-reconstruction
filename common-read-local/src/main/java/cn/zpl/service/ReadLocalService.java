@@ -20,4 +20,9 @@ public interface ReadLocalService {
     List<Ehentai> searchComics(QueryDTO queryDTO);
     
     List<Ehentai> searchComicsWithCustomPath(QueryDTO queryDTO, String customPath);
+
+    /**
+     * 获取所有已扫描漫画的ID列表
+     */
+    List<String> getAllComicIds();
 }
