@@ -30,6 +30,8 @@
         <module>spider-on-manhuagui</module>
         <module>spider-on-hospital</module>
         <module>spider-on-pixiv</module>
+        <module>common-read-local</module>
+        <module>spider-on-bilibili-local</module>
     </modules>
 
     <properties>
