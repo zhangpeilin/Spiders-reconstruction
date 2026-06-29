@@ -1,0 +1,15 @@
+server:
+  port: 8090
+
+spider:
+  bilibili:
+    cookies: ""
+    tmp-save-path: d:\视频爬虫\temp
+    video-save-path: g:\视频爬虫
+    ffmpeg: ffmpeg
+  common:
+    ffmpeg: d:\ffmpeg-master-latest-win64-gpl-shared\bin\ffmpeg
+
+eureka:
+  client:
+    enabled: false
