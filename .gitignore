@@ -60,4 +60,5 @@ gov.df.pay.web/src/main/resources/yy-datasource.xml
 
 #properties
 fpay-pay/src/main/resources/application.properties
-*.versionsBackup
+*.versionsBackups
+spider-ehentai-local/
