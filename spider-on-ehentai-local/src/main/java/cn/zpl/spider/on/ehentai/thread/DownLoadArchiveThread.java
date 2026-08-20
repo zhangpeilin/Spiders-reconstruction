@@ -12,6 +12,7 @@ import cn.zpl.util.CheckCallBack;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.ProxyUtil;
 import cn.zpl.util.UnZipUtils;
+import cn.zpl.util.URLConnectionTool;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -223,62 +224,156 @@ public class DownLoadArchiveThread extends CommonThread {
                     return;
                 }
                 if (form.attr("action").startsWith("http")) {
-                    Data d1 = new Data();
-                    d1.setUrl(form.attr("action"));
-                    d1.setHeader(EUtil.buildPostHeader(ehentaiConfig));
-                    d1.setProxy(true);
-                    d1.setParams("dltype=org&dlcheck=Download+Original+Archive");
-                    Map<String, String> vp = new HashMap<>();
-                    vp.put("dltype", "org");
-                    vp.put("dlcheck", "Download Original Archive");
-                    d1.setValuePairs(vp);
-
-                    String result = CommonIOUtils.postUrl(d1);
-                    Element tmpUrl = CommonIOUtils.getElementFromStr(result, "p#continue");
-                    Data data1 = new Data();
-                    data1.setAlwaysRetry();
-                    data1.setProxy(true);
-                    data1.setUrl(Objects.requireNonNull(tmpUrl.selectFirst("a")).attr("href"));
-                    CommonIOUtils.withTimer(data1);
-                    Document doc = Jsoup.parse(data1.getResult());
-                    // common-util 不设置 Data.baseUrl，须用实际请求 URL 作为 base，否则相对链接 absUrl 为空
-                    doc.setBaseUri(data1.getUrl());
-                    Element downUrl = CommonIOUtils.getElementFromStr(doc, "div#db a");
-                    Element fileName = CommonIOUtils.getElementFromStr(doc, "div#db strong");
-                    DownloadDTO dto = new DownloadDTO();
-                    dto.setProxy(true);
-                    dto.setUrl(downUrl.absUrl("href"));
-                    dto.setFileName(CommonIOUtils.filterFileName2(fileName.text()));
-                    List<String> path = new ArrayList<>();
-                    path.add(ehentaiConfig.getSavePath());
-                    path.add("archive");
-                    path.add(DateFormatUtils.format(new Date(), "yyyyMMdd"));
-                    dto.setSavePath(CommonIOUtils.makeFilePath(path, dto.getFileName()));
-                    OneFileOneThread thread2 = new OneFileOneThread(dto);
-                    if (isDownload) {
-                        thread2.run();
-                    } else {
-                        ehentai.setFinish(0);
-                        util.saveEh(ehentai);
-                    }
-                    if (thread2.getData().isComplete()) {
-                        ehentai.setSavePath(dto.getSavePath());
-                        ehentai.setFinish(1);
-                        ehentai.setSize(thread2.getData().getFileLength());
-                        util.saveEh(ehentai);
-                    }
-                    try {
-                        if (!ehentaiConfig.isUnzip()) {
-                            return;
-                        }
-                        String dest = UnZipUtils.unZip(new File(dto.getSavePath()), "G:\\exhentai\\archive\\20201226\\sw\\" + dto.getFileName().replace(".zip", ""), "");
-                        log.debug("解压成功，目录为：" + dest);
-                    } catch (IOException e) {
-                        log.error("解压失败");
-                        e.printStackTrace();
-                    }
+                    downloadArchive(form, ehentai);
+                    return;
                 }
             }
+        }
+    }
+
+    /**
+     * H@H session 被多个位置使用时的错误文本
+     */
+    public static final String HATH_SESSION_CONFLICT = "used from too many different locations";
+
+    /**
+     * 下载原档：POST 表单 → H@H 等待页 → 下载。
+     * <p>
+     * 若 H@H 返回 session 冲突（同一下载 session 被多个 IP 使用），
+     * 模拟浏览器界面的 cancel 操作取消原 session，重新 POST 生成新 session 再下载。
+     */
+    private void downloadArchive(Element form, Ehentai ehentai) {
+        int maxRetry = 3;
+        for (int attempt = 0; attempt < maxRetry; attempt++) {
+            DownloadDTO dto = doDownloadOnce(form, ehentai);
+            if (dto == null) {
+                return;
+            }
+            if (dto.isComplete()) {
+                ehentai.setSavePath(dto.getSavePath());
+                ehentai.setFinish(1);
+                ehentai.setSize(dto.getFileLength());
+                util.saveEh(ehentai);
+                afterDownload(dto);
+                return;
+            }
+            String errBody = probeDownloadError(dto.getUrl());
+            if (errBody != null && errBody.contains(HATH_SESSION_CONFLICT)) {
+                log.warn("检测到 H@H session 冲突（同一下载被多位置使用），取消原 session 后重新发起（第{}次）", attempt + 1);
+                cancelSession(form);
+                continue;
+            }
+            log.error("下载失败且非 session 冲突，放弃：{}", dto.getUrl());
+            return;
+        }
+        log.error("重试 {} 次后仍失败，放弃下载：{}", maxRetry, ehentai.getUrl());
+    }
+
+    /**
+     * 执行一次完整的下载请求（POST 表单 → continue 页 → H@H 等待页 → 单文件下载）。
+     *
+     * @return 非下载模式或解析失败返回 null；否则返回下载任务（complete 标记结果）
+     */
+    private DownloadDTO doDownloadOnce(Element form, Ehentai ehentai) {
+        Data d1 = new Data();
+        d1.setUrl(form.attr("action"));
+        d1.setHeader(EUtil.buildPostHeader(ehentaiConfig));
+        d1.setProxy(true);
+        d1.setParams("dltype=org&dlcheck=Download+Original+Archive");
+        Map<String, String> vp = new HashMap<>();
+        vp.put("dltype", "org");
+        vp.put("dlcheck", "Download Original Archive");
+        d1.setValuePairs(vp);
+
+        String result = CommonIOUtils.postUrl(d1);
+        Element tmpUrl = CommonIOUtils.getElementFromStr(result, "p#continue");
+        if (tmpUrl == null) {
+            log.error("POST 下载表单未返回 continue 页，结果长度：{}", result == null ? "null" : result.length());
+            return null;
+        }
+        Data data1 = new Data();
+        data1.setAlwaysRetry();
+        data1.setProxy(true);
+        data1.setUrl(Objects.requireNonNull(tmpUrl.selectFirst("a")).attr("href"));
+        CommonIOUtils.withTimer(data1);
+        Document doc = Jsoup.parse(data1.getResult());
+        // common-util 不设置 Data.baseUrl，须用实际请求 URL 作为 base，否则相对链接 absUrl 为空
+        doc.setBaseUri(data1.getUrl());
+        Element downUrl = CommonIOUtils.getElementFromStr(doc, "div#db a");
+        Element fileName = CommonIOUtils.getElementFromStr(doc, "div#db strong");
+        if (downUrl == null) {
+            log.error("H@H 等待页未返回下载链接，页面长度：{}", data1.getResult() == null ? "null" : data1.getResult().length());
+            return null;
+        }
+        DownloadDTO dto = new DownloadDTO();
+        dto.setProxy(true);
+        dto.setUrl(downUrl.absUrl("href"));
+        dto.setFileName(CommonIOUtils.filterFileName2(fileName.text()));
+        List<String> path = new ArrayList<>();
+        path.add(ehentaiConfig.getSavePath());
+        path.add("archive");
+        path.add(DateFormatUtils.format(new Date(), "yyyyMMdd"));
+        dto.setSavePath(CommonIOUtils.makeFilePath(path, dto.getFileName()));
+        OneFileOneThread thread2 = new OneFileOneThread(dto);
+        if (isDownload) {
+            thread2.run();
+        } else {
+            ehentai.setFinish(0);
+            util.saveEh(ehentai);
+            return null;
+        }
+        return thread2.getData();
+    }
+
+    /**
+     * 探测下载链接的错误响应体（仅 404 时读取错误流，正常响应不读 body）
+     */
+    private String probeDownloadError(String url) {
+        try {
+            java.net.HttpURLConnection conn = URLConnectionTool.getHttpURLConnection(true, url);
+            try {
+                int code = conn.getResponseCode();
+                if (code == 404 && conn.getErrorStream() != null) {
+                    return CommonIOUtils.toString(conn.getErrorStream());
+                }
+                return null;
+            } finally {
+                conn.disconnect();
+            }
+        } catch (Exception e) {
+            log.debug("探测下载链接失败：{}", url, e);
+            return null;
+        }
+    }
+
+    /**
+     * 模拟 archiver 页面 [cancel]：POST invalidate_sessions=1 取消当前解锁的下载 session
+     */
+    private void cancelSession(Element form) {
+        try {
+            Data d = new Data();
+            d.setUrl(form.attr("action"));
+            d.setHeader(EUtil.buildPostHeader(ehentaiConfig));
+            d.setProxy(true);
+            d.getDoRetry().setRetryMaxCount(2);
+            d.setParams("invalidate_sessions=1");
+            CommonIOUtils.postUrl(d);
+            log.debug("已请求取消 H@H session：{}", form.attr("action"));
+        } catch (Exception e) {
+            log.error("取消 H@H session 失败", e);
+        }
+    }
+
+    private void afterDownload(DownloadDTO dto) {
+        try {
+            if (!ehentaiConfig.isUnzip()) {
+                return;
+            }
+            String dest = UnZipUtils.unZip(new File(dto.getSavePath()), "G:\\exhentai\\archive\\20201226\\sw\\" + dto.getFileName().replace(".zip", ""), "");
+            log.debug("解压成功，目录为：" + dest);
+        } catch (IOException e) {
+            log.error("解压失败");
+            e.printStackTrace();
         }
     }
 
