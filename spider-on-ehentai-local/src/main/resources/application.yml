@@ -1,0 +1,13 @@
+server:
+  port: 8081
+
+spider:
+  ehentai:
+    ehentai-cookies: ""
+    save-path: ""
+    unzip: false
+    manhuagui-cookies: ""
+
+eureka:
+  client:
+    enabled: false

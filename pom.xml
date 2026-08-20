@@ -32,6 +32,7 @@
         <module>spider-on-pixiv</module>
         <module>common-read-local</module>
         <module>spider-on-bilibili-local</module>
+        <module>spider-on-ehentai-local</module>
     </modules>
 
     <properties>
