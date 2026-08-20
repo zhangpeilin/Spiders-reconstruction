@@ -101,6 +101,38 @@ public class EUtilTest {
         Assertions.assertNull(EUtil.getGalleryId("https://e-hentai.org/gallery/12345/"));
     }
 
+    @Test
+    public void testListAll() {
+        Ehentai a = new Ehentai();
+        a.setId("2001");
+        a.setTitle("收藏多");
+        a.setFavcount("999");
+        util.saveEh(a);
+        Ehentai b = new Ehentai();
+        b.setId("2002");
+        b.setTitle("收藏少");
+        b.setFavcount("1");
+        util.saveEh(b);
+        Ehentai c = new Ehentai();
+        c.setId("2003");
+        c.setTitle("无关标题");
+        c.setFavcount("50");
+        util.saveEh(c);
+
+        // 全量：按收藏数降序
+        java.util.List<Ehentai> all = util.listAll(null, 100);
+        Assertions.assertEquals(3, all.size());
+        Assertions.assertEquals("2001", all.get(0).getId());
+
+        // 关键词过滤
+        java.util.List<Ehentai> filtered = util.listAll("收藏", 100);
+        Assertions.assertEquals(2, filtered.size());
+
+        // size 限制
+        java.util.List<Ehentai> limited = util.listAll(null, 2);
+        Assertions.assertEquals(2, limited.size());
+    }
+
     private void injectConfig(EUtil target, String savePath) {
         EhentaiConfig config = new EhentaiConfig();
         config.setSavePath(savePath);

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 @RestController
 @Slf4j
@@ -48,6 +49,15 @@ public class DownloadController {
         }
         service.downTheOne(eh.getUrl(), -1, true);
         return "下载成功";
+    }
+
+    /**
+     * 查询本地元数据记录（供 UI 展示已下载/未完成的画廊）
+     */
+    @GetMapping("/local/list")
+    public RestResponse localList(@RequestParam(value = "keyword", required = false) String keyword,
+                                  @RequestParam(value = "size", required = false, defaultValue = "100") int size) {
+        return RestResponse.ok(utils.listAll(keyword, size));
     }
 
     @PostMapping("/downloadPage")

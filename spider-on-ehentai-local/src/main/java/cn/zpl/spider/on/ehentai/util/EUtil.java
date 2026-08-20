@@ -87,6 +87,33 @@ public class EUtil {
         localStore.remove(comicId);
     }
 
+    /**
+     * 列出本地元数据记录，支持关键词模糊匹配（id/title/url），按收藏数降序
+     */
+    public List<Ehentai> listAll(String keyword, int size) {
+        ensureLoaded();
+        List<Ehentai> list = new ArrayList<>(localStore.values());
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = keyword.trim().toLowerCase();
+            list.removeIf(e -> (e.getId() == null || !e.getId().toLowerCase().contains(kw))
+                    && (e.getTitle() == null || !e.getTitle().toLowerCase().contains(kw))
+                    && (e.getUrl() == null || !e.getUrl().toLowerCase().contains(kw)));
+        }
+        list.sort((a, b) -> {
+            long fb = 0, fa = 0;
+            try {
+                fb = a.getFavcount() == null ? 0 : Long.parseLong(a.getFavcount());
+                fa = b.getFavcount() == null ? 0 : Long.parseLong(b.getFavcount());
+            } catch (NumberFormatException ignored) {
+            }
+            return Long.compare(fa, fb);
+        });
+        if (list.size() > size) {
+            return list.subList(0, size);
+        }
+        return list;
+    }
+
     private void ensureLoaded() {
         if (!loaded) {
             synchronized (storeLock) {
