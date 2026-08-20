@@ -84,6 +84,29 @@ public class EUtil {
         }
     }
 
+    /**
+     * 组装 POST 请求头：Content-Type + Cookie。
+     * <p>
+     * common-util 的 postUrl 只解析 header 字段（不读 Data.cookie），
+     * 因此 POST 表单必须把 cookie 拼成 "Cookie: xxx" 头行，否则 e-hentai 返回 302。
+     */
+    public static String buildPostHeader(EhentaiConfig config) {
+        String header = "Content-Type: application/x-www-form-urlencoded; charset=UTF-8";
+        if (config == null) {
+            return header;
+        }
+        String cookies = config.getEhentaiCookies();
+        if (cookies == null || cookies.trim().isEmpty()) {
+            return header;
+        }
+        String trimmed = cookies.trim();
+        boolean headerStyle = trimmed.contains("\n") || trimmed.matches("^[^=;]+:.*");
+        if (headerStyle) {
+            return header + "\n" + trimmed;
+        }
+        return header + "\nCookie: " + trimmed;
+    }
+
     public Ehentai getEh(String id) {
         ensureLoaded();
         return localStore.get(id);

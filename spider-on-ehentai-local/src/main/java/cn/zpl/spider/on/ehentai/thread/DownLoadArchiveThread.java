@@ -225,8 +225,7 @@ public class DownLoadArchiveThread extends CommonThread {
                 if (form.attr("action").startsWith("http")) {
                     Data d1 = new Data();
                     d1.setUrl(form.attr("action"));
-                    d1.setHeader("Content-Type: application/x-www-form-urlencoded; charset=UTF-8");
-                    EUtil.setCookieHeader(d1, ehentaiConfig.getEhentaiCookies());
+                    d1.setHeader(EUtil.buildPostHeader(ehentaiConfig));
                     d1.setProxy(true);
                     d1.setParams("dltype=org&dlcheck=Download+Original+Archive");
                     Map<String, String> vp = new HashMap<>();
@@ -242,7 +241,8 @@ public class DownLoadArchiveThread extends CommonThread {
                     data1.setUrl(Objects.requireNonNull(tmpUrl.selectFirst("a")).attr("href"));
                     CommonIOUtils.withTimer(data1);
                     Document doc = Jsoup.parse(data1.getResult());
-                    doc.setBaseUri(data1.getBaseUrl());
+                    // common-util 不设置 Data.baseUrl，须用实际请求 URL 作为 base，否则相对链接 absUrl 为空
+                    doc.setBaseUri(data1.getUrl());
                     Element downUrl = CommonIOUtils.getElementFromStr(doc, "div#db a");
                     Element fileName = CommonIOUtils.getElementFromStr(doc, "div#db strong");
                     DownloadDTO dto = new DownloadDTO();
