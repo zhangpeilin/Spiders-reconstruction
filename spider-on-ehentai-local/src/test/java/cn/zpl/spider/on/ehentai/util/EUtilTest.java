@@ -133,6 +133,38 @@ public class EUtilTest {
         Assertions.assertEquals(2, limited.size());
     }
 
+    @Test
+    public void testSetCookieHeader() {
+        cn.zpl.pojo.Data data = new cn.zpl.pojo.Data();
+
+        // 浏览器 Cookie 格式 → 走 cookie 字段，header 保持默认 UA
+        EUtil.setCookieHeader(data, "ipb_member_id=2931137; ipb_pass_hash=abc; igneous=x");
+        Assertions.assertEquals("ipb_member_id=2931137; ipb_pass_hash=abc; igneous=x", data.getCookie());
+        Assertions.assertNotNull(data.getHeader());
+        Assertions.assertTrue(data.getHeader().startsWith("User-Agent:"));
+
+        // 请求头格式（含冒号）→ 覆盖 header 字段
+        cn.zpl.pojo.Data data2 = new cn.zpl.pojo.Data();
+        EUtil.setCookieHeader(data2, "Cookie: a=b\nUser-Agent: test");
+        Assertions.assertNull(data2.getCookie());
+        Assertions.assertEquals("Cookie: a=b\nUser-Agent: test", data2.getHeader());
+
+        // 空配置 → cookie 不设置，header 保持默认 UA
+        cn.zpl.pojo.Data data3 = new cn.zpl.pojo.Data();
+        EUtil.setCookieHeader(data3, "");
+        Assertions.assertNull(data3.getCookie());
+        Assertions.assertNotNull(data3.getHeader());
+        EUtil.setCookieHeader(data3, "  ");
+        Assertions.assertNull(data3.getCookie());
+        EUtil.setCookieHeader(data3, null);
+        Assertions.assertNull(data3.getCookie());
+
+        // Cookie 值含冒号（如哈希值）仍识别为 cookie 格式
+        cn.zpl.pojo.Data data4 = new cn.zpl.pojo.Data();
+        EUtil.setCookieHeader(data4, "ipb_pass_hash=30d3:1024abc; sk=x");
+        Assertions.assertEquals("ipb_pass_hash=30d3:1024abc; sk=x", data4.getCookie());
+    }
+
     private void injectConfig(EUtil target, String savePath) {
         EhentaiConfig config = new EhentaiConfig();
         config.setSavePath(savePath);

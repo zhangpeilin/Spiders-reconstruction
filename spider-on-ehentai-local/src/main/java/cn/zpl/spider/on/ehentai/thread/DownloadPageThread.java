@@ -3,6 +3,7 @@ package cn.zpl.spider.on.ehentai.thread;
 import cn.zpl.config.SpringContext;
 import cn.zpl.pojo.Data;
 import cn.zpl.spider.on.ehentai.config.EhentaiConfig;
+import cn.zpl.spider.on.ehentai.util.EUtil;
 import cn.zpl.thread.CommonThread;
 import cn.zpl.util.CommonIOUtils;
 import cn.zpl.util.DownloadTools;
@@ -55,7 +56,7 @@ public class DownloadPageThread extends CommonThread {
         EhentaiConfig ehentaiConfig = SpringContext.getBeanWithGenerics(EhentaiConfig.class);
         Data data = new Data();
         data.setUrl(getUrl());
-        data.setHeader(ehentaiConfig.getEhentaiCookies());
+        EUtil.setCookieHeader(data, ehentaiConfig.getEhentaiCookies());
         data.setProxy(true);
         data.setAlwaysRetry();
         CommonIOUtils.withTimer(data);

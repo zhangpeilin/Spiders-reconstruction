@@ -7,6 +7,9 @@ spider:
     save-path: ""
     unzip: false
     manhuagui-cookies: ""
+    # 请求代理（e-hentai 需要代理访问），默认本机 Clash
+    proxy-host: 127.0.0.1
+    proxy-port: 7890
 
 eureka:
   client:

@@ -2,6 +2,7 @@ package cn.zpl.spider.on.ehentai.util;
 
 import cn.zpl.common.bean.Ehentai;
 import cn.zpl.config.SpringContext;
+import cn.zpl.pojo.Data;
 import cn.zpl.spider.on.ehentai.config.EhentaiConfig;
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +63,25 @@ public class EUtil {
     public String convertToTraditionalChinese(String simplifiedChinese) {
         return simplifiedChinese;
 //        return ZhConverterUtil.toTraditional(simplifiedChinese);
+    }
+
+    /**
+     * 兼容两种 Cookie 配置格式，避免空头/无冒号行导致 header 解析越界：
+     * - "k=v; k2=v2" 浏览器 Cookie 格式 → 走 Data.cookie 字段（按 Cookie 头发送）
+     * - "HeaderName: value"（含换行多行）请求头格式 → 走 Data.header 字段
+     * - 空配置 → 不设置任何头
+     */
+    public static void setCookieHeader(Data data, String cookies) {
+        if (data == null || cookies == null || cookies.trim().isEmpty()) {
+            return;
+        }
+        String trimmed = cookies.trim();
+        boolean headerStyle = trimmed.contains("\n") || trimmed.matches("^[^=;]+:.*");
+        if (headerStyle) {
+            data.setHeader(trimmed);
+        } else {
+            data.setCookie(trimmed);
+        }
     }
 
     public Ehentai getEh(String id) {

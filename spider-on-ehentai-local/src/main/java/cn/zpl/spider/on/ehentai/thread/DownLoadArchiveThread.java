@@ -103,7 +103,7 @@ public class DownLoadArchiveThread extends CommonThread {
         Data data = new Data();
         Ehentai ehentai;
         data.setUrl(getUrl());
-        data.setHeader(ehentaiConfig.getEhentaiCookies());
+        EUtil.setCookieHeader(data, ehentaiConfig.getEhentaiCookies());
         data.setProxy(true);
         data.setAlwaysRetry();
         CommonIOUtils.withTimer(data);
@@ -182,7 +182,7 @@ public class DownLoadArchiveThread extends CommonThread {
             if (a.text().toLowerCase().contains("archive")) {
                 String js = a.attr("onclick");
                 Data archive = new Data();
-                archive.setHeader(ehentaiConfig.getEhentaiCookies());
+                EUtil.setCookieHeader(archive, ehentaiConfig.getEhentaiCookies());
                 archive.setUrl(js.substring(js.indexOf("http"), js.lastIndexOf("'")));
                 archive.setProxy(true);
                 archive.setAlwaysRetry();
@@ -225,7 +225,8 @@ public class DownLoadArchiveThread extends CommonThread {
                 if (form.attr("action").startsWith("http")) {
                     Data d1 = new Data();
                     d1.setUrl(form.attr("action"));
-                    d1.setHeader(ehentaiConfig.getEhentaiCookies() + "\nContent-Type: application/x-www-form-urlencoded; charset=UTF-8");
+                    d1.setHeader("Content-Type: application/x-www-form-urlencoded; charset=UTF-8");
+                    EUtil.setCookieHeader(d1, ehentaiConfig.getEhentaiCookies());
                     d1.setProxy(true);
                     d1.setParams("dltype=org&dlcheck=Download+Original+Archive");
                     Map<String, String> vp = new HashMap<>();
