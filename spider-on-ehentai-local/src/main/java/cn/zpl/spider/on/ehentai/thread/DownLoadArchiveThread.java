@@ -94,8 +94,17 @@ public class DownLoadArchiveThread extends CommonThread {
             //已经下载的，复制到当前目录一份，文件名中添加（拷贝）字样
             File path = new File(makePath(eh.getTitle()));
             String name = new File(eh.getSavePath()).getName();
+            File source = new File(eh.getSavePath());
+            File targetDir = path.getParentFile();
+            // 原文件已位于当前（当天）目录时，无需再次拷贝（统一 / 与 \ 分隔符后比较，忽略大小写）
+            if (source.getParentFile() != null && targetDir != null
+                    && source.getParentFile().getAbsolutePath().replace('\\', '/')
+                    .equalsIgnoreCase(targetDir.getAbsolutePath().replace('\\', '/'))) {
+                log.debug("{}已在当前目录，跳过拷贝", eh.getSavePath());
+                return;
+            }
             try {
-                FileUtils.copyFile(new File(eh.getSavePath()), new File(path.getParent(), "(拷贝)" + name));
+                FileUtils.copyFile(source, new File(targetDir, "(拷贝)" + name));
             } catch (IOException e) {
                 log.error("{}-->{}复制失败", getUrl(), eh.getTitle());
             }
