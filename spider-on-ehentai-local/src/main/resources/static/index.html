@@ -165,6 +165,10 @@
     <h2>本地记录</h2>
     <div class="toolbar">
       <input type="text" id="keyword" placeholder="按 id / 标题 / 地址搜索" onkeydown="if(event.key==='Enter')loadList()">
+      <select id="sortMode" onchange="loadList()">
+        <option value="status">状态优先（未完成在前）</option>
+        <option value="favcount">按收藏数排序</option>
+      </select>
       <button class="secondary" onclick="loadList()">查询</button>
       <button class="secondary" onclick="loadList(true)">刷新</button>
       <span class="result" id="listMeta"></span>
@@ -185,17 +189,52 @@
     el.className = 'result ' + (ok ? 'ok' : 'err');
   }
 
+  let listPolling = null;
+
+  // 获取当前本地记录 id 集合（用于提交后判断是否新增）
+  async function fetchListIds() {
+    try {
+      const resp = await fetch('/local/list?size=500');
+      const data = await resp.json();
+      return new Set((data.list || []).map(e => e.id));
+    } catch (e) {
+      return new Set();
+    }
+  }
+
   async function doDownload() {
     const el = document.getElementById('downloadResult');
     const urls = document.getElementById('urls').value.trim();
     if (!urls) { show(el, '请先填写画廊地址', false); return; }
+    const before = await fetchListIds();
     try {
       const text = await postForm('/download', { url: urls, isDownload: document.getElementById('isDownload').checked });
       const data = JSON.parse(text);
-      show(el, (data.message || text) + '（已提交，进度见服务窗口日志）', true);
+      show(el, (data.message || text) + '，等待程序记录...', true);
     } catch (e) {
       show(el, '请求失败：' + e.message, false);
+      return;
     }
+    // 清空输入框，便于连续提交
+    document.getElementById('urls').value = '';
+    // 轮询本地记录，程序写入后自动刷新列表
+    let tries = 0;
+    if (listPolling) { clearInterval(listPolling); }
+    listPolling = setInterval(async () => {
+      tries++;
+      const now = await fetchListIds();
+      if (now.size > before.size) {
+        clearInterval(listPolling);
+        listPolling = null;
+        show(el, '已记录 ' + (now.size - before.size) + ' 条，本地记录已刷新', true);
+        loadList();
+      } else if (tries >= 20) {
+        clearInterval(listPolling);
+        listPolling = null;
+        show(el, '提交完成（若画廊已在本地记录中则跳过），列表已刷新', true);
+        loadList();
+      }
+    }, 3000);
   }
 
   async function doDownloadPage() {
@@ -221,6 +260,32 @@
     return '<span class="tag none">未知</span>';
   }
 
+  function favNum(eh) {
+    const n = parseInt(eh.favcount || '0', 10);
+    return isNaN(n) ? 0 : n;
+  }
+
+  // 状态优先级：未完成(0) 最前，已完成(1) 最后，其余居中
+  function statusRank(eh) {
+    if (eh.finish === 1) return 2;
+    if (eh.savePath === '画廊已删除') return 1;
+    return 0;
+  }
+
+  function sortList(list) {
+    const mode = document.getElementById('sortMode').value;
+    const sorted = list.slice();
+    if (mode === 'favcount') {
+      sorted.sort((a, b) => favNum(b) - favNum(a));
+    } else {
+      sorted.sort((a, b) => {
+        const r = statusRank(a) - statusRank(b);
+        return r !== 0 ? r : favNum(b) - favNum(a);
+      });
+    }
+    return sorted;
+  }
+
   async function loadList(force) {
     const wrap = document.getElementById('listWrap');
     const meta = document.getElementById('listMeta');
@@ -228,7 +293,7 @@
     try {
       const resp = await fetch('/local/list?keyword=' + encodeURIComponent(keyword) + '&size=200');
       const data = await resp.json();
-      const list = data.list || [];
+      const list = sortList(data.list || []);
       meta.textContent = '共 ' + list.length + ' 条' + (keyword ? '（含过滤）' : '');
       if (!list.length) {
         wrap.innerHTML = '<div class="empty">暂无记录</div>';
