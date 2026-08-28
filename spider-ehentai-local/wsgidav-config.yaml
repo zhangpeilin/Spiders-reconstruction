@@ -1,0 +1,28 @@
+# WsgiDAV configuration for ehentai-local release folder
+# Mounts:
+#   /        -> downloads folder (keep existing mounts working)
+#   /pronhub -> E:\pronhub
+
+host: '::'
+port: 8088
+
+provider_mapping:
+  "/":
+    root: "E:/spider-ehentai/spider-ehentai-local/downloads"
+  "/pronhub":
+    root: E:\pronhub
+  /movie:
+    root: E:\疑犯追踪\三
+simple_dc:
+  user_mapping:
+    "*": true
+dir_browser:
+  enable: true
+  directory_slash: true
+middleware_stack:
+- wsgidav.mw.cors.Cors
+- wsgidav.error_printer.ErrorPrinter
+- wsgidav.http_authenticator.HTTPAuthenticator
+- trailing_slash.TrailingSlashMiddleware
+- wsgidav.dir_browser.WsgiDavDirBrowser
+- wsgidav.request_resolver.RequestResolver

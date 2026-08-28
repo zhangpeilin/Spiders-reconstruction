@@ -61,4 +61,12 @@ gov.df.pay.web/src/main/resources/yy-datasource.xml
 #properties
 fpay-pay/src/main/resources/application.properties
 *.versionsBackups
-spider-ehentai-local/
+
+# ehentai-local 发布目录：忽略运行产物与敏感配置，代码/脚本入库
+spider-ehentai-local/*.jar
+spider-ehentai-local/application.yml
+spider-ehentai-local/downloads/
+spider-ehentai-local/logs/
+spider-ehentai-local/webdav.log
+spider-ehentai-local/wsgidav-config.yaml.bak
+spider-ehentai-local/__pycache__/
